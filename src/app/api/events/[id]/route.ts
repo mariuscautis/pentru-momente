@@ -85,7 +85,8 @@ export async function DELETE(
 
   const ok = await deleteEvent(eventId, user.id)
   if (!ok) {
-    return NextResponse.json<ApiError>({ error: 'Event not found' }, { status: 404 })
+    console.error('[DELETE /api/events] not found or ownership mismatch', { eventId, userId: user.id })
+    return NextResponse.json<ApiError>({ error: `Event not found (id=${eventId}, user=${user.id})` }, { status: 404 })
   }
 
   return NextResponse.json({ ok: true })
