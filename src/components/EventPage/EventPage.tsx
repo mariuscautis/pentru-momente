@@ -71,14 +71,6 @@ export function EventPage({ event, items, donations, config, totalRaised }: Even
               >
                 {pageTitle}
               </h1>
-              {event.description && (
-                <p
-                  className="mt-2 text-sm leading-relaxed line-clamp-2"
-                  style={{ color: '#5A4030', textShadow: '0 1px 4px rgba(253,250,247,0.5)' }}
-                >
-                  {event.description}
-                </p>
-              )}
             </div>
           </div>
         </div>
@@ -90,19 +82,7 @@ export function EventPage({ event, items, donations, config, totalRaised }: Even
         {!event.coverImageUrl && (
           <header>
             <h1 className="text-3xl font-bold leading-tight" style={{ color: '#2D2016' }}>{pageTitle}</h1>
-            {event.description && (
-              <p className="mt-2 text-sm leading-relaxed whitespace-pre-wrap" style={{ color: '#7A6652' }}>
-                {event.description}
-              </p>
-            )}
           </header>
-        )}
-
-        {/* Description shown below hero if there's a cover */}
-        {event.coverImageUrl && event.description && (
-          <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: '#7A6652' }}>
-            {event.description}
-          </p>
         )}
 
         {/* Goal progress */}
@@ -131,6 +111,13 @@ export function EventPage({ event, items, donations, config, totalRaised }: Even
             </div>
             <p className="mt-1.5 text-xs text-right" style={{ color: '#B09070' }}>{goalPercent}% din obiectiv</p>
           </section>
+        )}
+
+        {/* Description — single instance, always just above the donate button */}
+        {event.description && (
+          <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: '#7A6652' }}>
+            {event.description}
+          </p>
         )}
 
         {/* Donate CTA */}

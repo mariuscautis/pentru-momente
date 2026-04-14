@@ -10,8 +10,16 @@ import { StepSuccess } from './StepSuccess'
 
 export type DonationStep = 'amount' | 'details' | 'tip' | 'payment' | 'success'
 
+// Each selected item has its own amount
+export interface SelectedItem {
+  itemId: string
+  amount: number
+}
+
 export interface DonationState {
-  selectedItemId?: string
+  // Multi-item selection — empty means general fund
+  selectedItems: SelectedItem[]
+  // General fund amount when no items selected
   amount: number
   tipAmount: number
   displayName: string
@@ -19,6 +27,13 @@ export interface DonationState {
   isAnonymous: boolean
   showAmount: boolean
   clientSecret?: string
+}
+
+export function totalDonationAmount(state: DonationState): number {
+  if (state.selectedItems.length > 0) {
+    return state.selectedItems.reduce((sum, i) => sum + i.amount, 0)
+  }
+  return state.amount
 }
 
 interface DonationFlowProps {
@@ -31,18 +46,14 @@ interface DonationFlowProps {
 export function DonationFlow({ event, items, config, preselectedItemId }: DonationFlowProps) {
   const [step, setStep] = useState<DonationStep>('amount')
   const [state, setState] = useState<DonationState>({
-    selectedItemId: preselectedItemId,
-    amount: config.tipDefault * 10,
+    selectedItems: preselectedItemId ? [{ itemId: preselectedItemId, amount: 100 }] : [],
+    amount: 100,
     tipAmount: 20,
     displayName: '',
     message: '',
     isAnonymous: config.donationVisibilityDefault === 'hidden',
     showAmount: config.donationVisibilityDefault === 'visible',
   })
-
-  const selectedItem = state.selectedItemId
-    ? items.find((i) => i.id === state.selectedItemId)
-    : undefined
 
   return (
     <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #EDE0D0', backgroundColor: '#FFFFFF' }}>
@@ -55,7 +66,6 @@ export function DonationFlow({ event, items, config, preselectedItemId }: Donati
             setState={setState}
             items={items}
             config={config}
-            selectedItem={selectedItem}
             onNext={() => setStep('details')}
           />
         )}
@@ -88,7 +98,7 @@ export function DonationFlow({ event, items, config, preselectedItemId }: Donati
           />
         )}
         {step === 'success' && (
-          <StepSuccess config={config} event={event} amount={state.amount} />
+          <StepSuccess config={config} event={event} amount={totalDonationAmount(state)} />
         )}
       </div>
     </div>
@@ -104,15 +114,12 @@ const STEPS: { key: DonationStep; label: string }[] = [
 
 function StepIndicator({ current }: { current: DonationStep }) {
   if (current === 'success') return null
-
   const currentIndex = STEPS.findIndex((s) => s.key === current)
-
   return (
     <div className="flex" style={{ borderBottom: '1px solid #F0E8DC' }} role="list" aria-label="Pași">
       {STEPS.map((step, i) => {
         const isDone = i < currentIndex
         const isActive = i === currentIndex
-
         return (
           <div
             key={step.key}

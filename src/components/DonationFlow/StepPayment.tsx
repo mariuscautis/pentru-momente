@@ -10,7 +10,7 @@ import {
 } from '@stripe/react-stripe-js'
 import { Event, EventTypeConfig } from '@/types'
 import { Button } from '@/components/ui/Button'
-import { DonationState } from './DonationFlow'
+import { DonationState, totalDonationAmount } from './DonationFlow'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -38,8 +38,8 @@ export function StepPayment({ state, setState, event, config, onBack, onSuccess 
           body: JSON.stringify({
             eventType: event.eventType,
             eventSlug: event.slug,
-            itemId: state.selectedItemId,
-            amount: state.amount,
+            selectedItems: state.selectedItems,
+            amount: totalDonationAmount(state),
             tipAmount: state.tipAmount,
             displayName: state.displayName || undefined,
             message: state.message || undefined,
@@ -102,7 +102,7 @@ export function StepPayment({ state, setState, event, config, onBack, onSuccess 
     >
       <CheckoutForm
         config={config}
-        amount={state.amount}
+        amount={totalDonationAmount(state)}
         tipAmount={state.tipAmount}
         onBack={onBack}
         onSuccess={onSuccess}

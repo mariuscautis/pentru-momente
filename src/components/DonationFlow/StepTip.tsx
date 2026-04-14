@@ -2,7 +2,7 @@
 
 import { Dispatch, SetStateAction, useState } from 'react'
 import { EventTypeConfig } from '@/types'
-import { DonationState } from './DonationFlow'
+import { DonationState, totalDonationAmount } from './DonationFlow'
 
 interface StepTipProps {
   state: DonationState
@@ -49,7 +49,8 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
   }
 
   const currentTip = mode === 'custom' ? parseFloat(customValue) || 0 : mode
-  const total = state.amount + currentTip
+  const donationTotal = totalDonationAmount(state)
+  const total = donationTotal + currentTip
 
   return (
     <div className="space-y-6">
@@ -138,7 +139,7 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
       <div className="rounded-xl p-4 space-y-2" style={{ backgroundColor: '#F5EDE3' }}>
         <div className="flex justify-between text-sm" style={{ color: '#7A6652' }}>
           <span>Donație</span>
-          <span className="font-medium">{state.amount} Lei</span>
+          <span className="font-medium">{donationTotal} Lei</span>
         </div>
         <div className="flex justify-between text-sm" style={{ color: '#7A6652' }}>
           <span>Contribuție platformă</span>
@@ -149,7 +150,7 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
           style={{ borderTop: '1px solid #EDE0D0', color: '#2D2016' }}
         >
           <span>Total de plătit</span>
-          <span>{total > state.amount ? `${total} Lei` : '—'}</span>
+          <span>{total > donationTotal ? `${total} Lei` : '—'}</span>
         </div>
       </div>
 
