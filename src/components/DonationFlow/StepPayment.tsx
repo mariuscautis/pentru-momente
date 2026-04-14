@@ -24,10 +24,13 @@ interface StepPaymentProps {
 }
 
 export function StepPayment({ state, setState, event, config, onBack, onSuccess }: StepPaymentProps) {
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!state.clientSecret)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    // Already have a clientSecret from a previous visit to this step — reuse it
+    if (state.clientSecret) return
+
     async function fetchIntent() {
       setLoading(true)
       setError(null)
