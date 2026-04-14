@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Nav } from '@/components/Nav'
 import {
   Flame, Gem, Baby, HeartPulse, Sparkles,
   BadgePercent, ShieldCheck, UserCheck, Landmark,
@@ -47,30 +48,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#FDFAF7' }}>
 
-      {/* Nav */}
-      <nav className="px-4 py-3" style={{ borderBottom: '1px solid #F0EBE3' }}>
-        <div className="mx-auto max-w-5xl flex items-center justify-between gap-4">
-          <span className="shrink-0 text-lg font-bold tracking-tight" style={{ color: '#2D2016' }}>
-            pentru<span style={{ color: '#C4956A' }}>momente</span>
-          </span>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/login"
-              className="hidden sm:block text-sm font-medium px-3 py-2 rounded-lg transition-colors hover:bg-white whitespace-nowrap"
-              style={{ color: '#7A6652' }}
-            >
-              Intră în cont
-            </Link>
-            <Link
-              href="/create"
-              className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 whitespace-nowrap"
-              style={{ backgroundColor: '#C4956A' }}
-            >
-              Creează pagina
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <Nav />
 
       {/* Hero */}
       <section className="px-4 py-14 sm:py-24 text-center">
