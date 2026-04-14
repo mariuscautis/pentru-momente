@@ -82,12 +82,14 @@ export async function getEventItems(eventId: string): Promise<EventItem[]> {
 
 export async function deleteEvent(eventId: string, organiserId: string): Promise<boolean> {
   // Verify ownership first
-  const { data: existing } = await supabaseAdmin
+  const { data: existing, error: fetchError } = await supabaseAdmin
     .from('events')
     .select('id')
     .eq('id', eventId)
     .eq('organiser_id', organiserId)
     .maybeSingle()
+
+  console.error('[deleteEvent] ownership check:', { existing, fetchError, eventId, organiserId })
 
   if (!existing) return false
 
@@ -95,6 +97,8 @@ export async function deleteEvent(eventId: string, organiserId: string): Promise
     .from('events')
     .delete()
     .eq('id', eventId)
+
+  console.error('[deleteEvent] delete result:', { error })
 
   return !error
 }
