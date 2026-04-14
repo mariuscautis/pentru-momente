@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { constructWebhookEvent } from '@/lib/payments/stripe'
-import { confirmDonation, getDonationByPaymentIntent, getTotalRaisedForEvent } from '@/lib/db/donations'
+import { confirmDonation, getDonationsByPaymentIntent, getTotalRaisedForEvent } from '@/lib/db/donations'
 import { updateEventItemRaisedAmount, getEventById } from '@/lib/db/events'
 import { sendDonationNotificationToOrganiser, sendMilestoneEmail } from '@/lib/email/brevo'
 import { getEventTypeConfig } from '@/config/event-types'
@@ -35,9 +35,12 @@ async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent): Prom
   const donation = await confirmDonation(paymentIntent.id)
   if (!donation) return
 
-  // Update item raised amount if this was an item donation
-  if (donation.itemId) {
-    await updateEventItemRaisedAmount(donation.itemId, donation.amount)
+  // Update raised amounts for all confirmed items on this payment intent
+  const allDonations = await getDonationsByPaymentIntent(paymentIntent.id)
+  for (const d of allDonations) {
+    if (d.itemId) {
+      await updateEventItemRaisedAmount(d.itemId, d.amount)
+    }
   }
 
   // Send organiser notification

@@ -76,23 +76,35 @@ export async function confirmDonation(stripePaymentIntentId: string): Promise<Do
     .update({ status: 'confirmed' })
     .eq('stripe_payment_intent_id', stripePaymentIntentId)
     .select()
-    .single()
 
-  if (error || !data) return null
-  return rowToDonation(data)
+  if (error || !data || data.length === 0) return null
+  // Return first row — caller uses it for event lookup / item update
+  return rowToDonation(data[0])
 }
 
 export async function getDonationByPaymentIntent(
   stripePaymentIntentId: string
 ): Promise<Donation | null> {
-  const { data, error } = await supabaseAdmin
+  const { data } = await supabaseAdmin
     .from('donations')
     .select('*')
     .eq('stripe_payment_intent_id', stripePaymentIntentId)
-    .single()
+    .limit(1)
+    .maybeSingle()
 
-  if (error || !data) return null
+  if (!data) return null
   return rowToDonation(data)
+}
+
+export async function getDonationsByPaymentIntent(
+  stripePaymentIntentId: string
+): Promise<Donation[]> {
+  const { data } = await supabaseAdmin
+    .from('donations')
+    .select('*')
+    .eq('stripe_payment_intent_id', stripePaymentIntentId)
+
+  return (data ?? []).map(rowToDonation)
 }
 
 export async function getTotalRaisedForEvent(eventId: string): Promise<number> {
