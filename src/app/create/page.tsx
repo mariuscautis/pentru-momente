@@ -62,9 +62,10 @@ interface PreviewProps {
   description: string
   goalAmount: string
   items: ItemInput[]
+  coverPreviewUrl: string | null
 }
 
-function LivePreview({ config, name, description, goalAmount, items }: PreviewProps) {
+function LivePreview({ config, name, description, goalAmount, items, coverPreviewUrl }: PreviewProps) {
   if (!config) return null
 
   const displayName = name || 'Numele persoanei'
@@ -95,8 +96,20 @@ function LivePreview({ config, name, description, goalAmount, items }: PreviewPr
         </div>
       </div>
 
+      {/* Cover image hero */}
+      {coverPreviewUrl && (
+        <div className="relative w-full" style={{ height: 100 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={coverPreviewUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+          <div
+            className="absolute inset-0"
+            style={{ background: `linear-gradient(to bottom, transparent 30%, ${config.palette.background} 100%)` }}
+          />
+        </div>
+      )}
+
       {/* Page content */}
-      <div className="p-5 space-y-3" style={{ backgroundColor: config.palette.background }}>
+      <div className="p-5 space-y-3" style={{ backgroundColor: config.palette.background, paddingTop: coverPreviewUrl ? 8 : undefined }}>
         <h3 className="font-bold text-sm leading-snug" style={{ color: '#2D2016' }}>{title}</h3>
 
         {description && (
@@ -778,6 +791,7 @@ export default function CreateEventPage() {
                 description={description}
                 goalAmount={goalAmount}
                 items={items}
+                coverPreviewUrl={coverPreviewUrl}
               />
               <p className="text-xs text-center" style={{ color: '#C0B0A0' }}>
                 Se actualizează pe măsură ce completezi
