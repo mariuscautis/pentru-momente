@@ -81,11 +81,20 @@ export async function getEventItems(eventId: string): Promise<EventItem[]> {
 }
 
 export async function deleteEvent(eventId: string, organiserId: string): Promise<boolean> {
+  // Verify ownership first
+  const { data: existing } = await supabaseAdmin
+    .from('events')
+    .select('id')
+    .eq('id', eventId)
+    .eq('organiser_id', organiserId)
+    .maybeSingle()
+
+  if (!existing) return false
+
   const { error } = await supabaseAdmin
     .from('events')
     .delete()
     .eq('id', eventId)
-    .eq('organiser_id', organiserId)
 
   return !error
 }
