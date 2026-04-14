@@ -33,35 +33,38 @@ export async function getDonationsForEvent(eventId: string): Promise<Donation[]>
 export async function createDonation(
   input: Omit<Donation, 'id' | 'createdAt' | 'status'>
 ): Promise<Donation> {
+  // Check if a donation already exists for this payment intent + item combination
+  // to guard against duplicate calls (e.g. user navigating back to payment step)
+  const existingQuery = supabaseAdmin
+    .from('donations')
+    .select()
+    .eq('stripe_payment_intent_id', input.stripePaymentIntentId)
+
+  if (input.itemId) {
+    existingQuery.eq('item_id', input.itemId)
+  } else {
+    existingQuery.is('item_id', null)
+  }
+
+  const { data: existing } = await existingQuery.maybeSingle()
+  if (existing) return rowToDonation(existing)
+
   const { data, error } = await supabaseAdmin
     .from('donations')
-    .upsert(
-      {
-        event_id: input.eventId,
-        item_id: input.itemId ?? null,
-        amount: input.amount,
-        tip_amount: input.tipAmount,
-        display_name: input.displayName ?? null,
-        message: input.message ?? null,
-        is_anonymous: input.isAnonymous,
-        show_amount: input.showAmount,
-        stripe_payment_intent_id: input.stripePaymentIntentId,
-        status: 'pending',
-      },
-      { onConflict: 'stripe_payment_intent_id', ignoreDuplicates: true }
-    )
+    .insert({
+      event_id: input.eventId,
+      item_id: input.itemId ?? null,
+      amount: input.amount,
+      tip_amount: input.tipAmount,
+      display_name: input.displayName ?? null,
+      message: input.message ?? null,
+      is_anonymous: input.isAnonymous,
+      show_amount: input.showAmount,
+      stripe_payment_intent_id: input.stripePaymentIntentId,
+      status: 'pending',
+    })
     .select()
     .single()
-
-  // ignoreDuplicates returns no row on conflict — fetch existing instead
-  if (!data && !error) {
-    const { data: existing } = await supabaseAdmin
-      .from('donations')
-      .select()
-      .eq('stripe_payment_intent_id', input.stripePaymentIntentId)
-      .single()
-    if (existing) return rowToDonation(existing)
-  }
 
   if (error || !data) throw new Error(error?.message ?? 'Failed to create donation')
   return rowToDonation(data)
