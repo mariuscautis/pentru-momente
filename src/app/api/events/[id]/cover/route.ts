@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import sharp from 'sharp'
 import { supabase, supabaseAdmin } from '@/lib/db/supabase'
 import { ApiError } from '@/types'
 
@@ -40,20 +41,25 @@ export async function POST(
     return NextResponse.json<ApiError>({ error: 'Only image files are allowed' }, { status: 400 })
   }
 
-  if (file.size > 5 * 1024 * 1024) {
-    return NextResponse.json<ApiError>({ error: 'File too large — maximum 5MB' }, { status: 400 })
+  if (file.size > 20 * 1024 * 1024) {
+    return NextResponse.json<ApiError>({ error: 'File too large — maximum 20MB' }, { status: 400 })
   }
 
-  const ext = file.name.split('.').pop() ?? 'jpg'
-  // Include timestamp in filename so each upload is a new unique file —
-  // this busts both the Supabase CDN cache and Next.js image cache
-  const ts = Date.now()
-  const path = `covers/${eventId}-${ts}.${ext}`
   const bytes = await file.arrayBuffer()
+
+  // Resize to max 1920px wide, convert to WebP at 85% quality
+  // A typical phone photo goes from ~4MB down to ~150-300KB
+  const processed = await sharp(Buffer.from(bytes))
+    .resize({ width: 1920, withoutEnlargement: true })
+    .webp({ quality: 85 })
+    .toBuffer()
+
+  const ts = Date.now()
+  const path = `covers/${eventId}-${ts}.webp`
 
   const { error: uploadError } = await supabaseAdmin.storage
     .from('event-covers')
-    .upload(path, bytes, { contentType: file.type, upsert: false })
+    .upload(path, processed, { contentType: 'image/webp', upsert: false })
 
   if (uploadError) {
     return NextResponse.json<ApiError>({ error: uploadError.message }, { status: 500 })
