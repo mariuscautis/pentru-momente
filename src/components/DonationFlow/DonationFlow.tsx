@@ -4,10 +4,11 @@ import { useState } from 'react'
 import { Event, EventItem, EventTypeConfig } from '@/types'
 import { StepChooseAmount } from './StepChooseAmount'
 import { StepDonorDetails } from './StepDonorDetails'
+import { StepTip } from './StepTip'
 import { StepPayment } from './StepPayment'
 import { StepSuccess } from './StepSuccess'
 
-export type DonationStep = 'amount' | 'details' | 'payment' | 'success'
+export type DonationStep = 'amount' | 'details' | 'tip' | 'payment' | 'success'
 
 export interface DonationState {
   selectedItemId?: string
@@ -32,7 +33,7 @@ export function DonationFlow({ event, items, config, preselectedItemId }: Donati
   const [state, setState] = useState<DonationState>({
     selectedItemId: preselectedItemId,
     amount: config.tipDefault * 10,
-    tipAmount: config.tipDefault,
+    tipAmount: 20,
     displayName: '',
     message: '',
     isAnonymous: config.donationVisibilityDefault === 'hidden',
@@ -44,8 +45,7 @@ export function DonationFlow({ event, items, config, preselectedItemId }: Donati
     : undefined
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-      {/* Step indicator */}
+    <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #EDE0D0', backgroundColor: '#FFFFFF' }}>
       <StepIndicator current={step} />
 
       <div className="p-5">
@@ -65,6 +65,15 @@ export function DonationFlow({ event, items, config, preselectedItemId }: Donati
             setState={setState}
             config={config}
             onBack={() => setStep('amount')}
+            onNext={() => setStep('tip')}
+          />
+        )}
+        {step === 'tip' && (
+          <StepTip
+            state={state}
+            setState={setState}
+            config={config}
+            onBack={() => setStep('details')}
             onNext={() => setStep('payment')}
           />
         )}
@@ -74,7 +83,7 @@ export function DonationFlow({ event, items, config, preselectedItemId }: Donati
             setState={setState}
             event={event}
             config={config}
-            onBack={() => setStep('details')}
+            onBack={() => setStep('tip')}
             onSuccess={() => setStep('success')}
           />
         )}
@@ -89,6 +98,7 @@ export function DonationFlow({ event, items, config, preselectedItemId }: Donati
 const STEPS: { key: DonationStep; label: string }[] = [
   { key: 'amount', label: 'Sumă' },
   { key: 'details', label: 'Detalii' },
+  { key: 'tip', label: 'Contribuție' },
   { key: 'payment', label: 'Plată' },
 ]
 
@@ -98,7 +108,7 @@ function StepIndicator({ current }: { current: DonationStep }) {
   const currentIndex = STEPS.findIndex((s) => s.key === current)
 
   return (
-    <div className="flex border-b border-gray-100" role="list" aria-label="Pași">
+    <div className="flex" style={{ borderBottom: '1px solid #F0E8DC' }} role="list" aria-label="Pași">
       {STEPS.map((step, i) => {
         const isDone = i < currentIndex
         const isActive = i === currentIndex
@@ -108,14 +118,13 @@ function StepIndicator({ current }: { current: DonationStep }) {
             key={step.key}
             role="listitem"
             aria-current={isActive ? 'step' : undefined}
-            className={[
-              'flex-1 py-3 text-center text-xs font-medium transition-colors',
-              isActive ? 'text-gray-900 border-b-2 border-gray-900' : '',
-              isDone ? 'text-gray-400' : '',
-              !isActive && !isDone ? 'text-gray-300' : '',
-            ].join(' ')}
+            className="flex-1 py-3 text-center text-xs font-medium transition-colors"
+            style={{
+              color: isActive ? '#2D2016' : isDone ? '#C4956A' : '#C8B8A8',
+              borderBottom: isActive ? '2px solid #C4956A' : '2px solid transparent',
+            }}
           >
-            {i + 1}. {step.label}
+            {isDone ? '✓' : i + 1}. {step.label}
           </div>
         )
       })}
