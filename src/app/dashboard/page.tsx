@@ -270,48 +270,47 @@ function EventCard({
     >
       {/* Cover image area */}
       <div
-        className="relative w-full cursor-pointer group"
+        className="relative w-full group"
         style={{ height: event.coverImageUrl ? 200 : 100, backgroundColor: '#F5EDE3' }}
-        onClick={() => {
-          if (fileRef.current) {
-            fileRef.current.value = ''
-            fileRef.current.click()
-          }
-        }}
       >
         {event.coverImageUrl ? (
           <Image src={event.coverImageUrl} alt={event.name} fill className="object-cover" />
         ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 pointer-events-none">
             <span className="text-2xl">{meta.emoji}</span>
             <p className="text-xs font-medium" style={{ color: '#B09070' }}>Adaugă o imagine de copertă</p>
           </div>
         )}
 
-        {/* Hover overlay */}
-        <div
-          className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity"
+        {/* Hover overlay — button sits on top of everything including the Image */}
+        <button
+          type="button"
+          className="absolute inset-0 w-full flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
           style={{ backgroundColor: 'rgba(45,32,22,0.5)' }}
+          onClick={() => {
+            if (fileRef.current) {
+              fileRef.current.value = ''
+              fileRef.current.click()
+            }
+          }}
         >
           {uploadingCover ? (
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
           ) : (
-            <>
-              <span className="text-white text-sm font-medium">
-                {event.coverImageUrl ? '✎ Schimbă imaginea' : '+ Adaugă imagine'}
-              </span>
-            </>
+            <span className="text-white text-sm font-medium">
+              {event.coverImageUrl ? '✎ Schimbă imaginea' : '+ Adaugă imagine'}
+            </span>
           )}
-        </div>
-
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => { const f = e.target.files?.[0]; if (f) onUploadCover(f) }}
-        />
+        </button>
       </div>
+
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) onUploadCover(f) }}
+      />
 
       {/* Card body */}
       <div className="p-6 space-y-5">
