@@ -2,24 +2,35 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/db/supabase'
-import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
+import { getSupabase } from '@/lib/db/supabase'
 
 export default function LoginPage() {
   const router = useRouter()
+  const [mode, setMode] = useState<'login' | 'register'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [mode, setMode] = useState<'login' | 'register'>('login')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [oauthLoading, setOauthLoading] = useState<'google' | 'facebook' | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [message, setMessage] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setLoading(true)
     setError(null)
-    setMessage(null)
+    setSuccess(null)
+
+    if (mode === 'register' && password !== confirmPassword) {
+      setError('Parolele nu coincid.')
+      return
+    }
+    if (mode === 'register' && password.length < 8) {
+      setError('Parola trebuie să aibă cel puțin 8 caractere.')
+      return
+    }
+
+    setLoading(true)
+    const supabase = getSupabase()
 
     if (mode === 'login') {
       const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
@@ -29,59 +40,162 @@ export default function LoginPage() {
         router.push('/dashboard')
       }
     } else {
-      const { error: authError } = await supabase.auth.signUp({ email, password })
+      const { error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+        },
+      })
       if (authError) {
         setError(authError.message)
       } else {
-        setMessage('Contul a fost creat. Verifică emailul pentru confirmare.')
+        setSuccess('Contul a fost creat! Verifică emailul și apasă pe linkul de confirmare pentru a te autentifica.')
       }
     }
 
     setLoading(false)
   }
 
+  async function handleOAuth(provider: 'google' | 'facebook') {
+    setOauthLoading(provider)
+    const supabase = getSupabase()
+    await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+      },
+    })
+    setOauthLoading(null)
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+    <div
+      className="min-h-screen flex items-center justify-center px-4"
+      style={{ backgroundColor: '#FDFAF7' }}
+    >
       <div className="w-full max-w-sm">
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 space-y-6">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <a href="/" className="text-xl font-bold tracking-tight" style={{ color: '#2D2016' }}>
+            pentru<span style={{ color: '#C4956A' }}>momente</span>
+          </a>
+        </div>
+
+        {/* Card */}
+        <div
+          className="rounded-2xl p-8 space-y-6"
+          style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDE0D0' }}
+        >
           <div>
-            <h1 className="text-xl font-bold text-gray-900">
-              {mode === 'login' ? 'Intră în cont' : 'Creează cont'}
+            <h1 className="text-xl font-bold" style={{ color: '#2D2016' }}>
+              {mode === 'login' ? 'Bine ai revenit' : 'Creează un cont'}
             </h1>
-            <p className="text-sm text-gray-500 mt-1">pentrumomente.ro</p>
+            <p className="text-sm mt-1" style={{ color: '#9A7B60' }}>
+              {mode === 'login'
+                ? 'Intră în contul tău pentru a gestiona paginile.'
+                : 'Înregistrează-te pentru a crea o pagină de donații.'}
+            </p>
           </div>
 
+          {/* OAuth buttons */}
+          <div className="space-y-2">
+            <OAuthButton
+              onClick={() => handleOAuth('google')}
+              loading={oauthLoading === 'google'}
+              icon={<GoogleIcon />}
+            >
+              Continuă cu Google
+            </OAuthButton>
+            <OAuthButton
+              onClick={() => handleOAuth('facebook')}
+              loading={oauthLoading === 'facebook'}
+              icon={<FacebookIcon />}
+            >
+              Continuă cu Facebook
+            </OAuthButton>
+          </div>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px" style={{ backgroundColor: '#EDE0D0' }} />
+            <span className="text-xs" style={{ color: '#B09070' }}>sau cu email</span>
+            <div className="flex-1 h-px" style={{ backgroundColor: '#EDE0D0' }} />
+          </div>
+
+          {/* Email form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
+            <Field
               label="Email"
               type="email"
-              required
-              autoComplete="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={setEmail}
+              autoComplete="email"
+              placeholder="adresa@email.ro"
             />
-            <Input
+            <Field
               label="Parolă"
               type="password"
-              required
-              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={setPassword}
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              placeholder={mode === 'register' ? 'Minim 8 caractere' : ''}
             />
+            {mode === 'register' && (
+              <Field
+                label="Confirmă parola"
+                type="password"
+                value={confirmPassword}
+                onChange={setConfirmPassword}
+                autoComplete="new-password"
+                placeholder="Repetă parola"
+              />
+            )}
 
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            {message && <p className="text-sm text-green-700">{message}</p>}
+            {error && (
+              <p
+                className="text-sm rounded-lg px-3 py-2"
+                style={{ backgroundColor: '#FEF2F2', color: '#B91C1C' }}
+              >
+                {error}
+              </p>
+            )}
+            {success && (
+              <p
+                className="text-sm rounded-lg px-3 py-2 leading-relaxed"
+                style={{ backgroundColor: '#F0FFF4', color: '#166534' }}
+              >
+                {success}
+              </p>
+            )}
 
-            <Button type="submit" loading={loading} size="lg" className="w-full">
-              {mode === 'login' ? 'Intră' : 'Înregistrează-te'}
-            </Button>
+            {!success && (
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-xl py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                style={{ backgroundColor: '#C4956A', opacity: loading ? 0.6 : 1 }}
+              >
+                {loading
+                  ? 'Se procesează...'
+                  : mode === 'login'
+                  ? 'Intră în cont'
+                  : 'Creează cont'}
+              </button>
+            )}
           </form>
 
-          <p className="text-center text-sm text-gray-500">
+          <p className="text-center text-sm" style={{ color: '#9A7B60' }}>
             {mode === 'login' ? 'Nu ai cont?' : 'Ai deja cont?'}{' '}
             <button
-              onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
-              className="text-gray-900 font-medium hover:underline"
+              onClick={() => {
+                setMode(mode === 'login' ? 'register' : 'login')
+                setError(null)
+                setSuccess(null)
+                setConfirmPassword('')
+              }}
+              className="font-semibold transition-colors"
+              style={{ color: '#C4956A' }}
             >
               {mode === 'login' ? 'Înregistrează-te' : 'Intră'}
             </button>
@@ -89,5 +203,94 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+// ─── Primitives ───────────────────────────────────────────────────────────────
+
+function Field({
+  label, type, value, onChange, autoComplete, placeholder,
+}: {
+  label: string
+  type: string
+  value: string
+  onChange: (v: string) => void
+  autoComplete?: string
+  placeholder?: string
+}) {
+  return (
+    <div>
+      <label className="block text-xs font-medium mb-1.5" style={{ color: '#7A6652' }}>
+        {label}
+      </label>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        required
+        autoComplete={autoComplete}
+        placeholder={placeholder}
+        className="w-full rounded-lg px-3 py-2.5 text-sm outline-none transition-colors"
+        style={{
+          border: '1px solid #E0D0C0',
+          color: '#2D2016',
+          backgroundColor: '#FDFAF7',
+        }}
+        onFocus={(e) => (e.target.style.borderColor = '#C4956A')}
+        onBlur={(e) => (e.target.style.borderColor = '#E0D0C0')}
+      />
+    </div>
+  )
+}
+
+function OAuthButton({
+  onClick, loading, icon, children,
+}: {
+  onClick: () => void
+  loading: boolean
+  icon: React.ReactNode
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={loading}
+      className="w-full flex items-center justify-center gap-3 rounded-xl py-2.5 text-sm font-medium transition-colors"
+      style={{
+        border: '1px solid #E0D0C0',
+        color: '#2D2016',
+        backgroundColor: loading ? '#F5EDE3' : '#FFFFFF',
+      }}
+    >
+      {loading ? (
+        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+        </svg>
+      ) : (
+        icon
+      )}
+      {children}
+    </button>
+  )
+}
+
+function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+      <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+      <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
+      <path d="M3.964 10.706A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.706V4.962H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.038l3.007-2.332z" fill="#FBBC05"/>
+      <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.962L3.964 7.294C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+    </svg>
+  )
+}
+
+function FacebookIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+      <path d="M18 9a9 9 0 10-10.406 8.892v-6.29H5.309V9h2.285V7.017c0-2.256 1.343-3.502 3.4-3.502.985 0 2.015.176 2.015.176V5.92h-1.135c-1.119 0-1.468.695-1.468 1.407V9h2.496l-.399 2.602H10.406v6.29A9.002 9.002 0 0018 9z" fill="#1877F2"/>
+    </svg>
   )
 }
