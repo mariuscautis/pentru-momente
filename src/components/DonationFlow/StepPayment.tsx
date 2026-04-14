@@ -48,15 +48,22 @@ export function StepPayment({ state, setState, event, config, onBack, onSuccess 
           }),
         })
 
-        const data = (await res.json()) as { clientSecret?: string; error?: string }
+        let data: { clientSecret?: string; error?: string }
+        try {
+          data = (await res.json()) as { clientSecret?: string; error?: string }
+        } catch {
+          setError(`Eroare server (${res.status}). Încearcă din nou.`)
+          return
+        }
+
         if (!res.ok || !data.clientSecret) {
           setError(data.error ?? 'Eroare la inițializarea plății.')
           return
         }
 
         setState((prev) => ({ ...prev, clientSecret: data.clientSecret }))
-      } catch {
-        setError('Eroare de rețea. Încearcă din nou.')
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Eroare de rețea. Încearcă din nou.')
       } finally {
         setLoading(false)
       }

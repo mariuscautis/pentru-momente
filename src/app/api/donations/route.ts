@@ -25,6 +25,16 @@ interface CreateDonationBody {
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  try {
+    return await handlePost(req)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Internal server error'
+    console.error('[donations] unhandled error:', err)
+    return NextResponse.json<ApiError>({ error: message }, { status: 500 })
+  }
+}
+
+async function handlePost(req: NextRequest): Promise<NextResponse> {
   let body: CreateDonationBody
 
   try {
