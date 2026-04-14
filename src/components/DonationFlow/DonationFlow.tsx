@@ -40,13 +40,15 @@ interface DonationFlowProps {
   event: Event
   items: EventItem[]
   config: EventTypeConfig
-  preselectedItemId?: string
+  initialCart?: SelectedItem[]
+  onClose?: () => void
 }
 
-export function DonationFlow({ event, items, config, preselectedItemId }: DonationFlowProps) {
-  const [step, setStep] = useState<DonationStep>('amount')
+export function DonationFlow({ event, items, config, initialCart, onClose }: DonationFlowProps) {
+  const hasCart = initialCart && initialCart.length > 0
+  const [step, setStep] = useState<DonationStep>(hasCart ? 'details' : 'amount')
   const [state, setState] = useState<DonationState>({
-    selectedItems: preselectedItemId ? [{ itemId: preselectedItemId, amount: 100 }] : [],
+    selectedItems: initialCart ?? [],
     amount: 100,
     tipAmount: 20,
     displayName: '',
@@ -57,7 +59,21 @@ export function DonationFlow({ event, items, config, preselectedItemId }: Donati
 
   return (
     <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #EDE0D0', backgroundColor: '#FFFFFF' }}>
-      <StepIndicator current={step} />
+      <div className="flex items-center justify-between" style={{ borderBottom: '1px solid #F0E8DC' }}>
+        <div className="flex-1">
+          <StepIndicator current={step} />
+        </div>
+        {onClose && step !== 'success' && (
+          <button
+            onClick={onClose}
+            className="px-4 py-3 text-sm transition-opacity hover:opacity-70"
+            style={{ color: '#9A7B60' }}
+            aria-label="Închide"
+          >
+            ✕
+          </button>
+        )}
+      </div>
 
       <div className="p-5">
         {step === 'amount' && (
@@ -74,7 +90,7 @@ export function DonationFlow({ event, items, config, preselectedItemId }: Donati
             state={state}
             setState={setState}
             config={config}
-            onBack={() => setStep('amount')}
+            onBack={() => hasCart ? (onClose?.()) : setStep('amount')}
             onNext={() => setStep('tip')}
           />
         )}
@@ -116,7 +132,7 @@ function StepIndicator({ current }: { current: DonationStep }) {
   if (current === 'success') return null
   const currentIndex = STEPS.findIndex((s) => s.key === current)
   return (
-    <div className="flex" style={{ borderBottom: '1px solid #F0E8DC' }} role="list" aria-label="Pași">
+    <div className="flex" role="list" aria-label="Pași">
       {STEPS.map((step, i) => {
         const isDone = i < currentIndex
         const isActive = i === currentIndex

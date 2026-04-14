@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { Event, EventItem, Donation, EventTypeConfig } from '@/types'
 import { ItemTracker } from '@/components/ItemTracker/ItemTracker'
 import { DonorWall } from '@/components/DonorWall/DonorWall'
-import { DonationFlow } from '@/components/DonationFlow/DonationFlow'
+import { DonationFlow, SelectedItem } from '@/components/DonationFlow/DonationFlow'
 
 interface EventPageProps {
   event: Event
@@ -16,22 +16,27 @@ interface EventPageProps {
 }
 
 export function EventPage({ event, items, donations, config, totalRaised }: EventPageProps) {
-  const [donateOpen, setDonateOpen] = useState(false)
-  const [preselectedItemId, setPreselectedItemId] = useState<string | undefined>()
+  const [cart, setCart] = useState<SelectedItem[]>([])
+  const [checkoutOpen, setCheckoutOpen] = useState(false)
 
   const goalPercent = event.goalAmount
     ? Math.min(100, Math.round((totalRaised / event.goalAmount) * 100))
     : null
 
-  function openDonate(itemId?: string) {
-    setPreselectedItemId(itemId)
-    setDonateOpen(true)
-  }
+  const cartTotal = cart.reduce((sum, i) => sum + i.amount, 0)
 
   const pageTitle = config.copy.pageTitle
     .replace('{name}', event.name)
     .replace('{name1}', event.name.split(' & ')[0] ?? event.name)
     .replace('{name2}', event.name.split(' & ')[1] ?? '')
+
+  function openCheckout() {
+    setCheckoutOpen(true)
+    // Scroll to top of checkout
+    setTimeout(() => {
+      document.getElementById('checkout-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 50)
+  }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: config.palette.background }}>
@@ -48,7 +53,6 @@ export function EventPage({ event, items, donations, config, totalRaised }: Even
             sizes="100vw"
             quality={90}
           />
-          {/* Gradient: solid image → transparent → background colour */}
           <div
             className="absolute inset-0"
             style={{
@@ -61,8 +65,6 @@ export function EventPage({ event, items, donations, config, totalRaised }: Even
               )`,
             }}
           />
-
-          {/* Title overlaid on hero */}
           <div className="absolute bottom-0 left-0 right-0 px-4 pb-6 pt-16">
             <div className="mx-auto max-w-2xl">
               <h1
@@ -76,9 +78,8 @@ export function EventPage({ event, items, donations, config, totalRaised }: Even
         </div>
       ) : null}
 
-      <main className="mx-auto max-w-2xl px-4 space-y-6" style={{ paddingTop: event.coverImageUrl ? 24 : 40, paddingBottom: 48 }}>
+      <main className="mx-auto max-w-2xl px-4 space-y-6" style={{ paddingTop: event.coverImageUrl ? 24 : 40, paddingBottom: cart.length > 0 ? 100 : 48 }}>
 
-        {/* Header — only shown when no cover image */}
         {!event.coverImageUrl && (
           <header>
             <h1 className="text-3xl font-bold leading-tight" style={{ color: '#2D2016' }}>{pageTitle}</h1>
@@ -113,17 +114,17 @@ export function EventPage({ event, items, donations, config, totalRaised }: Even
           </section>
         )}
 
-        {/* Description — single instance, always just above the donate button */}
+        {/* Description */}
         {event.description && (
           <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: '#7A6652' }}>
             {event.description}
           </p>
         )}
 
-        {/* Donate CTA */}
-        {!donateOpen && (
+        {/* General donate CTA — only when no items or checkout not open */}
+        {!checkoutOpen && (
           <button
-            onClick={() => openDonate()}
+            onClick={() => { setCart([]); openCheckout() }}
             className="w-full rounded-2xl py-4 text-base font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
             style={{ backgroundColor: config.palette.primary }}
           >
@@ -131,24 +132,28 @@ export function EventPage({ event, items, donations, config, totalRaised }: Even
           </button>
         )}
 
-        {/* Donation flow */}
-        {donateOpen && (
-          <DonationFlow
-            event={event}
-            items={items}
-            config={config}
-            preselectedItemId={preselectedItemId}
-          />
+        {/* Checkout / donation flow */}
+        {checkoutOpen && (
+          <div id="checkout-section">
+            <DonationFlow
+              event={event}
+              items={items}
+              config={config}
+              initialCart={cart}
+              onClose={() => { setCheckoutOpen(false); setCart([]) }}
+            />
+          </div>
         )}
 
-        {/* Items */}
-        {items.length > 0 && (
+        {/* Items list */}
+        {items.length > 0 && !checkoutOpen && (
           <section aria-label="Articole">
             <h2 className="text-base font-semibold mb-3" style={{ color: '#2D2016' }}>Articole</h2>
             <ItemTracker
               items={items}
               config={config}
-              onSelectItem={(id) => openDonate(id)}
+              cart={cart}
+              onCartChange={setCart}
             />
           </section>
         )}
@@ -158,11 +163,48 @@ export function EventPage({ event, items, donations, config, totalRaised }: Even
           <DonorWall donations={donations} config={config} />
         )}
       </main>
+
+      {/* ── Sticky cart bar ── */}
+      {cart.length > 0 && !checkoutOpen && (
+        <div
+          className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 pt-4"
+          style={{ background: `linear-gradient(to top, ${config.palette.background} 60%, transparent)` }}
+        >
+          <div
+            className="mx-auto max-w-2xl rounded-2xl px-5 py-4 flex items-center justify-between gap-4"
+            style={{ backgroundColor: '#2D2016', boxShadow: '0 8px 32px rgba(45,32,22,0.25)' }}
+          >
+            <div>
+              <p className="text-xs font-medium" style={{ color: '#C4956A' }}>
+                {cart.length} {cart.length === 1 ? 'articol' : 'articole'} în coș
+              </p>
+              <p className="text-lg font-bold" style={{ color: '#FDFAF7' }}>
+                {cartTotal} RON
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCart([])}
+                className="rounded-xl px-3 py-2 text-xs font-medium transition-colors"
+                style={{ color: '#9A7B60', border: '1px solid #3A2A18' }}
+              >
+                Golește
+              </button>
+              <button
+                onClick={openCheckout}
+                className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                style={{ backgroundColor: '#C4956A' }}
+              >
+                Spre plată →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
-// Convert hex colour to rgba so we can use it in the gradient
 function hexToRgba(hex: string, alpha: number): string {
   const clean = hex.replace('#', '')
   const r = parseInt(clean.slice(0, 2), 16)
