@@ -45,12 +45,15 @@ export async function POST(
   }
 
   const ext = file.name.split('.').pop() ?? 'jpg'
-  const path = `covers/${eventId}.${ext}`
+  // Include timestamp in filename so each upload is a new unique file —
+  // this busts both the Supabase CDN cache and Next.js image cache
+  const ts = Date.now()
+  const path = `covers/${eventId}-${ts}.${ext}`
   const bytes = await file.arrayBuffer()
 
   const { error: uploadError } = await supabaseAdmin.storage
     .from('event-covers')
-    .upload(path, bytes, { contentType: file.type, upsert: true })
+    .upload(path, bytes, { contentType: file.type, upsert: false })
 
   if (uploadError) {
     return NextResponse.json<ApiError>({ error: uploadError.message }, { status: 500 })
