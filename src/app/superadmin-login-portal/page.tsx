@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabase } from '@/lib/db/supabase'
-import { isAdminEmail } from '@/lib/db/admin'
 
 export default function SuperAdminLoginPage() {
   const router = useRouter()
@@ -21,14 +20,17 @@ export default function SuperAdminLoginPage() {
       const supabase = getSupabase()
       const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password })
 
-      if (authError || !data.user) {
+      if (authError || !data.user || !data.session) {
         setError('Email sau parolă incorectă.')
         return
       }
 
-      // Verify this user is actually an admin
-      const admin = await isAdminEmail(data.user.email ?? '')
-      if (!admin) {
+      // Verify this user is actually an admin via server-side API
+      const res = await fetch('/api/admin/verify', {
+        headers: { Authorization: `Bearer ${data.session.access_token}` },
+      })
+
+      if (!res.ok) {
         await supabase.auth.signOut()
         setError('Acest cont nu are acces la panoul de administrare.')
         return
