@@ -51,7 +51,7 @@ export default function DashboardPage() {
       eventsData.map(async (row) => {
         const eventId = row.id as string
         const [donationsRes, payoutsRes] = await Promise.all([
-          supabase.from('donations').select('amount').eq('event_id', eventId).eq('status', 'confirmed'),
+          supabase.from('donations').select('amount').eq('event_id', eventId).in('status', ['confirmed', 'pending']),
           fetch(`/api/payouts?eventId=${eventId}`, { headers: { Authorization: `Bearer ${session.access_token}` } })
             .then((r) => r.json()).then((d) => (d.payouts ?? []) as Payout[]).catch(() => [] as Payout[]),
         ])

@@ -23,7 +23,7 @@ export async function getDonationsForEvent(eventId: string): Promise<Donation[]>
     .from('donations')
     .select('*')
     .eq('event_id', eventId)
-    .eq('status', 'confirmed')
+    .in('status', ['confirmed', 'pending'])
     .order('created_at', { ascending: false })
 
   if (error || !data) return []
@@ -112,7 +112,7 @@ export async function getTotalRaisedForEvent(eventId: string): Promise<number> {
     .from('donations')
     .select('amount')
     .eq('event_id', eventId)
-    .eq('status', 'confirmed')
+    .in('status', ['confirmed', 'pending'])
 
   if (error || !data) return 0
   return data.reduce((sum, row) => sum + (row.amount as number), 0)

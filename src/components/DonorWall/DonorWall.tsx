@@ -1,3 +1,5 @@
+'use client'
+
 import { Donation, EventTypeConfig } from '@/types'
 
 interface DonorWallProps {
@@ -12,7 +14,7 @@ export function DonorWall({ donations, config }: DonorWallProps) {
 
   return (
     <section aria-label={config.donorWallLabel}>
-      <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+      <h2 className="text-sm font-semibold uppercase tracking-wide mb-3" style={{ color: '#9A7B60' }}>
         {config.donorWallLabel}
       </h2>
       <ul className="space-y-2">
@@ -38,11 +40,13 @@ function DonorCard({ donation, config }: DonorCardProps) {
   })
 
   return (
-    <li className="flex items-start gap-3 rounded-lg border border-gray-100 bg-white p-3 shadow-sm">
-      {/* Avatar */}
+    <li
+      className="flex items-start gap-3 rounded-2xl p-3"
+      style={{ backgroundColor: '#FFFDFB', border: '1px solid #EDE0D0' }}
+    >
       <div
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white"
-        style={{ backgroundColor: config.palette.accent }}
+        style={{ backgroundColor: config.palette.primary }}
         aria-hidden="true"
       >
         {initials}
@@ -50,17 +54,17 @@ function DonorCard({ donation, config }: DonorCardProps) {
 
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline justify-between gap-2">
-          <p className="font-medium text-gray-900 text-sm truncate">{name}</p>
-          {donation.showAmount && !donation.isAnonymous && (
-            <span className="shrink-0 text-xs font-medium text-gray-500">
+          <p className="font-semibold text-sm truncate" style={{ color: '#2D2016' }}>{name}</p>
+          {donation.showAmount && (
+            <span className="shrink-0 text-xs font-medium" style={{ color: '#9A7B60' }}>
               {donation.amount} RON
             </span>
           )}
         </div>
         {donation.message && (
-          <p className="mt-0.5 text-sm text-gray-600 line-clamp-2">{donation.message}</p>
+          <p className="mt-0.5 text-sm line-clamp-2" style={{ color: '#7A6652' }}>{donation.message}</p>
         )}
-        <p className="mt-0.5 text-xs text-gray-400">{date}</p>
+        <p className="mt-0.5 text-xs" style={{ color: '#B09070' }}>{date}</p>
       </div>
     </li>
   )
