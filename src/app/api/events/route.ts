@@ -14,7 +14,7 @@ interface CreateEventBody {
   items: Array<{ name: string; targetAmount: number; emoji?: string }>
 }
 
-const IBAN_REGEX = /^RO\d{2}[A-Z]{4}\d{16}$/
+const IBAN_REGEX = /^RO\d{2}[A-Z]{4}[A-Z0-9]{16}$/
 
 function validateIban(iban: string): boolean {
   return IBAN_REGEX.test(iban.replace(/\s/g, '').toUpperCase())
