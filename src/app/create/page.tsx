@@ -1,13 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { getAllEventTypes } from '@/config/event-types'
 import { EventTypeConfig } from '@/types'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
-import { supabase } from '@/lib/db/supabase'
+import { getSupabase } from '@/lib/db/supabase'
 
 type CreateStep = 'type' | 'details' | 'items' | 'payout'
 
@@ -210,8 +211,12 @@ export default function CreateEventPage() {
   const [goalAmount, setGoalAmount] = useState('')
   const [organiserIban, setOrganiserIban] = useState('')
   const [items, setItems] = useState<ItemInput[]>([])
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null)
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null)
+  const [expiresAt, setExpiresAt] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const coverInputRef = useRef<HTMLInputElement>(null)
 
   function selectType(config: EventTypeConfig) {
     setSelectedConfig(config)
@@ -238,6 +243,7 @@ export default function CreateEventPage() {
     setLoading(true)
     setError(null)
 
+    const supabase = getSupabase()
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
       router.push('/login?next=/create')
@@ -256,6 +262,7 @@ export default function CreateEventPage() {
         slug: slug || autoSlug(combinedName),
         description: description || undefined,
         goalAmount: goalAmount ? parseFloat(goalAmount) : undefined,
+        expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
         organiserIban,
         items: items.map((i) => ({
           name: i.name,
@@ -265,12 +272,24 @@ export default function CreateEventPage() {
       }),
     })
 
-    const data = (await res.json()) as { event?: { eventType: string; slug: string }; error?: string }
+    const data = (await res.json()) as { event?: { id: string; eventType: string; slug: string }; error?: string }
     if (!res.ok) {
       setError(data.error ?? 'A apărut o eroare.')
       setLoading(false)
       return
     }
+
+    // Upload cover image if one was selected
+    if (coverImageFile && data.event?.id) {
+      const formData = new FormData()
+      formData.append('file', coverImageFile)
+      await fetch(`/api/events/${data.event.id}/cover`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: formData,
+      })
+    }
+
     router.push(`/${data.event!.eventType}/${data.event!.slug}`)
   }
 
@@ -465,6 +484,71 @@ export default function CreateEventPage() {
                       }}
                       hint={slug ? `pentrumomente.ro/${selectedConfig.slug}/${slug}` : 'Se generează automat din numele introdus.'}
                     />
+
+                    {/* Cover image */}
+                    <div>
+                      <p className="text-sm font-medium mb-2" style={{ color: '#5A4030' }}>
+                        Imagine copertă (opțional)
+                      </p>
+                      <input
+                        ref={coverInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (!file) return
+                          setCoverImageFile(file)
+                          setCoverPreviewUrl(URL.createObjectURL(file))
+                        }}
+                      />
+                      {coverPreviewUrl ? (
+                        <div className="relative rounded-2xl overflow-hidden" style={{ height: 160 }}>
+                          <Image src={coverPreviewUrl} alt="Copertă" fill className="object-cover" unoptimized />
+                          <button
+                            type="button"
+                            onClick={() => { setCoverImageFile(null); setCoverPreviewUrl(null); if (coverInputRef.current) coverInputRef.current.value = '' }}
+                            className="absolute top-2 right-2 rounded-full px-2.5 py-1 text-xs font-medium"
+                            style={{ backgroundColor: 'rgba(45,32,22,0.7)', color: '#fff' }}
+                          >
+                            Elimină
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => coverInputRef.current?.click()}
+                          className="w-full rounded-2xl py-8 text-sm transition-all flex flex-col items-center gap-2"
+                          style={{ border: '1.5px dashed #D0C0B0', color: '#9A7B60' }}
+                          onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#C4956A'; e.currentTarget.style.color = '#C4956A' }}
+                          onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#D0C0B0'; e.currentTarget.style.color = '#9A7B60' }}
+                        >
+                          <span className="text-2xl">🖼️</span>
+                          <span className="font-medium">Adaugă o fotografie</span>
+                          <span className="text-xs">Apare ca fundal pe pagina de donații</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Expiry date */}
+                    <div>
+                      <p className="text-sm font-medium mb-1" style={{ color: '#5A4030' }}>
+                        Data de expirare (opțional)
+                      </p>
+                      <p className="text-xs mb-2" style={{ color: '#9A7B60' }}>
+                        Pagina devine inactivă automat după această dată.
+                      </p>
+                      <input
+                        type="date"
+                        value={expiresAt}
+                        min={new Date().toISOString().split('T')[0]}
+                        onChange={(e) => setExpiresAt(e.target.value)}
+                        className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
+                        style={{ border: '1px solid #E0D0C0', color: expiresAt ? '#2D2016' : '#B09070', backgroundColor: '#FDFAF7' }}
+                        onFocus={(e) => (e.target.style.borderColor = '#C4956A')}
+                        onBlur={(e) => (e.target.style.borderColor = '#E0D0C0')}
+                      />
+                    </div>
                   </div>
 
                   <div className="flex gap-3 pt-2">

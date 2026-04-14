@@ -29,6 +29,8 @@ export default function DashboardPage() {
   const [payoutAmounts, setPayoutAmounts] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
   const [uploadingFor, setUploadingFor] = useState<string | null>(null)
+  const [deletingFor, setDeletingFor] = useState<string | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   async function load() {
     const supabase = getSupabase()
@@ -65,6 +67,7 @@ export default function DashboardPage() {
           organiserId: row.organiser_id as string,
           organiserIban: row.organiser_iban as string,
           isActive: row.is_active as boolean,
+          expiresAt: row.expires_at as string | undefined,
           createdAt: row.created_at as string,
           totalRaised,
           payouts: payoutsRes,
@@ -115,6 +118,25 @@ export default function DashboardPage() {
     if (res.ok) { load() }
     else { const d = await res.json() as { error: string }; setError(d.error) }
     setUploadingFor(null)
+  }
+
+  async function handleDeleteEvent(eventId: string) {
+    setDeletingFor(eventId)
+    const supabase = getSupabase()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    const res = await fetch(`/api/events/${eventId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+    if (res.ok) {
+      setEvents((prev) => prev.filter((e) => e.id !== eventId))
+    } else {
+      const d = await res.json() as { error: string }
+      setError(d.error ?? 'Eroare la ștergere.')
+    }
+    setDeletingFor(null)
+    setConfirmDeleteId(null)
   }
 
   async function handleLogout() {
@@ -216,6 +238,11 @@ export default function DashboardPage() {
               uploadingCover={uploadingFor === event.id}
               onUploadCover={(file) => uploadCover(event.id, file)}
               onEventUpdated={load}
+              confirmingDelete={confirmDeleteId === event.id}
+              deletingEvent={deletingFor === event.id}
+              onDeleteRequest={() => setConfirmDeleteId(event.id)}
+              onDeleteConfirm={() => handleDeleteEvent(event.id)}
+              onDeleteCancel={() => setConfirmDeleteId(null)}
             />
           ))}
         </div>
@@ -252,11 +279,17 @@ interface EventCardProps {
   uploadingCover: boolean
   onUploadCover: (file: File) => void
   onEventUpdated: () => void
+  confirmingDelete: boolean
+  deletingEvent: boolean
+  onDeleteRequest: () => void
+  onDeleteConfirm: () => void
+  onDeleteCancel: () => void
 }
 
 function EventCard({
   event, payoutAmount, onPayoutAmountChange, onRequestPayout,
   payoutLoading, uploadingCover, onUploadCover, onEventUpdated,
+  confirmingDelete, deletingEvent, onDeleteRequest, onDeleteConfirm, onDeleteCancel,
 }: EventCardProps) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [coverUrl, setCoverUrl] = useState(event.coverImageUrl ?? null)
@@ -266,10 +299,14 @@ function EventCard({
   const [editGoal, setEditGoal] = useState(event.goalAmount ? String(event.goalAmount) : '')
   const [saving, setSaving] = useState(false)
   const [editError, setEditError] = useState('')
+  const [editExpiry, setEditExpiry] = useState(
+    event.expiresAt ? new Date(event.expiresAt).toISOString().split('T')[0] : ''
+  )
   const meta = EVENT_TYPE_LABELS[event.eventType] ?? { label: event.eventType, emoji: '🌟' }
   const pendingPayouts = event.payouts.filter((p) => p.status === 'pending' || p.status === 'processing')
   const goalPercent = event.goalAmount ? Math.min(100, Math.round((event.totalRaised / event.goalAmount) * 100)) : null
   const eventUrl = `/${event.eventType}/${event.slug}`
+  const isExpired = event.expiresAt ? new Date(event.expiresAt) < new Date() : false
 
   function handleUpload(file: File) {
     onUploadCover(file)
@@ -291,6 +328,7 @@ function EventCard({
         name: editName,
         description: editDescription,
         goalAmount: editGoal ? parseFloat(editGoal) : null,
+        expiresAt: editExpiry ? new Date(editExpiry).toISOString() : null,
       }),
     })
 
@@ -366,13 +404,20 @@ function EventCard({
               <span
                 className="text-xs px-2 py-0.5 rounded-full font-medium"
                 style={
-                  event.isActive
+                  isExpired
+                    ? { backgroundColor: '#FEF2F2', color: '#B91C1C' }
+                    : event.isActive
                     ? { backgroundColor: '#F0FFF4', color: '#166534' }
                     : { backgroundColor: '#F5F5F5', color: '#6B7280' }
                 }
               >
-                {event.isActive ? 'Activ' : 'Inactiv'}
+                {isExpired ? 'Expirat' : event.isActive ? 'Activ' : 'Inactiv'}
               </span>
+              {event.expiresAt && !isExpired && (
+                <span className="text-xs" style={{ color: '#B09070' }}>
+                  Expiră {new Date(event.expiresAt).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </span>
+              )}
             </div>
             <h2 className="text-lg font-bold" style={{ color: '#2D2016' }}>{event.name}</h2>
           </div>
@@ -392,8 +437,44 @@ function EventCard({
             >
               Vezi ↗
             </Link>
+            <button
+              onClick={onDeleteRequest}
+              className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
+              style={{ border: '1px solid #FECACA', color: '#DC2626' }}
+            >
+              🗑
+            </button>
           </div>
         </div>
+
+        {/* Delete confirmation */}
+        {confirmingDelete && (
+          <div
+            className="rounded-2xl p-4 flex items-center justify-between gap-4"
+            style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA' }}
+          >
+            <p className="text-sm font-medium" style={{ color: '#991B1B' }}>
+              Ești sigur? Pagina și toate donațiile asociate vor fi șterse permanent.
+            </p>
+            <div className="flex gap-2 shrink-0">
+              <button
+                onClick={onDeleteCancel}
+                className="text-xs px-3 py-1.5 rounded-lg font-medium"
+                style={{ border: '1px solid #FECACA', color: '#7A6652', backgroundColor: '#fff' }}
+              >
+                Anulează
+              </button>
+              <button
+                onClick={onDeleteConfirm}
+                disabled={deletingEvent}
+                className="text-xs px-3 py-1.5 rounded-lg font-semibold text-white transition-opacity"
+                style={{ backgroundColor: '#DC2626', opacity: deletingEvent ? 0.6 : 1 }}
+              >
+                {deletingEvent ? 'Se șterge...' : 'Șterge pagina'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Inline edit panel */}
         {editing && (
@@ -445,6 +526,32 @@ function EventCard({
                 onFocus={(e) => (e.target.style.borderColor = '#C4956A')}
                 onBlur={(e) => (e.target.style.borderColor = '#E0D0C0')}
               />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: '#7A6652' }}>
+                Data de expirare <span style={{ color: '#B09070' }}>— opțional</span>
+              </label>
+              <input
+                type="date"
+                value={editExpiry}
+                min={new Date().toISOString().split('T')[0]}
+                onChange={(e) => setEditExpiry(e.target.value)}
+                className="w-full rounded-lg px-3 py-2.5 text-sm outline-none"
+                style={{ border: '1px solid #E0D0C0', color: editExpiry ? '#2D2016' : '#B09070', backgroundColor: '#FFFDFB' }}
+                onFocus={(e) => (e.target.style.borderColor = '#C4956A')}
+                onBlur={(e) => (e.target.style.borderColor = '#E0D0C0')}
+              />
+              {editExpiry && (
+                <button
+                  type="button"
+                  onClick={() => setEditExpiry('')}
+                  className="mt-1 text-xs"
+                  style={{ color: '#9A7B60' }}
+                >
+                  Elimină data de expirare
+                </button>
+              )}
             </div>
 
             {editError && (

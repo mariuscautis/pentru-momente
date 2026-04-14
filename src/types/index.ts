@@ -40,6 +40,7 @@ export interface Event {
   organiserId: string
   organiserIban: string // collected at creation, used for Wise payout
   isActive: boolean
+  expiresAt?: string   // ISO datetime — page becomes inactive after this
   createdAt: string
 }
 

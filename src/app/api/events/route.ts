@@ -10,6 +10,7 @@ interface CreateEventBody {
   slug: string
   description?: string
   goalAmount?: number
+  expiresAt?: string
   organiserIban: string
   items: Array<{ name: string; targetAmount: number; emoji?: string }>
 }
@@ -94,6 +95,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     name: body.name.trim(),
     description: body.description?.trim(),
     goalAmount: body.goalAmount,
+    expiresAt: body.expiresAt,
     organiserId: user.id,
     organiserIban: body.organiserIban.replace(/\s/g, '').toUpperCase(),
     isActive: true,

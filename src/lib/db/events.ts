@@ -13,6 +13,7 @@ function rowToEvent(row: Record<string, unknown>): Event {
     organiserId: row.organiser_id as string,
     organiserIban: row.organiser_iban as string,
     isActive: row.is_active as boolean,
+    expiresAt: row.expires_at as string | undefined,
     createdAt: row.created_at as string,
   }
 }
@@ -38,7 +39,12 @@ export async function getEventBySlug(eventType: string, slug: string): Promise<E
     .single()
 
   if (error || !data) return null
-  return rowToEvent(data)
+
+  const event = rowToEvent(data)
+  // Treat expired events as not found
+  if (event.expiresAt && new Date(event.expiresAt) < new Date()) return null
+
+  return event
 }
 
 export async function getEventById(id: string): Promise<Event | null> {
@@ -74,6 +80,16 @@ export async function getEventItems(eventId: string): Promise<EventItem[]> {
   return data.map(rowToEventItem)
 }
 
+export async function deleteEvent(eventId: string, organiserId: string): Promise<boolean> {
+  const { error } = await supabaseAdmin
+    .from('events')
+    .delete()
+    .eq('id', eventId)
+    .eq('organiser_id', organiserId)
+
+  return !error
+}
+
 export async function createEvent(
   input: Omit<Event, 'id' | 'createdAt'> & { items: Array<{ name: string; targetAmount: number; emoji?: string }> }
 ): Promise<Event> {
@@ -91,6 +107,7 @@ export async function createEvent(
       organiser_id: eventData.organiserId,
       organiser_iban: eventData.organiserIban,
       is_active: true,
+      expires_at: eventData.expiresAt ?? null,
     })
     .select()
     .single()
