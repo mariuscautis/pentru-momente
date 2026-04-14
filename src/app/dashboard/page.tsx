@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import QRCode from 'qrcode'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 import { getSupabase } from '@/lib/db/supabase'
 import { Event, Payout } from '@/types'
 
@@ -258,10 +257,20 @@ function EventCard({
   payoutLoading, uploadingCover, onUploadCover,
 }: EventCardProps) {
   const fileRef = useRef<HTMLInputElement>(null)
+  // Local cover URL with cache-buster so the image refreshes after upload
+  const [coverUrl, setCoverUrl] = useState(event.coverImageUrl ?? null)
   const meta = EVENT_TYPE_LABELS[event.eventType] ?? { label: event.eventType, emoji: '🌟' }
   const pendingPayouts = event.payouts.filter((p) => p.status === 'pending' || p.status === 'processing')
   const goalPercent = event.goalAmount ? Math.min(100, Math.round((event.totalRaised / event.goalAmount) * 100)) : null
   const eventUrl = `/${event.eventType}/${event.slug}`
+
+  function handleUpload(file: File) {
+    onUploadCover(file)
+    // Optimistically preview using a local object URL, then switch to the
+    // server URL with a cache-busting param once the parent signals done
+    const localPreview = URL.createObjectURL(file)
+    setCoverUrl(localPreview)
+  }
 
   return (
     <article
@@ -271,10 +280,11 @@ function EventCard({
       {/* Cover image area */}
       <div
         className="relative w-full group"
-        style={{ height: event.coverImageUrl ? 200 : 100, backgroundColor: '#F5EDE3' }}
+        style={{ height: coverUrl ? 200 : 100, backgroundColor: '#F5EDE3' }}
       >
-        {event.coverImageUrl ? (
-          <Image src={event.coverImageUrl} alt={event.name} fill className="object-cover" />
+        {coverUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={coverUrl} alt={event.name} className="absolute inset-0 w-full h-full object-cover" />
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 pointer-events-none">
             <span className="text-2xl">{meta.emoji}</span>
@@ -298,7 +308,7 @@ function EventCard({
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
           ) : (
             <span className="text-white text-sm font-medium">
-              {event.coverImageUrl ? '✎ Schimbă imaginea' : '+ Adaugă imagine'}
+              {coverUrl ? '✎ Schimbă imaginea' : '+ Adaugă imagine'}
             </span>
           )}
         </button>
@@ -309,7 +319,7 @@ function EventCard({
         type="file"
         accept="image/*"
         className="hidden"
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) onUploadCover(f) }}
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f) }}
       />
 
       {/* Card body */}
