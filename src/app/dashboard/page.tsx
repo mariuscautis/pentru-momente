@@ -215,6 +215,7 @@ export default function DashboardPage() {
               payoutLoading={payoutLoading === event.id}
               uploadingCover={uploadingFor === event.id}
               onUploadCover={(file) => uploadCover(event.id, file)}
+              onEventUpdated={load}
             />
           ))}
         </div>
@@ -250,15 +251,21 @@ interface EventCardProps {
   payoutLoading: boolean
   uploadingCover: boolean
   onUploadCover: (file: File) => void
+  onEventUpdated: () => void
 }
 
 function EventCard({
   event, payoutAmount, onPayoutAmountChange, onRequestPayout,
-  payoutLoading, uploadingCover, onUploadCover,
+  payoutLoading, uploadingCover, onUploadCover, onEventUpdated,
 }: EventCardProps) {
   const fileRef = useRef<HTMLInputElement>(null)
-  // Local cover URL with cache-buster so the image refreshes after upload
   const [coverUrl, setCoverUrl] = useState(event.coverImageUrl ?? null)
+  const [editing, setEditing] = useState(false)
+  const [editName, setEditName] = useState(event.name)
+  const [editDescription, setEditDescription] = useState(event.description ?? '')
+  const [editGoal, setEditGoal] = useState(event.goalAmount ? String(event.goalAmount) : '')
+  const [saving, setSaving] = useState(false)
+  const [editError, setEditError] = useState('')
   const meta = EVENT_TYPE_LABELS[event.eventType] ?? { label: event.eventType, emoji: '🌟' }
   const pendingPayouts = event.payouts.filter((p) => p.status === 'pending' || p.status === 'processing')
   const goalPercent = event.goalAmount ? Math.min(100, Math.round((event.totalRaised / event.goalAmount) * 100)) : null
@@ -266,10 +273,35 @@ function EventCard({
 
   function handleUpload(file: File) {
     onUploadCover(file)
-    // Optimistically preview using a local object URL, then switch to the
-    // server URL with a cache-busting param once the parent signals done
     const localPreview = URL.createObjectURL(file)
     setCoverUrl(localPreview)
+  }
+
+  async function saveEdit() {
+    setSaving(true)
+    setEditError('')
+    const supabase = getSupabase()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+
+    const res = await fetch(`/api/events/${event.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({
+        name: editName,
+        description: editDescription,
+        goalAmount: editGoal ? parseFloat(editGoal) : null,
+      }),
+    })
+
+    if (res.ok) {
+      setEditing(false)
+      onEventUpdated()
+    } else {
+      const d = await res.json() as { error: string }
+      setEditError(d.error ?? 'Eroare la salvare.')
+    }
+    setSaving(false)
   }
 
   return (
@@ -344,15 +376,102 @@ function EventCard({
             </div>
             <h2 className="text-lg font-bold" style={{ color: '#2D2016' }}>{event.name}</h2>
           </div>
-          <Link
-            href={eventUrl}
-            target="_blank"
-            className="shrink-0 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
-            style={{ border: '1px solid #EDE0D0', color: '#7A6652' }}
-          >
-            Vezi pagina ↗
-          </Link>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => { setEditing(!editing); setEditError('') }}
+              className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
+              style={{ border: '1px solid #EDE0D0', color: editing ? '#C4956A' : '#7A6652' }}
+            >
+              {editing ? 'Anulează' : '✎ Editează'}
+            </button>
+            <Link
+              href={eventUrl}
+              target="_blank"
+              className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
+              style={{ border: '1px solid #EDE0D0', color: '#7A6652' }}
+            >
+              Vezi ↗
+            </Link>
+          </div>
         </div>
+
+        {/* Inline edit panel */}
+        {editing && (
+          <div
+            className="rounded-2xl p-5 space-y-4"
+            style={{ backgroundColor: '#F5EDE3', border: '1px solid #E0D0C0' }}
+          >
+            <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#9A7B60' }}>
+              Editează pagina
+            </p>
+
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: '#7A6652' }}>Nume</label>
+              <input
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="w-full rounded-lg px-3 py-2.5 text-sm outline-none"
+                style={{ border: '1px solid #E0D0C0', color: '#2D2016', backgroundColor: '#FFFDFB' }}
+                onFocus={(e) => (e.target.style.borderColor = '#C4956A')}
+                onBlur={(e) => (e.target.style.borderColor = '#E0D0C0')}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: '#7A6652' }}>Descriere</label>
+              <textarea
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                rows={4}
+                className="w-full rounded-lg px-3 py-2.5 text-sm outline-none resize-y"
+                style={{ border: '1px solid #E0D0C0', color: '#2D2016', backgroundColor: '#FFFDFB' }}
+                onFocus={(e) => (e.target.style.borderColor = '#C4956A')}
+                onBlur={(e) => (e.target.style.borderColor = '#E0D0C0')}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: '#7A6652' }}>
+                Obiectiv (RON) <span style={{ color: '#B09070' }}>— opțional</span>
+              </label>
+              <input
+                type="number"
+                value={editGoal}
+                onChange={(e) => setEditGoal(e.target.value)}
+                placeholder="ex: 5000"
+                className="w-full rounded-lg px-3 py-2.5 text-sm outline-none"
+                style={{ border: '1px solid #E0D0C0', color: '#2D2016', backgroundColor: '#FFFDFB' }}
+                onFocus={(e) => (e.target.style.borderColor = '#C4956A')}
+                onBlur={(e) => (e.target.style.borderColor = '#E0D0C0')}
+              />
+            </div>
+
+            {editError && (
+              <p className="text-sm rounded-lg px-3 py-2" style={{ backgroundColor: '#FEF2F2', color: '#B91C1C' }}>
+                {editError}
+              </p>
+            )}
+
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={saveEdit}
+                disabled={saving}
+                className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-opacity"
+                style={{ backgroundColor: '#C4956A', opacity: saving ? 0.6 : 1 }}
+              >
+                {saving ? 'Se salvează...' : 'Salvează modificările'}
+              </button>
+              <button
+                onClick={() => { setEditing(false); setEditError('') }}
+                className="rounded-xl px-5 py-2.5 text-sm font-medium transition-colors"
+                style={{ border: '1px solid #E0D0C0', color: '#7A6652' }}
+              >
+                Anulează
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Share section */}
         <ShareSection eventUrl={eventUrl} eventName={event.name} />
