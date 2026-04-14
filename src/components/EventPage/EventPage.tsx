@@ -38,13 +38,15 @@ export function EventPage({ event, items, donations, config, totalRaised }: Even
 
       {/* ── Hero ── */}
       {event.coverImageUrl ? (
-        <div className="relative w-full" style={{ height: 420 }}>
+        <div className="relative w-full" style={{ height: 'clamp(320px, 55vh, 620px)' }}>
           <Image
             src={event.coverImageUrl}
             alt={event.name}
             fill
             className="object-cover"
             priority
+            sizes="100vw"
+            quality={90}
           />
           {/* Gradient: solid image → transparent → background colour */}
           <div
