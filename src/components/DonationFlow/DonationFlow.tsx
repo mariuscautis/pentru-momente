@@ -82,6 +82,7 @@ export function DonationFlow({ event, items, config, initialCart, onClose }: Don
             setState={setState}
             items={items}
             config={config}
+            onBack={onClose}
             onNext={() => setStep('details')}
           />
         )}
@@ -90,7 +91,7 @@ export function DonationFlow({ event, items, config, initialCart, onClose }: Don
             state={state}
             setState={setState}
             config={config}
-            onBack={() => hasCart ? (onClose?.()) : setStep('amount')}
+            onBack={() => setStep('amount')}
             onNext={() => setStep('tip')}
           />
         )}

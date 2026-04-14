@@ -11,10 +11,11 @@ interface StepChooseAmountProps {
   setState: Dispatch<SetStateAction<DonationState>>
   items: EventItem[]
   config: EventTypeConfig
+  onBack?: () => void
   onNext: () => void
 }
 
-export function StepChooseAmount({ state, setState, config, onNext }: StepChooseAmountProps) {
+export function StepChooseAmount({ state, setState, config, onBack, onNext }: StepChooseAmountProps) {
   const isPreset = PRESET_AMOUNTS.includes(state.amount)
 
   function setAmount(amount: number) {
@@ -68,15 +69,32 @@ export function StepChooseAmount({ state, setState, config, onNext }: StepChoose
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={onNext}
-        disabled={state.amount < 1}
-        className="w-full rounded-xl py-3 text-base font-semibold text-white transition-opacity"
-        style={{ backgroundColor: config.palette.primary, opacity: state.amount < 1 ? 0.5 : 1 }}
-      >
-        Continuă
-      </button>
+      <div className={onBack ? 'flex gap-3' : ''}>
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex-1 rounded-xl py-3 text-sm font-semibold transition-colors"
+            style={{ border: '1px solid #EDE0D0', color: '#7A6652', backgroundColor: '#FFFFFF' }}
+          >
+            Înapoi
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={onNext}
+          disabled={state.amount < 1}
+          className="rounded-xl py-3 text-base font-semibold text-white transition-opacity"
+          style={{
+            backgroundColor: config.palette.primary,
+            opacity: state.amount < 1 ? 0.5 : 1,
+            flex: onBack ? 2 : undefined,
+            width: onBack ? undefined : '100%',
+          }}
+        >
+          Continuă
+        </button>
+      </div>
     </div>
   )
 }
