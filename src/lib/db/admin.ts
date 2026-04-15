@@ -233,6 +233,7 @@ export interface SitePage {
   slug: string
   content: string
   metaDescription: string | null
+  coverImageUrl: string | null
   menuPosition: number
   parentId: string | null
   isPublished: boolean
@@ -264,6 +265,7 @@ export async function createSitePage(input: {
   slug: string
   content: string
   metaDescription?: string
+  coverImageUrl?: string
   menuPosition: number
   parentId?: string | null
   isPublished: boolean
@@ -275,6 +277,7 @@ export async function createSitePage(input: {
       slug: input.slug,
       content: input.content,
       meta_description: input.metaDescription ?? null,
+      cover_image_url: input.coverImageUrl ?? null,
       menu_position: input.menuPosition,
       parent_id: input.parentId ?? null,
       is_published: input.isPublished,
@@ -292,6 +295,7 @@ export async function updateSitePage(
     slug: string
     content: string
     metaDescription: string
+    coverImageUrl: string | null
     menuPosition: number
     parentId: string | null
     isPublished: boolean
@@ -302,6 +306,7 @@ export async function updateSitePage(
   if (input.slug !== undefined) update.slug = input.slug
   if (input.content !== undefined) update.content = input.content
   if (input.metaDescription !== undefined) update.meta_description = input.metaDescription
+  if ('coverImageUrl' in input) update.cover_image_url = input.coverImageUrl
   if (input.menuPosition !== undefined) update.menu_position = input.menuPosition
   if ('parentId' in input) update.parent_id = input.parentId
   if (input.isPublished !== undefined) update.is_published = input.isPublished
@@ -319,6 +324,7 @@ function rowToPage(row: Record<string, unknown>): SitePage {
     slug: row.slug as string,
     content: row.content as string,
     metaDescription: row.meta_description as string | null,
+    coverImageUrl: row.cover_image_url as string | null,
     menuPosition: row.menu_position as number,
     parentId: row.parent_id as string | null,
     isPublished: row.is_published as boolean,

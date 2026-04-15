@@ -20,6 +20,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     slug: string
     content: string
     metaDescription?: string
+    coverImageUrl?: string
     menuPosition: number
     parentId?: string | null
     isPublished: boolean
