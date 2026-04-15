@@ -1,26 +1,39 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { getSupabase } from '@/lib/db/supabase'
+import { Suspense } from 'react'
 
-// Handles the hash-fragment OAuth flow (access_token in URL #hash)
-// The server-side route.ts handles the ?code= flow (email confirmation)
-export default function AuthCallbackPage() {
+function AuthCallbackInner() {
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
     const supabase = getSupabase()
+    const code = searchParams.get('code')
 
-    // getSession picks up the token from the URL hash automatically
-    supabase.auth.getSession().then(({ data }) => {
+    async function handleCallback() {
+      if (code) {
+        // PKCE flow — exchange the code for a session and persist it
+        const { error } = await supabase.auth.exchangeCodeForSession(code)
+        if (error) {
+          router.replace('/login?error=auth')
+          return
+        }
+      }
+
+      // After exchange (or if session already in hash), verify we have a session
+      const { data } = await supabase.auth.getSession()
       if (data.session) {
         router.replace('/dashboard')
       } else {
         router.replace('/login?error=auth')
       }
-    })
-  }, [router])
+    }
+
+    handleCallback()
+  }, [router, searchParams])
 
   return (
     <div
@@ -36,5 +49,14 @@ export default function AuthCallbackPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+// useSearchParams requires Suspense in Next.js 16
+export default function AuthCallbackPage() {
+  return (
+    <Suspense>
+      <AuthCallbackInner />
+    </Suspense>
   )
 }
