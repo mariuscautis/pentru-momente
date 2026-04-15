@@ -28,7 +28,7 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
 
   // ── Fixed-amount mode (≤ 2000 RON) ─────────────────────────────────────────
   const [fixedAmount, setFixedAmount] = useState<number>(() => {
-    if (!isLarge && state.tipAmount > 0) return state.tipAmount
+    if (!isLarge && FIXED_PRESETS.includes(state.tipAmount)) return state.tipAmount
     return 20 // default preset
   })
   const [customValue, setCustomValue] = useState<string>(() => {
@@ -39,8 +39,7 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
   })
   const [activeFixedPreset, setActiveFixedPreset] = useState<number | null>(() => {
     if (!isLarge && FIXED_PRESETS.includes(state.tipAmount)) return state.tipAmount
-    if (!isLarge && state.tipAmount === 0) return 20
-    return isLarge ? null : null
+    return isLarge ? null : 20 // default to 20 Lei preset
   })
 
   function selectFixedPreset(amount: number) {
@@ -67,9 +66,11 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
 
   const [pct, setPct] = useState<number>(() => {
     if (isLarge && state.tipAmount > 0) {
-      return Math.round((state.tipAmount / donationTotal) * 100 * 10) / 10
+      const derived = Math.round((state.tipAmount / donationTotal) * 100 * 10) / 10
+      // Only restore if it was actually set as a percentage (≥ 1%), not a leftover fixed amount
+      if (derived >= 1) return derived
     }
-    return 2
+    return 2 // default to 2% for large donations
   })
   const [pctError, setPctError] = useState('')
 
