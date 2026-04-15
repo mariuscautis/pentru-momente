@@ -77,50 +77,31 @@ export function Nav() {
               onClick={() => setMenuOpen(v => !v)}
               aria-label={menuOpen ? 'Închide meniu' : 'Deschide meniu'}
               aria-expanded={menuOpen}
-              className="relative flex flex-col justify-center items-center w-9 h-9 rounded-lg transition-colors hover:bg-white"
-              style={{ border: '1px solid #E8DDD4', gap: 0 }}
+              className="flex flex-col justify-center items-center w-9 h-9 rounded-lg transition-colors hover:bg-white"
+              style={{ border: '1px solid #E8DDD4', gap: '5px' }}
             >
-              {/* Three lines that animate into an X */}
-              <span
-                style={{
-                  display: 'block',
-                  position: 'absolute',
-                  height: '2px',
-                  width: '16px',
-                  backgroundColor: '#5A4030',
-                  borderRadius: '2px',
-                  transition: 'transform 0.25s ease, opacity 0.25s ease, top 0.25s ease',
-                  top: menuOpen ? '50%' : 'calc(50% - 5px)',
-                  transform: menuOpen ? 'translateY(-50%) rotate(45deg)' : 'translateY(0) rotate(0)',
-                }}
-              />
-              <span
-                style={{
-                  display: 'block',
-                  position: 'absolute',
-                  height: '2px',
-                  width: '16px',
-                  backgroundColor: '#5A4030',
-                  borderRadius: '2px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  transition: 'opacity 0.15s ease',
-                  opacity: menuOpen ? 0 : 1,
-                }}
-              />
-              <span
-                style={{
-                  display: 'block',
-                  position: 'absolute',
-                  height: '2px',
-                  width: '16px',
-                  backgroundColor: '#5A4030',
-                  borderRadius: '2px',
-                  transition: 'transform 0.25s ease, opacity 0.25s ease, top 0.25s ease',
-                  top: menuOpen ? '50%' : 'calc(50% + 5px)',
-                  transform: menuOpen ? 'translateY(-50%) rotate(-45deg)' : 'translateY(0) rotate(0)',
-                }}
-              />
+              {/* Top line */}
+              <span style={{
+                display: 'block', height: '2px', width: '16px',
+                backgroundColor: '#5A4030', borderRadius: '2px',
+                transition: 'transform 0.25s ease',
+                transform: menuOpen ? 'translateY(7px) rotate(45deg)' : 'none',
+              }} />
+              {/* Middle line */}
+              <span style={{
+                display: 'block', height: '2px', width: '16px',
+                backgroundColor: '#5A4030', borderRadius: '2px',
+                transition: 'opacity 0.15s ease, transform 0.25s ease',
+                opacity: menuOpen ? 0 : 1,
+                transform: menuOpen ? 'scaleX(0)' : 'scaleX(1)',
+              }} />
+              {/* Bottom line */}
+              <span style={{
+                display: 'block', height: '2px', width: '16px',
+                backgroundColor: '#5A4030', borderRadius: '2px',
+                transition: 'transform 0.25s ease',
+                transform: menuOpen ? 'translateY(-7px) rotate(-45deg)' : 'none',
+              }} />
             </button>
 
             {/* Animated dropdown panel */}
@@ -183,55 +164,34 @@ export function Nav() {
           </div>
         </div>
 
-        {/* Mobile hamburger */}
+        {/* Mobile hamburger — same icon as desktop */}
         <button
           ref={mobileButtonRef}
-          className="sm:hidden relative flex flex-col justify-center items-center w-9 h-9 rounded-lg"
+          className="sm:hidden flex flex-col justify-center items-center w-9 h-9 rounded-lg"
           onClick={() => setMenuOpen(v => !v)}
           aria-label={menuOpen ? 'Închide meniu' : 'Deschide meniu'}
           aria-expanded={menuOpen}
-          style={{ border: '1px solid #E8DDD4' }}
+          style={{ border: '1px solid #E8DDD4', gap: '5px' }}
         >
-          <span
-            style={{
-              display: 'block',
-              position: 'absolute',
-              height: '2px',
-              width: '16px',
-              backgroundColor: '#5A4030',
-              borderRadius: '2px',
-              transition: 'transform 0.25s ease, top 0.25s ease',
-              top: menuOpen ? '50%' : 'calc(50% - 5px)',
-              transform: menuOpen ? 'translateY(-50%) rotate(45deg)' : 'translateY(0) rotate(0)',
-            }}
-          />
-          <span
-            style={{
-              display: 'block',
-              position: 'absolute',
-              height: '2px',
-              width: '16px',
-              backgroundColor: '#5A4030',
-              borderRadius: '2px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              transition: 'opacity 0.15s ease',
-              opacity: menuOpen ? 0 : 1,
-            }}
-          />
-          <span
-            style={{
-              display: 'block',
-              position: 'absolute',
-              height: '2px',
-              width: '16px',
-              backgroundColor: '#5A4030',
-              borderRadius: '2px',
-              transition: 'transform 0.25s ease, top 0.25s ease',
-              top: menuOpen ? '50%' : 'calc(50% + 5px)',
-              transform: menuOpen ? 'translateY(-50%) rotate(-45deg)' : 'translateY(0) rotate(0)',
-            }}
-          />
+          <span style={{
+            display: 'block', height: '2px', width: '16px',
+            backgroundColor: '#5A4030', borderRadius: '2px',
+            transition: 'transform 0.25s ease',
+            transform: menuOpen ? 'translateY(7px) rotate(45deg)' : 'none',
+          }} />
+          <span style={{
+            display: 'block', height: '2px', width: '16px',
+            backgroundColor: '#5A4030', borderRadius: '2px',
+            transition: 'opacity 0.15s ease, transform 0.25s ease',
+            opacity: menuOpen ? 0 : 1,
+            transform: menuOpen ? 'scaleX(0)' : 'scaleX(1)',
+          }} />
+          <span style={{
+            display: 'block', height: '2px', width: '16px',
+            backgroundColor: '#5A4030', borderRadius: '2px',
+            transition: 'transform 0.25s ease',
+            transform: menuOpen ? 'translateY(-7px) rotate(-45deg)' : 'none',
+          }} />
         </button>
       </div>
 

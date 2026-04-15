@@ -765,9 +765,12 @@ function MenuTab() {
     ...ALL_STATIC_PAGES
       .filter(sp => !inMenuIds.has(sp.id))
       .map(sp => ({ ...sp, isStatic: true })),
-    // DB-created pages not in menu
+    // DB-created pages not in menu and not shadowed by a static page with the same slug
     ...dbPages
-      .filter(p => !inMenuIds.has(p.id) && !ALL_STATIC_PAGES.some(sp => sp.id === p.id))
+      .filter(p =>
+        !inMenuIds.has(p.id) &&
+        !ALL_STATIC_PAGES.some(sp => sp.id === p.id || sp.slug === p.slug)
+      )
       .map(p => ({ ...p, isStatic: false })),
   ]
 
