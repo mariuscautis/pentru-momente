@@ -42,20 +42,7 @@ interface AdminEvent {
   blockInfo: { reason: string | null; blockedBy: string; blockedAt: string } | null
 }
 
-interface SitePage {
-  id: string
-  title: string
-  slug: string
-  content: string
-  metaDescription: string | null
-  coverImageUrl: string | null
-  menuPosition: number
-  parentId: string | null
-  isPublished: boolean
-  createdAt: string
-}
-
-type Tab = 'seo' | 'blog' | 'events' | 'pages' | 'menu'
+type Tab = 'seo' | 'blog' | 'terms' | 'menu' | 'events'
 
 // ─── Design tokens ─────────────────────────────────────────────────────────────
 
@@ -163,7 +150,7 @@ export default function SuperAdminPage() {
   const navItems: { id: Tab; label: string; icon: string }[] = [
     { id: 'seo',    label: 'SEO',               icon: '⚙️' },
     { id: 'blog',   label: 'Blog',              icon: '📝' },
-    { id: 'pages',  label: 'Pagini Site',        icon: '📄' },
+    { id: 'terms',  label: 'Termeni & Condiții', icon: '📋' },
     { id: 'menu',   label: 'Meniu',             icon: '☰' },
     { id: 'events', label: 'Statistici Donații', icon: '📊' },
   ]
@@ -233,7 +220,7 @@ export default function SuperAdminPage() {
           <div className="px-4 md:px-8 py-8">
             {tab === 'seo'    && <SeoTab />}
             {tab === 'blog'   && <BlogTab />}
-            {tab === 'pages'  && <PagesTab />}
+            {tab === 'terms'  && <TermsTab />}
             {tab === 'menu'   && <MenuTab />}
             {tab === 'events' && <EventsTab />}
           </div>
@@ -523,196 +510,100 @@ function BlogPreview({ post }: { post: BlogPost }) {
   )
 }
 
-// ─── Pages Tab ────────────────────────────────────────────────────────────────
+// ─── Terms Tab ────────────────────────────────────────────────────────────────
 
-function PagesTab() {
-  const [pages, setPages] = useState<SitePage[]>([])
-  const [view, setView] = useState<'list' | 'new' | 'edit'>('list')
-  const [editingPage, setEditingPage] = useState<SitePage | null>(null)
-  const [expandedParents, setExpandedParents] = useState<Set<string>>(new Set())
+// Key used to store T&C in seo_overrides table (repurposed as a generic KV store)
+const TERMS_KEY = '__terms_and_conditions__'
 
-  const [title, setTitle] = useState('')
-  const [slug, setSlug] = useState('')
+function TermsTab() {
   const [content, setContent] = useState('')
-  const [metaDesc, setMetaDesc] = useState('')
-  const [coverImageUrl, setCoverImageUrl] = useState('')
-  const [menuPosition, setMenuPosition] = useState(10)
-  const [parentId, setParentId] = useState('')
-  const [isPublished, setIsPublished] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null)
 
-  const load = useCallback(async () => {
-    const res = await apiFetch('/api/admin/pages')
-    if (res.ok) { const json = await res.json() as { pages: SitePage[] }; setPages(json.pages) }
+  useEffect(() => {
+    apiFetch('/api/admin/terms')
+      .then(r => r.ok ? r.json() : { content: '' })
+      .then((j: { content: string }) => { setContent(j.content ?? ''); setLoading(false) })
+      .catch(() => setLoading(false))
   }, [])
 
-  useEffect(() => { load() }, [load])
-
-  function openNew() {
-    setEditingPage(null); setTitle(''); setSlug(''); setContent(''); setMetaDesc(''); setCoverImageUrl('')
-    setMenuPosition((pages.filter(p => !p.parentId).length + 1) * 10)
-    setParentId(''); setIsPublished(true); setMsg(null); setView('new')
-  }
-  function openEdit(page: SitePage) {
-    setEditingPage(page); setTitle(page.title); setSlug(page.slug); setContent(page.content)
-    setMetaDesc(page.metaDescription ?? ''); setCoverImageUrl(page.coverImageUrl ?? '')
-    setMenuPosition(page.menuPosition); setParentId(page.parentId ?? ''); setIsPublished(page.isPublished)
-    setMsg(null); setView('edit')
-  }
-  function handleTitleChange(v: string) {
-    setTitle(v)
-    if (view === 'new') setSlug(toSlug(v))
-  }
-
-  async function savePage() {
+  async function save() {
     setSaving(true); setMsg(null)
-    const payload = { title, slug, content, metaDescription: metaDesc, coverImageUrl, menuPosition, parentId: parentId || null, isPublished }
-    if (view === 'new') {
-      const res = await apiFetch('/api/admin/pages', { method: 'POST', body: JSON.stringify(payload) })
-      if (res.ok) { setMsg({ text: 'Pagina a fost creată.', ok: true }); load(); setTimeout(() => setView('list'), 800) }
-      else { const j = await res.json() as { error: string }; setMsg({ text: j.error ?? 'Eroare.', ok: false }) }
-    } else if (editingPage) {
-      const res = await apiFetch(`/api/admin/pages/${editingPage.id}`, { method: 'PATCH', body: JSON.stringify(payload) })
-      if (res.ok) { setMsg({ text: 'Salvat.', ok: true }); load(); setTimeout(() => setView('list'), 800) }
-      else setMsg({ text: 'Eroare.', ok: false })
-    }
+    const res = await apiFetch('/api/admin/terms', {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    })
+    if (res.ok) setMsg({ text: 'Termenii au fost salvați.', ok: true })
+    else setMsg({ text: 'Eroare la salvare.', ok: false })
     setSaving(false)
   }
 
-  async function deletePage(id: string) {
-    if (!confirm('Ștergi această pagină?')) return
-    await apiFetch(`/api/admin/pages/${id}`, { method: 'DELETE' })
-    load()
-  }
-
-  if (view === 'list') {
-    const topLevel = pages.filter(p => !p.parentId).sort((a, b) => a.menuPosition - b.menuPosition)
-    const childrenOf = (id: string) => pages.filter(p => p.parentId === id).sort((a, b) => a.menuPosition - b.menuPosition)
-
-    return (
-      <div className="max-w-4xl space-y-6">
-        <div className="flex items-center justify-between">
-          <PageHeader title="Pagini Site" description="Pagini statice — ordinea și ierarhia se gestionează în tab-ul Meniu." />
-          <Btn onClick={openNew}>+ Pagină nouă</Btn>
-        </div>
-        {pages.length === 0 ? <EmptyState message="Nicio pagină încă." /> : (
-          <div className="space-y-2">
-            {topLevel.map((page) => {
-              const children = childrenOf(page.id)
-              const expanded = expandedParents.has(page.id)
-              return (
-                <div key={page.id}>
-                  <div className="rounded-xl overflow-hidden" style={{ backgroundColor: c.surface, border: `1px solid ${c.border}` }}>
-                    <div className="flex items-center gap-3 px-4 py-3">
-                      {children.length > 0 ? (
-                        <button onClick={() => setExpandedParents(prev => { const s = new Set(prev); s.has(page.id) ? s.delete(page.id) : s.add(page.id); return s })}
-                          className="p-0.5 rounded" style={{ color: c.textSoft, transform: expanded ? 'rotate(90deg)' : 'none', transition: 'transform .2s' }}>
-                          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-                        </button>
-                      ) : <span className="w-5" />}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-semibold" style={{ color: c.text }}>{page.title}</span>
-                          <StatusBadge published={page.isPublished} />
-                          {children.length > 0 && <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ backgroundColor: c.badge, color: c.badgeText }}>{children.length} sub-pagini</span>}
-                        </div>
-                        <p className="text-xs mt-0.5" style={{ color: c.textSoft }}>/{page.slug} · Poziție: {page.menuPosition}</p>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button onClick={() => openEdit(page)} className="text-xs px-2.5 py-1 rounded-lg font-medium" style={{ color: c.accent, backgroundColor: c.badge }}>Editează</button>
-                        <button onClick={() => deletePage(page.id)} className="text-xs px-2.5 py-1 rounded-lg" style={{ color: c.danger, backgroundColor: c.dangerBg }}>Șterge</button>
-                      </div>
-                    </div>
-                  </div>
-                  {expanded && children.map(child => (
-                    <div key={child.id} className="ml-6 mt-1 flex items-center gap-3 px-4 py-2.5 rounded-xl" style={{ backgroundColor: c.surface, border: `1px solid ${c.border}`, borderLeft: `3px solid ${c.accent}` }}>
-                      <span className="text-xs" style={{ color: c.textSoft }}>↳</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2"><span className="text-sm font-medium" style={{ color: c.text }}>{child.title}</span><StatusBadge published={child.isPublished} /></div>
-                        <p className="text-xs mt-0.5" style={{ color: c.textSoft }}>/{child.slug} · Poziție: {child.menuPosition}</p>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button onClick={() => openEdit(child)} className="text-xs px-2.5 py-1 rounded-lg font-medium" style={{ color: c.accent, backgroundColor: c.badge }}>Editează</button>
-                        <button onClick={() => deletePage(child.id)} className="text-xs px-2.5 py-1 rounded-lg" style={{ color: c.danger, backgroundColor: c.dangerBg }}>Șterge</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )
-            })}
+  return (
+    <div className="max-w-3xl space-y-6">
+      <PageHeader
+        title="Termeni și Condiții"
+        description="Conținut afișat pe pagina /termeni-si-conditii. Suportă Markdown."
+      />
+      <Card>
+        {loading ? (
+          <p className="text-sm" style={{ color: c.textSoft }}>Se încarcă...</p>
+        ) : (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: c.textMid }}>
+                Conținut (Markdown) — H2 pentru secțiuni, H3 pentru sub-secțiuni
+              </label>
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                rows={28}
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none resize-y font-mono"
+                style={{ backgroundColor: '#FAFBFF', border: `1px solid ${c.border}`, color: c.text, lineHeight: '1.6' }}
+              />
+            </div>
+            {msg && <Msg ok={msg.ok} text={msg.text} />}
+            <Btn onClick={save} loading={saving}>Salvează termenii</Btn>
           </div>
         )}
-      </div>
-    )
-  }
+      </Card>
 
-  const parentOptions = pages.filter(p => !p.parentId && p.id !== editingPage?.id)
-
-  return (
-    <div className="max-w-4xl">
-      <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => setView('list')} className="text-sm" style={{ color: c.textSoft }}>← Înapoi</button>
-        <h1 className="text-xl font-bold" style={{ color: c.text }}>{view === 'new' ? 'Pagină nouă' : `Editează: ${editingPage?.title}`}</h1>
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-5">
-          <Card>
-            <h3 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: c.textSoft }}>Conținut pagină</h3>
-            <div className="space-y-4">
-              <Field label="Titlu pagină" value={title} onChange={handleTitleChange} placeholder="ex: Despre noi" />
-              <Field label="Slug (URL) — /[slug]" value={slug} onChange={setSlug} placeholder="ex: despre-noi" />
-              <Field label="Meta description" value={metaDesc} onChange={setMetaDesc} placeholder="Descriere pentru SEO" />
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: c.textMid }}>Conținut pagină (Markdown)</label>
-                <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={14}
-                  className="w-full rounded-xl px-4 py-3 text-sm outline-none resize-y font-mono"
-                  style={{ backgroundColor: '#FAFBFF', border: `1px solid ${c.border}`, color: c.text }} />
+      {/* Live preview */}
+      {content && (
+        <Card>
+          <h3 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: c.textSoft }}>Previzualizare</h3>
+          <div className="space-y-5 max-h-96 overflow-y-auto pr-2">
+            {parseSections(content).map((s, i) => (
+              <div key={i}>
+                {s.h2 && <h2 className="text-base font-bold mb-2" style={{ color: c.text }}>{s.h2}</h2>}
+                {s.h3 && <h3 className="text-sm font-semibold mb-1.5" style={{ color: c.text }}>{s.h3}</h3>}
+                {s.body && (
+                  <div className="space-y-1.5">
+                    {s.body.split('\n').filter(Boolean).map((line, j) => (
+                      <p key={j} className="text-sm leading-relaxed" style={{ color: c.textMid }}>{line}</p>
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
-          </Card>
-        </div>
-        <div className="space-y-5">
-          <Card>
-            <h3 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: c.textSoft }}>Imagine Pagină</h3>
-            <ImageUpload value={coverImageUrl} onChange={setCoverImageUrl} folder="pages" hint="Banner / imagine reprezentativă" />
-          </Card>
-          <Card>
-            <h3 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: c.textSoft }}>Meniu & Structură</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: c.textMid }}>Poziție în meniu</label>
-                <input type="number" value={menuPosition} onChange={(e) => setMenuPosition(parseInt(e.target.value) || 0)}
-                  className="w-full rounded-lg px-3 py-2.5 text-sm outline-none"
-                  style={{ backgroundColor: '#FAFBFF', border: `1px solid ${c.border}`, color: c.text }} />
-                <p className="text-xs mt-1" style={{ color: c.textSoft }}>Ordine crescătoare (10, 20, 30...)</p>
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: c.textMid }}>Pagină părinte (opțional)</label>
-                <select value={parentId} onChange={(e) => setParentId(e.target.value)}
-                  className="w-full rounded-lg px-3 py-2.5 text-sm outline-none"
-                  style={{ backgroundColor: '#FAFBFF', border: `1px solid ${c.border}`, color: c.text }}>
-                  <option value="">— Pagină principală —</option>
-                  {parentOptions.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
-                </select>
-              </div>
-            </div>
-          </Card>
-          <Card>
-            <h3 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: c.textSoft }}>Publicare</h3>
-            <Toggle value={isPublished} onChange={setIsPublished} label={isPublished ? 'Publicată' : 'Draft'} />
-          </Card>
-          <Card>
-            {msg && <Msg ok={msg.ok} text={msg.text} />}
-            <Btn onClick={savePage} loading={saving} fullWidth>{view === 'new' ? 'Creează pagina' : 'Salvează'}</Btn>
-          </Card>
-        </div>
-      </div>
+            ))}
+          </div>
+        </Card>
+      )}
     </div>
   )
 }
 
+// Suppress unused warning — TERMS_KEY is used conceptually (referenced in API)
+void TERMS_KEY
+
 // ─── Menu Tab (WordPress-style drag-to-order) ─────────────────────────────────
+
+// Hardcoded static pages that always exist on the site
+const STATIC_PAGES: { id: string; title: string; slug: string }[] = [
+  { id: '__despre-noi__',           title: 'Despre noi',         slug: 'despre-noi' },
+  { id: '__contact__',              title: 'Contact',            slug: 'contact' },
+  { id: '__termeni-si-conditii__',  title: 'Termeni și Condiții', slug: 'termeni-si-conditii' },
+]
 
 interface MenuItem {
   id: string
@@ -720,7 +611,7 @@ interface MenuItem {
   slug: string
   menuPosition: number
   parentId: string | null
-  isPublished: boolean
+  isStatic: boolean   // hardcoded pages — no DB, cannot be deleted
 }
 
 function MenuTab() {
@@ -731,19 +622,36 @@ function MenuTab() {
   const dragOver = useRef<number | null>(null)
 
   const load = useCallback(async () => {
-    const res = await apiFetch('/api/admin/pages')
-    if (res.ok) {
-      const json = await res.json() as { pages: SitePage[] }
-      setItems(json.pages.map(p => ({
-        id: p.id, title: p.title, slug: p.slug,
-        menuPosition: p.menuPosition, parentId: p.parentId, isPublished: p.isPublished,
-      })).sort((a, b) => a.menuPosition - b.menuPosition))
+    // Fetch saved menu order from DB (site_pages stores position/parent for static pages too)
+    const res = await apiFetch('/api/admin/menu')
+    type DbItem = { id: string; title: string; slug: string; menuPosition: number; parentId: string | null }
+    const dbItems: DbItem[] =
+      res.ok ? ((await res.json()) as { items: DbItem[] }).items ?? [] : []
+
+    // Merge: static pages always present; use saved position/parent if available
+    const merged: MenuItem[] = STATIC_PAGES.map((sp, i) => {
+      const saved = dbItems.find(d => d.id === sp.id)
+      return {
+        id: sp.id, title: sp.title, slug: sp.slug,
+        menuPosition: saved?.menuPosition ?? (i + 1) * 10,
+        parentId: saved?.parentId ?? null,
+        isStatic: true,
+      }
+    })
+
+    // Add any extra DB-only pages
+    for (const d of dbItems) {
+      if (!merged.find(m => m.id === d.id)) {
+        merged.push({ ...d, isStatic: false })
+      }
     }
+
+    merged.sort((a, b) => a.menuPosition - b.menuPosition)
+    setItems(merged)
   }, [])
 
   useEffect(() => { load() }, [load])
 
-  // Flat ordered list (top-level first, children after their parent)
   const topLevel = items.filter(i => !i.parentId)
   const childrenOf = (id: string) => items.filter(i => i.parentId === id)
 
@@ -762,16 +670,11 @@ function MenuTab() {
   function handleDrop() {
     if (dragItem.current === null || dragOver.current === null) return
     const flat = flatList()
-    const from = dragItem.current
-    const to = dragOver.current
+    const from = dragItem.current; const to = dragOver.current
     if (from === to) { dragItem.current = null; dragOver.current = null; return }
-
     const moved = flat.splice(from, 1)[0]
     flat.splice(to, 0, moved)
-
-    // Reassign positions: top-level items get 10,20,30... children keep their parentId but get re-positioned among siblings
-    const updated = flat.map((item, idx) => ({ ...item, menuPosition: (idx + 1) * 10 }))
-    setItems(updated)
+    setItems(flat.map((item, idx) => ({ ...item, menuPosition: (idx + 1) * 10 })))
     dragItem.current = null; dragOver.current = null
   }
 
@@ -783,12 +686,15 @@ function MenuTab() {
     setSaving(true); setMsg(null)
     const flat = flatList()
     try {
-      await Promise.all(flat.map((item, idx) =>
-        apiFetch(`/api/admin/pages/${item.id}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ menuPosition: (idx + 1) * 10, parentId: item.parentId }),
-        })
-      ))
+      await apiFetch('/api/admin/menu', {
+        method: 'POST',
+        body: JSON.stringify({
+          items: flat.map((item, idx) => ({
+            id: item.id, title: item.title, slug: item.slug,
+            menuPosition: (idx + 1) * 10, parentId: item.parentId,
+          })),
+        }),
+      })
       setMsg({ text: 'Meniu salvat cu succes.', ok: true })
       load()
     } catch {
@@ -803,95 +709,85 @@ function MenuTab() {
     <div className="max-w-2xl space-y-6">
       <PageHeader title="Meniu Site" description="Trage elementele pentru a reordona. Setează pagina părinte din dropdown." />
 
-      {items.length === 0 ? <EmptyState message="Nicio pagină. Adaugă pagini din tab-ul Pagini Site." /> : (
-        <>
-          <Card>
-            <p className="text-xs mb-4" style={{ color: c.textSoft }}>
-              Trage rândurile pentru a schimba ordinea. Setează un părinte pentru a crea sub-meniuri.
-            </p>
+      <Card>
+        <p className="text-xs mb-4" style={{ color: c.textSoft }}>
+          Paginile statice (Despre noi, Contact, Termeni) sunt întotdeauna prezente. Trage pentru a reordona.
+        </p>
 
-            <div className="space-y-1.5">
-              {flat.map((item, idx) => (
-                <div
-                  key={item.id}
-                  draggable
-                  onDragStart={() => handleDragStart(idx)}
-                  onDragEnter={() => handleDragEnter(idx)}
-                  onDragEnd={handleDrop}
-                  onDragOver={(e) => e.preventDefault()}
-                  className="flex items-center gap-3 px-3 py-3 rounded-xl cursor-grab active:cursor-grabbing select-none"
-                  style={{
-                    backgroundColor: c.surface,
-                    border: `1px solid ${c.border}`,
-                    marginLeft: item.parentId ? '2rem' : '0',
-                    borderLeft: item.parentId ? `3px solid ${c.accent}` : `1px solid ${c.border}`,
-                  }}
-                >
-                  {/* Drag handle */}
-                  <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} style={{ color: c.textSoft, flexShrink: 0 }}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 8h16M4 16h16" />
-                  </svg>
+        <div className="space-y-1.5">
+          {flat.map((item, idx) => (
+            <div
+              key={item.id}
+              draggable
+              onDragStart={() => handleDragStart(idx)}
+              onDragEnter={() => handleDragEnter(idx)}
+              onDragEnd={handleDrop}
+              onDragOver={(e) => e.preventDefault()}
+              className="flex items-center gap-3 px-3 py-3 rounded-xl cursor-grab active:cursor-grabbing select-none"
+              style={{
+                backgroundColor: c.surface, border: `1px solid ${c.border}`,
+                marginLeft: item.parentId ? '2rem' : '0',
+                borderLeft: item.parentId ? `3px solid ${c.accent}` : `1px solid ${c.border}`,
+              }}
+            >
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} style={{ color: c.textSoft, flexShrink: 0 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 8h16M4 16h16" />
+              </svg>
 
-                  {/* Page info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      {item.parentId && <span className="text-xs" style={{ color: c.textSoft }}>↳</span>}
-                      <span className="text-sm font-medium truncate" style={{ color: c.text }}>{item.title}</span>
-                      <StatusBadge published={item.isPublished} />
-                    </div>
-                    <p className="text-xs mt-0.5" style={{ color: c.textSoft }}>/{item.slug}</p>
-                  </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  {item.parentId && <span className="text-xs" style={{ color: c.textSoft }}>↳</span>}
+                  <span className="text-sm font-medium truncate" style={{ color: c.text }}>{item.title}</span>
+                  {item.isStatic && (
+                    <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ backgroundColor: c.badge, color: c.badgeText }}>static</span>
+                  )}
+                </div>
+                <p className="text-xs mt-0.5" style={{ color: c.textSoft }}>/{item.slug}</p>
+              </div>
 
-                  {/* Parent selector */}
-                  <select
-                    value={item.parentId ?? ''}
-                    onChange={(e) => setParent(item.id, e.target.value)}
-                    className="text-xs rounded-lg px-2 py-1.5 outline-none shrink-0"
-                    style={{ backgroundColor: c.bg, border: `1px solid ${c.border}`, color: c.textMid, maxWidth: '130px' }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <option value="">— Fără părinte —</option>
-                    {items.filter(p => !p.parentId && p.id !== item.id).map(p => (
-                      <option key={p.id} value={p.id}>{p.title}</option>
-                    ))}
-                  </select>
+              <select
+                value={item.parentId ?? ''}
+                onChange={(e) => setParent(item.id, e.target.value)}
+                className="text-xs rounded-lg px-2 py-1.5 outline-none shrink-0"
+                style={{ backgroundColor: c.bg, border: `1px solid ${c.border}`, color: c.textMid, maxWidth: '130px' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <option value="">— Fără părinte —</option>
+                {items.filter(p => !p.parentId && p.id !== item.id).map(p => (
+                  <option key={p.id} value={p.id}>{p.title}</option>
+                ))}
+              </select>
 
-                  {/* Position badge */}
-                  <span className="text-xs w-6 text-center shrink-0" style={{ color: c.textSoft }}>{idx + 1}</span>
+              <span className="text-xs w-6 text-center shrink-0" style={{ color: c.textSoft }}>{idx + 1}</span>
+            </div>
+          ))}
+        </div>
+
+        {msg && <div className="mt-4"><Msg ok={msg.ok} text={msg.text} /></div>}
+        <div className="mt-5"><Btn onClick={saveMenu} loading={saving}>Salvează meniu</Btn></div>
+      </Card>
+
+      <Card>
+        <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: c.textSoft }}>Previzualizare structură</h3>
+        <div className="space-y-1">
+          {items.filter(i => !i.parentId).sort((a, b) => a.menuPosition - b.menuPosition).map(item => (
+            <div key={item.id}>
+              <div className="flex items-center gap-2 py-1">
+                <span className="w-4 h-0.5 rounded" style={{ backgroundColor: c.accent }} />
+                <span className="text-sm font-medium" style={{ color: c.text }}>{item.title}</span>
+                <span className="text-xs" style={{ color: c.textSoft }}>/{item.slug}</span>
+              </div>
+              {items.filter(i => i.parentId === item.id).sort((a, b) => a.menuPosition - b.menuPosition).map(child => (
+                <div key={child.id} className="flex items-center gap-2 py-1 ml-6">
+                  <span className="text-xs" style={{ color: c.textSoft }}>↳</span>
+                  <span className="text-sm" style={{ color: c.textMid }}>{child.title}</span>
+                  <span className="text-xs" style={{ color: c.textSoft }}>/{child.slug}</span>
                 </div>
               ))}
             </div>
-
-            {msg && <div className="mt-4"><Msg ok={msg.ok} text={msg.text} /></div>}
-
-            <div className="mt-5">
-              <Btn onClick={saveMenu} loading={saving}>Salvează meniu</Btn>
-            </div>
-          </Card>
-
-          <Card>
-            <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: c.textSoft }}>Previzualizare structură</h3>
-            <div className="space-y-1">
-              {items.filter(i => !i.parentId).sort((a, b) => a.menuPosition - b.menuPosition).map(item => (
-                <div key={item.id}>
-                  <div className="flex items-center gap-2 py-1">
-                    <span className="w-4 h-0.5 rounded" style={{ backgroundColor: c.accent }} />
-                    <span className="text-sm font-medium" style={{ color: c.text }}>{item.title}</span>
-                    <span className="text-xs" style={{ color: c.textSoft }}>/{item.slug}</span>
-                  </div>
-                  {items.filter(i => i.parentId === item.id).sort((a, b) => a.menuPosition - b.menuPosition).map(child => (
-                    <div key={child.id} className="flex items-center gap-2 py-1 ml-6">
-                      <span className="text-xs" style={{ color: c.textSoft }}>↳</span>
-                      <span className="text-sm" style={{ color: c.textMid }}>{child.title}</span>
-                      <span className="text-xs" style={{ color: c.textSoft }}>/{child.slug}</span>
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-          </Card>
-        </>
-      )}
+          ))}
+        </div>
+      </Card>
     </div>
   )
 }
