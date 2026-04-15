@@ -4,7 +4,7 @@ import { Dispatch, SetStateAction, useState } from 'react'
 import { EventTypeConfig } from '@/types'
 import { DonationState, totalDonationAmount } from './DonationFlow'
 
-const PRESETS = [1, 2, 3, 4, 5] // percentages
+const QUICK_PCTS = [1, 2, 3, 5]
 
 interface StepTipProps {
   state: DonationState
@@ -17,144 +17,112 @@ interface StepTipProps {
 export function StepTip({ state, setState, config, onBack, onNext }: StepTipProps) {
   const donationTotal = totalDonationAmount(state)
   const isLarge = donationTotal > 2000
-  const minPercent = isLarge ? 1 : 0
+  const minPct = isLarge ? 1 : 0
 
-  function percentToRon(pct: number) {
-    return Math.round(donationTotal * pct / 100)
+  function ronFromPct(pct: number) {
+    return Math.max(1, Math.round(donationTotal * pct / 100))
   }
 
-  // Derive initial percent from existing tipAmount if set
-  function initialPercent(): number | 'custom' {
-    if (state.tipAmount === 0) return isLarge ? 1 : 2
-    const pct = Math.round((state.tipAmount / donationTotal) * 100)
-    if (PRESETS.includes(pct)) return pct as 1 | 2 | 3 | 4 | 5
-    return 'custom'
-  }
-
-  const [selectedPct, setSelectedPct] = useState<number | 'custom'>(initialPercent)
-  const [customPct, setCustomPct] = useState<string>(
-    selectedPct === 'custom' ? String(Math.round((state.tipAmount / donationTotal) * 100)) : ''
-  )
+  const defaultPct = isLarge ? 2 : 2
+  const [pct, setPct] = useState<number>(() => {
+    if (state.tipAmount > 0) {
+      return Math.round((state.tipAmount / donationTotal) * 100 * 10) / 10
+    }
+    return defaultPct
+  })
   const [error, setError] = useState('')
 
-  function selectPreset(pct: number) {
-    setSelectedPct(pct)
+  function handleSlider(val: number) {
+    const rounded = Math.round(val * 10) / 10
+    setPct(rounded)
     setError('')
-    setState((prev) => ({ ...prev, tipAmount: percentToRon(pct) }))
+    setState((prev) => ({ ...prev, tipAmount: ronFromPct(rounded) }))
   }
 
-  function handleCustomChange(val: string) {
-    setCustomPct(val)
+  function handleQuick(p: number) {
+    setPct(p)
     setError('')
-    const num = parseFloat(val)
-    if (!isNaN(num) && num > 0) {
-      setState((prev) => ({ ...prev, tipAmount: percentToRon(num) }))
-    }
+    setState((prev) => ({ ...prev, tipAmount: ronFromPct(p) }))
   }
 
   function handleNext() {
-    const pct = selectedPct === 'custom' ? parseFloat(customPct) : selectedPct
-    if (isNaN(pct) || pct < minPercent) {
-      setError(isLarge
-        ? `Contribuția minimă este 1% (${percentToRon(1)} Lei) pentru donații peste 2000 Lei.`
-        : 'Te rugăm să introduci o contribuție validă.'
-      )
+    if (isLarge && pct < minPct) {
+      setError(`Contribuția minimă pentru donații peste 2.000 Lei este 1% (${ronFromPct(1)} Lei).`)
       return
     }
-    setState((prev) => ({ ...prev, tipAmount: percentToRon(pct) }))
+    setState((prev) => ({ ...prev, tipAmount: ronFromPct(pct) }))
     onNext()
   }
 
-  const currentPct = selectedPct === 'custom' ? (parseFloat(customPct) || 0) : selectedPct
-  const currentTip = percentToRon(currentPct)
-  const total = donationTotal + currentTip
+  const tipRon = ronFromPct(pct)
+  const total = donationTotal + tipRon
 
   return (
     <div className="space-y-6">
+
+      {/* Header */}
       <div>
         <h2 className="font-semibold text-lg" style={{ color: '#2D2016' }}>
-          Contribuție pentru platformă
+          Ajuți și platforma?
         </h2>
         <p className="text-sm mt-1 leading-relaxed" style={{ color: '#9A7B60' }}>
-          100% din donația ta ajunge la familie. Platforma este susținută printr-o contribuție separată — îți mulțumim.
+          Familia primește 100% din donația ta. Dacă vrei să susții și platforma care face asta posibil, poți adăuga o contribuție mică.
         </p>
-        {isLarge && (
-          <p className="text-xs mt-2 px-3 py-2 rounded-lg" style={{ backgroundColor: '#FFF8EE', color: '#9A6B45', border: '1px solid #EDD9B8' }}>
-            Pentru donații peste 2.000 Lei, contribuția minimă este 1%.
-          </p>
-        )}
       </div>
 
-      {/* Percent presets */}
-      <div className="grid grid-cols-3 gap-2">
-        {PRESETS.map((pct) => (
+      {/* Big tip display */}
+      <div
+        className="rounded-2xl p-5 text-center"
+        style={{ backgroundColor: '#F5EDE3', border: '1px solid #E8D5C0' }}
+      >
+        <p className="text-4xl font-bold" style={{ color: '#2D2016' }}>{tipRon} Lei</p>
+        <p className="text-sm mt-1" style={{ color: '#9A7B60' }}>
+          {pct}% din donația ta de {donationTotal} Lei
+        </p>
+      </div>
+
+      {/* Slider */}
+      <div>
+        <input
+          type="range"
+          min={minPct}
+          max={10}
+          step={0.5}
+          value={pct}
+          onChange={(e) => handleSlider(parseFloat(e.target.value))}
+          className="w-full"
+          style={{ accentColor: '#C4956A' }}
+        />
+        <div className="flex justify-between text-xs mt-1" style={{ color: '#B09070' }}>
+          <span>{minPct}%</span>
+          <span>5%</span>
+          <span>10%</span>
+        </div>
+      </div>
+
+      {/* Quick-pick anchors */}
+      <div className="flex gap-2">
+        {QUICK_PCTS.filter(p => p >= minPct).map((p) => (
           <button
-            key={pct}
+            key={p}
             type="button"
-            onClick={() => selectPreset(pct)}
-            className="rounded-xl py-3 px-2 text-sm font-semibold transition-all flex flex-col items-center gap-0.5"
+            onClick={() => handleQuick(p)}
+            className="flex-1 rounded-xl py-2 text-xs font-semibold transition-all"
             style={
-              selectedPct === pct
-                ? { backgroundColor: '#C4956A', color: '#FFFFFF', border: '2px solid #C4956A' }
-                : { backgroundColor: '#FDFAF7', color: '#2D2016', border: '2px solid #EDE0D0' }
+              pct === p
+                ? { backgroundColor: '#C4956A', color: '#fff', border: '1.5px solid #C4956A' }
+                : { backgroundColor: '#FDFAF7', color: '#7A6652', border: '1.5px solid #EDE0D0' }
             }
           >
-            <span>{pct}%</span>
-            <span className="text-xs font-normal opacity-75">{percentToRon(pct)} Lei</span>
+            {p}% · {ronFromPct(p)} Lei
           </button>
         ))}
-        <button
-          type="button"
-          onClick={() => {
-            setSelectedPct('custom')
-            setError('')
-            if (!customPct) {
-              const defaultPct = String(isLarge ? 1 : 2)
-              setCustomPct(defaultPct)
-              setState((prev) => ({ ...prev, tipAmount: percentToRon(parseFloat(defaultPct)) }))
-            }
-          }}
-          className="rounded-xl py-3 px-2 text-sm font-semibold transition-all"
-          style={
-            selectedPct === 'custom'
-              ? { backgroundColor: '#C4956A', color: '#FFFFFF', border: '2px solid #C4956A' }
-              : { backgroundColor: '#FDFAF7', color: '#2D2016', border: '2px solid #EDE0D0' }
-          }
-        >
-          Alt %
-        </button>
       </div>
 
-      {/* Custom percent input */}
-      {selectedPct === 'custom' && (
-        <div>
-          <label className="block text-xs font-medium mb-1.5" style={{ color: '#7A6652' }}>
-            Procent contribuție{isLarge ? ` (minim ${minPercent}%)` : ''}
-          </label>
-          <div className="relative">
-            <input
-              type="number"
-              min={minPercent}
-              max={100}
-              step={0.5}
-              value={customPct}
-              onChange={(e) => handleCustomChange(e.target.value)}
-              placeholder={`ex: ${isLarge ? '1.5' : '2'}`}
-              className="w-full rounded-lg px-3 py-2.5 text-sm outline-none pr-10"
-              style={{ border: '1px solid #E0D0C0', color: '#2D2016', backgroundColor: '#FDFAF7' }}
-              onFocus={(e) => (e.target.style.borderColor = '#C4956A')}
-              onBlur={(e) => (e.target.style.borderColor = '#E0D0C0')}
-            />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium" style={{ color: '#9A7B60' }}>
-              %
-            </span>
-          </div>
-          {customPct && !isNaN(parseFloat(customPct)) && (
-            <p className="mt-1 text-xs" style={{ color: '#9A7B60' }}>
-              = {percentToRon(parseFloat(customPct))} Lei
-            </p>
-          )}
-        </div>
+      {isLarge && (
+        <p className="text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: '#FFF8EE', color: '#9A6B45', border: '1px solid #EDD9B8' }}>
+          Pentru donații peste 2.000 Lei, contribuția minimă este 1%.
+        </p>
       )}
 
       {error && (
@@ -163,22 +131,22 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
         </p>
       )}
 
-      {/* Order summary */}
+      {/* Summary */}
       <div className="rounded-xl p-4 space-y-2" style={{ backgroundColor: '#F5EDE3' }}>
         <div className="flex justify-between text-sm" style={{ color: '#7A6652' }}>
           <span>Donație</span>
           <span className="font-medium">{donationTotal} Lei</span>
         </div>
         <div className="flex justify-between text-sm" style={{ color: '#7A6652' }}>
-          <span>Contribuție platformă{currentPct > 0 ? ` (${currentPct}%)` : ''}</span>
-          <span className="font-medium">{currentTip > 0 ? `${currentTip} Lei` : '—'}</span>
+          <span>Contribuție platformă ({pct}%)</span>
+          <span className="font-medium">{tipRon} Lei</span>
         </div>
         <div
           className="flex justify-between text-sm font-bold pt-2"
           style={{ borderTop: '1px solid #EDE0D0', color: '#2D2016' }}
         >
           <span>Total de plătit</span>
-          <span>{currentTip > 0 ? `${total} Lei` : `${donationTotal} Lei`}</span>
+          <span>{total} Lei</span>
         </div>
       </div>
 
@@ -186,7 +154,7 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
         <button
           type="button"
           onClick={onBack}
-          className="flex-1 rounded-xl py-3 text-sm font-semibold transition-colors"
+          className="flex-1 rounded-xl py-3 text-sm font-semibold"
           style={{ border: '1px solid #EDE0D0', color: '#7A6652', backgroundColor: '#FFFFFF' }}
         >
           Înapoi
