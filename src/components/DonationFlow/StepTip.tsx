@@ -63,10 +63,10 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
       {/* Header */}
       <div>
         <h2 className="font-semibold text-lg" style={{ color: '#2D2016' }}>
-          Ajuți și platforma?
+          Susține platforma
         </h2>
         <p className="text-sm mt-1 leading-relaxed" style={{ color: '#9A7B60' }}>
-          Familia primește 100% din donația ta. Dacă vrei să susții și platforma care face asta posibil, poți adăuga o contribuție mică.
+          Familia primește tot. Platforma se susține printr-o mică contribuție adăugată de tine.
         </p>
       </div>
 
