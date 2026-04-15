@@ -1,25 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdminRequest } from '@/lib/admin-auth'
-import { getAllSeoOverrides, upsertSeoOverride } from '@/lib/db/admin'
+import { getAllSitePages, createSitePage } from '@/lib/db/admin'
 import { ApiError } from '@/types'
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const adminEmail = await verifyAdminRequest(req)
   if (!adminEmail) return NextResponse.json<ApiError>({ error: 'Unauthorized' }, { status: 401 })
 
-  const overrides = await getAllSeoOverrides()
-  return NextResponse.json({ overrides })
+  const pages = await getAllSitePages()
+  return NextResponse.json({ pages })
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const adminEmail = await verifyAdminRequest(req)
   if (!adminEmail) return NextResponse.json<ApiError>({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = await req.json() as { pageKey: string; seoTitle: string; metaDescription: string; socialImageUrl?: string }
-  if (!body.pageKey?.trim()) {
-    return NextResponse.json<ApiError>({ error: 'pageKey is required' }, { status: 400 })
+  const body = await req.json() as {
+    title: string
+    slug: string
+    content: string
+    metaDescription?: string
+    menuPosition: number
+    parentId?: string | null
+    isPublished: boolean
   }
 
-  await upsertSeoOverride(body.pageKey.trim(), body.seoTitle ?? '', body.metaDescription ?? '', body.socialImageUrl ?? '')
-  return NextResponse.json({ ok: true })
+  if (!body.title?.trim() || !body.slug?.trim()) {
+    return NextResponse.json<ApiError>({ error: 'title and slug are required' }, { status: 400 })
+  }
+
+  const page = await createSitePage(body)
+  return NextResponse.json({ page }, { status: 201 })
 }

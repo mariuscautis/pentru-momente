@@ -5,6 +5,7 @@ export interface SeoOverride {
   pageKey: string
   seoTitle: string | null
   metaDescription: string | null
+  socialImageUrl: string | null
   updatedAt: string
 }
 
@@ -64,10 +65,17 @@ export async function getSeoOverride(pageKey: string): Promise<SeoOverride | nul
 export async function upsertSeoOverride(
   pageKey: string,
   seoTitle: string,
-  metaDescription: string
+  metaDescription: string,
+  socialImageUrl?: string
 ): Promise<void> {
   await supabaseAdmin.from('seo_overrides').upsert(
-    { page_key: pageKey, seo_title: seoTitle, meta_description: metaDescription, updated_at: new Date().toISOString() },
+    {
+      page_key: pageKey,
+      seo_title: seoTitle,
+      meta_description: metaDescription,
+      social_image_url: socialImageUrl ?? null,
+      updated_at: new Date().toISOString(),
+    },
     { onConflict: 'page_key' }
   )
 }
@@ -78,6 +86,7 @@ function rowToSeo(row: Record<string, unknown>): SeoOverride {
     pageKey: row.page_key as string,
     seoTitle: row.seo_title as string | null,
     metaDescription: row.meta_description as string | null,
+    socialImageUrl: row.social_image_url as string | null,
     updatedAt: row.updated_at as string,
   }
 }
@@ -213,5 +222,107 @@ function rowToBlocked(row: Record<string, unknown>): BlockedEvent {
     reason: row.reason as string | null,
     blockedAt: row.blocked_at as string,
     blockedBy: row.blocked_by as string,
+  }
+}
+
+// ─── Site pages ───────────────────────────────────────────────────────────────
+
+export interface SitePage {
+  id: string
+  title: string
+  slug: string
+  content: string
+  metaDescription: string | null
+  menuPosition: number
+  parentId: string | null
+  isPublished: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export async function getAllSitePages(): Promise<SitePage[]> {
+  const { data, error } = await supabaseAdmin
+    .from('site_pages')
+    .select('*')
+    .order('menu_position', { ascending: true })
+  if (error || !data) return []
+  return data.map(rowToPage)
+}
+
+export async function getSitePageBySlug(slug: string): Promise<SitePage | null> {
+  const { data, error } = await supabaseAdmin
+    .from('site_pages')
+    .select('*')
+    .eq('slug', slug)
+    .single()
+  if (error || !data) return null
+  return rowToPage(data)
+}
+
+export async function createSitePage(input: {
+  title: string
+  slug: string
+  content: string
+  metaDescription?: string
+  menuPosition: number
+  parentId?: string | null
+  isPublished: boolean
+}): Promise<SitePage> {
+  const { data, error } = await supabaseAdmin
+    .from('site_pages')
+    .insert({
+      title: input.title,
+      slug: input.slug,
+      content: input.content,
+      meta_description: input.metaDescription ?? null,
+      menu_position: input.menuPosition,
+      parent_id: input.parentId ?? null,
+      is_published: input.isPublished,
+    })
+    .select()
+    .single()
+  if (error || !data) throw new Error(error?.message ?? 'Failed to create page')
+  return rowToPage(data)
+}
+
+export async function updateSitePage(
+  id: string,
+  input: Partial<{
+    title: string
+    slug: string
+    content: string
+    metaDescription: string
+    menuPosition: number
+    parentId: string | null
+    isPublished: boolean
+  }>
+): Promise<void> {
+  const update: Record<string, unknown> = { updated_at: new Date().toISOString() }
+  if (input.title !== undefined) update.title = input.title
+  if (input.slug !== undefined) update.slug = input.slug
+  if (input.content !== undefined) update.content = input.content
+  if (input.metaDescription !== undefined) update.meta_description = input.metaDescription
+  if (input.menuPosition !== undefined) update.menu_position = input.menuPosition
+  if ('parentId' in input) update.parent_id = input.parentId
+  if (input.isPublished !== undefined) update.is_published = input.isPublished
+  await supabaseAdmin.from('site_pages').update(update).eq('id', id)
+}
+
+export async function deleteSitePage(id: string): Promise<void> {
+  await supabaseAdmin.from('site_pages').delete().eq('id', id)
+}
+
+function rowToPage(row: Record<string, unknown>): SitePage {
+  return {
+    id: row.id as string,
+    title: row.title as string,
+    slug: row.slug as string,
+    content: row.content as string,
+    metaDescription: row.meta_description as string | null,
+    menuPosition: row.menu_position as number,
+    parentId: row.parent_id as string | null,
+    isPublished: row.is_published as boolean,
+    createdAt: row.created_at as string,
+    updatedAt: row.updated_at as string,
   }
 }
