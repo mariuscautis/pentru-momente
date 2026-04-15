@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none">
+  <rect width="1200" height="630" fill="#FDFAF7"/>
+  <!-- Warm accent strip -->
+  <rect width="1200" height="8" fill="#C4956A"/>
+  <!-- Circle logo -->
+  <circle cx="120" cy="120" r="52" fill="#C4956A"/>
+  <text x="120" y="136" font-family="Georgia, serif" font-size="38" font-weight="700" fill="#FFFDFB" text-anchor="middle" letter-spacing="-1">pm</text>
+  <!-- Main headline -->
+  <text x="100" y="290" font-family="Georgia, serif" font-size="72" font-weight="700" fill="#2D2016">pentru</text>
+  <text x="100" y="370" font-family="Georgia, serif" font-size="72" font-weight="700" fill="#C4956A">momente</text>
+  <!-- Subline -->
+  <text x="100" y="440" font-family="-apple-system, sans-serif" font-size="32" fill="#7A6652">Strânge fonduri pentru momentele care contează.</text>
+  <!-- Trust badge -->
+  <rect x="100" y="490" width="380" height="52" rx="26" fill="#F5EDE3"/>
+  <text x="290" y="522" font-family="-apple-system, sans-serif" font-size="22" font-weight="600" fill="#9A6B45" text-anchor="middle">100% ajunge la familie</text>
+</svg>

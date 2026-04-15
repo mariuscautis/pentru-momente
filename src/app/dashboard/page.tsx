@@ -396,9 +396,9 @@ function EventCard({
       <div className="p-6 space-y-5">
 
         {/* Title row */}
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
               <span className="text-base">{meta.emoji}</span>
               <span className="text-xs font-medium" style={{ color: '#9A7B60' }}>{meta.label}</span>
               <span
@@ -450,7 +450,7 @@ function EventCard({
         {/* Delete confirmation */}
         {confirmingDelete && (
           <div
-            className="rounded-2xl p-4 flex items-center justify-between gap-4"
+            className="rounded-2xl p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
             style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA' }}
           >
             <p className="text-sm font-medium" style={{ color: '#991B1B' }}>
