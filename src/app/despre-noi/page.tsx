@@ -25,7 +25,6 @@ export default function DespreNoiPage() {
           className="relative overflow-hidden"
           style={{ background: 'linear-gradient(135deg, #2D1A0E 0%, #5A3420 50%, #8B5A3A 100%)' }}
         >
-          {/* Subtle pattern overlay */}
           <div className="absolute inset-0 opacity-10"
             style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, #C4956A 1px, transparent 0)', backgroundSize: '32px 32px' }} />
 
@@ -46,9 +45,21 @@ export default function DespreNoiPage() {
         <section style={{ backgroundColor: '#F5EDE3', borderBottom: '1px solid #EAD8C8' }}>
           <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12 grid sm:grid-cols-3 gap-8 text-center">
             {[
-              { icon: '💛', title: '100% ajunge la familie', desc: 'Platforma se susține prin contribuții voluntare ale donatorilor, nu prin comision din donații.' },
-              { icon: '⚡', title: '3 minute să creezi o pagină', desc: 'De la idee la pagina publică, gata de distribuuit pe WhatsApp și Facebook.' },
-              { icon: '🇷🇴', title: 'Direct în cont românesc', desc: 'Fondurile ajung prin transfer bancar direct în contul IBAN al familiei.' },
+              {
+                icon: '💛',
+                title: '100% ajunge la familie',
+                desc: 'Platforma percepe un comision fix per donație, afișat transparent donatorului. Niciun leu nu se scade din suma destinată familiei.',
+              },
+              {
+                icon: '⚡',
+                title: '3 minute să creezi o pagină',
+                desc: 'De la idee la pagina publică, gata de distribuit pe WhatsApp și Facebook — inclusiv cu cod QR pentru invitații tipărite.',
+              },
+              {
+                icon: '🏦',
+                title: 'Direct în cont românesc',
+                desc: 'Fondurile ajung prin transfer bancar direct în contul IBAN al familiei, mereu la cel mai avantajos comision bancar posibil.',
+              },
             ].map(item => (
               <div key={item.title} className="space-y-2">
                 <div className="text-3xl">{item.icon}</div>
@@ -73,12 +84,16 @@ export default function DespreNoiPage() {
                   Colectele de bani au existat mereu în cultura românească. Am vrut să le facem mai simple, mai transparente și mai demne — potrivite cu realitatea secolului XXI.
                 </p>
               </div>
-              <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, #F5EDE3 0%, #EAD8C8 100%)', minHeight: '220px' }}>
-                <div className="h-full flex items-center justify-center p-8 text-center">
-                  <div>
-                    <div className="text-5xl mb-3">🌱</div>
-                    <p className="text-sm font-medium" style={{ color: '#7A6652' }}>Creat în România, pentru România</p>
-                  </div>
+
+              {/* Illustration: Romania outline / map pin feel */}
+              <div
+                className="rounded-2xl overflow-hidden flex items-center justify-center p-8 text-center"
+                style={{ background: 'linear-gradient(135deg, #F5EDE3 0%, #EAD8C8 100%)', minHeight: '220px' }}
+              >
+                <div>
+                  <div className="text-6xl mb-3">🇷🇴</div>
+                  <p className="text-sm font-semibold mb-1" style={{ color: '#2D1A0E' }}>Creat în România</p>
+                  <p className="text-xs" style={{ color: '#7A6652' }}>pentru familiile românești</p>
                 </div>
               </div>
             </div>
@@ -94,14 +109,21 @@ export default function DespreNoiPage() {
             </div>
 
             <div className="grid md:grid-cols-2 gap-8 items-center">
-              <div className="rounded-2xl overflow-hidden order-2 md:order-1" style={{ background: 'linear-gradient(135deg, #EAD8C8 0%, #D4B89A 100%)', minHeight: '220px' }}>
-                <div className="h-full flex items-center justify-center p-8 text-center">
-                  <div>
-                    <div className="text-5xl mb-3">🤝</div>
-                    <p className="text-sm font-medium" style={{ color: '#5A3420' }}>Comunitate și încredere</p>
+              {/* Illustration: handshake / people / heart */}
+              <div
+                className="rounded-2xl overflow-hidden flex items-center justify-center p-8 text-center order-2 md:order-1"
+                style={{ background: 'linear-gradient(135deg, #EAD8C8 0%, #D4B89A 100%)', minHeight: '220px' }}
+              >
+                <div>
+                  <div className="flex justify-center gap-2 text-5xl mb-3">
+                    <span>👨‍👩‍👧</span>
+                    <span>❤️</span>
                   </div>
+                  <p className="text-sm font-semibold mb-1" style={{ color: '#5A3420' }}>Familia pe primul loc</p>
+                  <p className="text-xs" style={{ color: '#7A5038' }}>sprijinită de comunitate</p>
                 </div>
               </div>
+
               <div className="order-1 md:order-2">
                 <h2 className="text-2xl font-bold mb-4" style={{ color: '#2D1A0E' }}>Valorile care ne ghidează</h2>
                 <ul className="space-y-3">

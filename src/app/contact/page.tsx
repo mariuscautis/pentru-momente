@@ -74,12 +74,6 @@ export default function ContactPage() {
                       value: 'Luni – Vineri, 9:00 – 18:00',
                       href: null,
                     },
-                    {
-                      icon: '📍',
-                      label: 'Țara',
-                      value: 'România',
-                      href: null,
-                    },
                   ].map(item => (
                     <div key={item.label} className="flex items-start gap-3">
                       <span className="text-xl mt-0.5">{item.icon}</span>

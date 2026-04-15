@@ -14,7 +14,9 @@ interface NavPage {
 export function Nav() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [pages, setPages] = useState<NavPage[]>([])
-  const menuRef = useRef<HTMLDivElement>(null)
+  const desktopMenuRef = useRef<HTMLDivElement>(null)
+  const mobileMenuRef = useRef<HTMLDivElement>(null)
+  const mobileButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     fetch('/api/pages')
@@ -23,10 +25,14 @@ export function Nav() {
       .catch(() => {})
   }, [])
 
-  // Close on outside click
+  // Close on outside click — must exclude mobile button to avoid race
   useEffect(() => {
     function handler(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      const target = e.target as Node
+      const inDesktop = desktopMenuRef.current?.contains(target)
+      const inMobileMenu = mobileMenuRef.current?.contains(target)
+      const inMobileButton = mobileButtonRef.current?.contains(target)
+      if (!inDesktop && !inMobileMenu && !inMobileButton) {
         setMenuOpen(false)
       }
     }
@@ -41,6 +47,57 @@ export function Nav() {
   const panelItemCount = 2 + pages.length
   const panelMaxHeight = panelItemCount * 60 + 80
 
+  const PagesList = ({ onNavigate }: { onNavigate: () => void }) => (
+    <>
+      {topLevel.map(page => {
+        const children = childrenOf(page.id)
+        return (
+          <div key={page.id}>
+            <Link
+              href={`/${page.slug}`}
+              onClick={onNavigate}
+              className="flex items-center justify-between px-4 py-2.5 text-sm transition-colors hover:bg-white"
+              style={{ color: '#2D2016', fontWeight: children.length > 0 ? 600 : 400 }}
+            >
+              {page.title}
+              {children.length > 0 && (
+                <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} style={{ color: '#C4956A' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              )}
+            </Link>
+            {children.map(child => (
+              <Link
+                key={child.id}
+                href={`/${child.slug}`}
+                onClick={onNavigate}
+                className="flex items-center gap-2 pl-7 pr-4 py-2 text-sm transition-colors hover:bg-white"
+                style={{ color: '#7A6652' }}
+              >
+                <span style={{ color: '#C4956A' }}>↳</span>
+                {child.title}
+              </Link>
+            ))}
+          </div>
+        )
+      })}
+      {topLevel.length === 0 && (
+        <p className="px-4 py-3 text-sm" style={{ color: '#9A7B60' }}>Nicio pagină.</p>
+      )}
+    </>
+  )
+
+  const HamburgerIcon = ({ size = 22, thickness = 3 }: { size?: number; thickness?: number }) => (
+    <>
+      <span className="block rounded-full transition-all duration-300 ease-in-out origin-center"
+        style={{ height: thickness, width: size, backgroundColor: '#5A4030', transform: menuOpen ? `translateY(${thickness * 2 + 2}px) rotate(45deg)` : 'none' }} />
+      <span className="block rounded-full transition-all duration-300 ease-in-out"
+        style={{ height: thickness, width: size, backgroundColor: '#5A4030', opacity: menuOpen ? 0 : 1, transform: menuOpen ? 'scaleX(0)' : 'scaleX(1)' }} />
+      <span className="block rounded-full transition-all duration-300 ease-in-out origin-center"
+        style={{ height: thickness, width: size, backgroundColor: '#5A4030', transform: menuOpen ? `translateY(-${thickness * 2 + 2}px) rotate(-45deg)` : 'none' }} />
+    </>
+  )
+
   return (
     <nav style={{ borderBottom: '1px solid #F0EBE3', backgroundColor: '#FDFAF7' }}>
       <div className="mx-auto max-w-5xl px-4 py-3 flex items-center justify-between">
@@ -48,7 +105,7 @@ export function Nav() {
           pentru<span style={{ color: '#C4956A' }}>momente</span>
         </Link>
 
-        {/* Desktop CTA links + hamburger (hidden on mobile) */}
+        {/* Desktop: CTA links + hamburger */}
         <div className="hidden sm:flex items-center gap-2">
           <Link
             href="/login"
@@ -65,91 +122,46 @@ export function Nav() {
             Creează pagina
           </Link>
 
-          {/* Hamburger — right side of desktop nav */}
-          <div className="relative ml-1" ref={menuRef}>
+          {/* Desktop hamburger + dropdown */}
+          <div className="relative ml-1" ref={desktopMenuRef}>
             <button
-              onClick={() => setMenuOpen(!menuOpen)}
+              onClick={() => setMenuOpen(v => !v)}
               className="flex flex-col justify-center items-center w-10 h-10 gap-[5px] rounded-lg transition-colors hover:bg-white"
               aria-label={menuOpen ? 'Închide meniu' : 'Deschide meniu'}
               style={{ border: '1px solid #F0EBE3' }}
             >
-              <span className="block rounded-full transition-all duration-300 ease-in-out origin-center"
-                style={{ height: 2, width: 18, backgroundColor: '#5A4030', transform: menuOpen ? 'translateY(7px) rotate(45deg)' : 'none' }} />
-              <span className="block rounded-full transition-all duration-300 ease-in-out"
-                style={{ height: 2, width: 18, backgroundColor: '#5A4030', opacity: menuOpen ? 0 : 1, transform: menuOpen ? 'scaleX(0)' : 'scaleX(1)' }} />
-              <span className="block rounded-full transition-all duration-300 ease-in-out origin-center"
-                style={{ height: 2, width: 18, backgroundColor: '#5A4030', transform: menuOpen ? 'translateY(-7px) rotate(-45deg)' : 'none' }} />
+              <HamburgerIcon size={18} thickness={2} />
             </button>
 
-            {/* Desktop pages panel */}
             {menuOpen && (
               <div
                 className="absolute top-full right-0 mt-1 rounded-xl shadow-lg overflow-hidden z-50 min-w-[220px]"
                 style={{ backgroundColor: '#FDFAF7', border: '1px solid #F0EBE3' }}
               >
-                {topLevel.length > 0 ? (
-                  topLevel.map(page => {
-                    const children = childrenOf(page.id)
-                    return (
-                      <div key={page.id}>
-                        <Link
-                          href={`/${page.slug}`}
-                          onClick={() => setMenuOpen(false)}
-                          className="flex items-center justify-between px-4 py-2.5 text-sm transition-colors hover:bg-white"
-                          style={{ color: '#2D2016', fontWeight: children.length > 0 ? 600 : 400 }}
-                        >
-                          {page.title}
-                          {children.length > 0 && (
-                            <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} style={{ color: '#C4956A' }}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                            </svg>
-                          )}
-                        </Link>
-                        {children.map(child => (
-                          <Link
-                            key={child.id}
-                            href={`/${child.slug}`}
-                            onClick={() => setMenuOpen(false)}
-                            className="flex items-center gap-2 pl-7 pr-4 py-2 text-sm transition-colors hover:bg-white"
-                            style={{ color: '#7A6652' }}
-                          >
-                            <span style={{ color: '#C4956A' }}>↳</span>
-                            {child.title}
-                          </Link>
-                        ))}
-                      </div>
-                    )
-                  })
-                ) : (
-                  <p className="px-4 py-3 text-sm" style={{ color: '#9A7B60' }}>Nicio pagină.</p>
-                )}
+                <PagesList onNavigate={() => setMenuOpen(false)} />
               </div>
             )}
           </div>
         </div>
 
-        {/* Mobile hamburger (hidden on desktop) */}
+        {/* Mobile hamburger */}
         <button
+          ref={mobileButtonRef}
           className="sm:hidden flex flex-col justify-center items-center w-10 h-10 gap-[5px] rounded-lg"
-          onClick={() => setMenuOpen(!menuOpen)}
+          onClick={() => setMenuOpen(v => !v)}
           aria-label={menuOpen ? 'Închide meniu' : 'Deschide meniu'}
         >
-          <span className="block rounded-full transition-all duration-300 ease-in-out origin-center"
-            style={{ height: 3, width: 22, backgroundColor: '#5A4030', transform: menuOpen ? 'translateY(8px) rotate(45deg)' : 'none' }} />
-          <span className="block rounded-full transition-all duration-300 ease-in-out"
-            style={{ height: 3, width: 22, backgroundColor: '#5A4030', opacity: menuOpen ? 0 : 1, transform: menuOpen ? 'scaleX(0)' : 'scaleX(1)' }} />
-          <span className="block rounded-full transition-all duration-300 ease-in-out origin-center"
-            style={{ height: 3, width: 22, backgroundColor: '#5A4030', transform: menuOpen ? 'translateY(-8px) rotate(-45deg)' : 'none' }} />
+          <HamburgerIcon size={22} thickness={3} />
         </button>
       </div>
 
       {/* Mobile dropdown */}
       <div
+        ref={mobileMenuRef}
         className="sm:hidden overflow-hidden transition-all duration-300 ease-in-out"
         style={{ maxHeight: menuOpen ? panelMaxHeight : 0, opacity: menuOpen ? 1 : 0 }}
       >
         <div className="px-4 pb-4 pt-2 space-y-2" style={{ borderTop: '1px solid #F0EBE3' }}>
-          {/* CTA links at top */}
           <Link
             href="/login"
             onClick={() => setMenuOpen(false)}
@@ -167,7 +179,6 @@ export function Nav() {
             Creează o pagină gratuită
           </Link>
 
-          {/* Dynamic pages */}
           {topLevel.length > 0 && (
             <div className="pt-1 space-y-1" style={{ borderTop: '1px solid #F0EBE3' }}>
               {topLevel.map(page => {
