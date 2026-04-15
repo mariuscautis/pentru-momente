@@ -42,7 +42,7 @@ interface AdminEvent {
   blockInfo: { reason: string | null; blockedBy: string; blockedAt: string } | null
 }
 
-type Tab = 'seo' | 'blog' | 'terms' | 'menu' | 'events'
+type Tab = 'seo' | 'blog' | 'terms' | 'cookies' | 'gdpr' | 'menu' | 'events'
 
 // ─── Design tokens ─────────────────────────────────────────────────────────────
 
@@ -148,11 +148,13 @@ export default function SuperAdminPage() {
   }
 
   const navItems: { id: Tab; label: string; icon: string }[] = [
-    { id: 'seo',    label: 'SEO',               icon: '⚙️' },
-    { id: 'blog',   label: 'Blog',              icon: '📝' },
-    { id: 'terms',  label: 'Termeni & Condiții', icon: '📋' },
-    { id: 'menu',   label: 'Meniu',             icon: '☰' },
-    { id: 'events', label: 'Statistici Donații', icon: '📊' },
+    { id: 'seo',     label: 'SEO',               icon: '⚙️' },
+    { id: 'blog',    label: 'Blog',              icon: '📝' },
+    { id: 'terms',   label: 'Termeni & Condiții', icon: '📋' },
+    { id: 'cookies', label: 'Politica Cookies',  icon: '🍪' },
+    { id: 'gdpr',    label: 'Politica GDPR',     icon: '🔒' },
+    { id: 'menu',    label: 'Meniu',             icon: '☰' },
+    { id: 'events',  label: 'Statistici Donații', icon: '📊' },
   ]
 
   return (
@@ -218,11 +220,13 @@ export default function SuperAdminPage() {
 
         <main className="flex-1 overflow-auto">
           <div className="px-4 md:px-8 py-8">
-            {tab === 'seo'    && <SeoTab />}
-            {tab === 'blog'   && <BlogTab />}
-            {tab === 'terms'  && <TermsTab />}
-            {tab === 'menu'   && <MenuTab />}
-            {tab === 'events' && <EventsTab />}
+            {tab === 'seo'     && <SeoTab />}
+            {tab === 'blog'    && <BlogTab />}
+            {tab === 'terms'   && <TermsTab />}
+            {tab === 'cookies' && <CookiesTab />}
+            {tab === 'gdpr'    && <GdprTab />}
+            {tab === 'menu'    && <MenuTab />}
+            {tab === 'events'  && <EventsTab />}
           </div>
         </main>
       </div>
@@ -596,13 +600,112 @@ function TermsTab() {
 // Suppress unused warning — TERMS_KEY is used conceptually (referenced in API)
 void TERMS_KEY
 
+// ─── Reusable legal-content editor ───────────────────────────────────────────
+
+function LegalContentTab({
+  title, description, apiPath, saveLabel,
+}: { title: string; description: string; apiPath: string; saveLabel: string }) {
+  const [content, setContent] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null)
+
+  useEffect(() => {
+    apiFetch(apiPath)
+      .then(r => r.ok ? r.json() : { content: '' })
+      .then((j: { content: string }) => { setContent(j.content ?? ''); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [apiPath])
+
+  async function save() {
+    setSaving(true); setMsg(null)
+    const res = await apiFetch(apiPath, { method: 'POST', body: JSON.stringify({ content }) })
+    if (res.ok) setMsg({ text: 'Conținutul a fost salvat.', ok: true })
+    else setMsg({ text: 'Eroare la salvare.', ok: false })
+    setSaving(false)
+  }
+
+  return (
+    <div className="max-w-3xl space-y-6">
+      <PageHeader title={title} description={description} />
+      <Card>
+        {loading ? (
+          <p className="text-sm" style={{ color: c.textSoft }}>Se încarcă...</p>
+        ) : (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: c.textMid }}>
+                Conținut (Markdown) — H2 pentru secțiuni, H3 pentru sub-secțiuni
+              </label>
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                rows={28}
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none resize-y font-mono"
+                style={{ backgroundColor: '#FAFBFF', border: `1px solid ${c.border}`, color: c.text, lineHeight: '1.6' }}
+              />
+            </div>
+            {msg && <Msg ok={msg.ok} text={msg.text} />}
+            <Btn onClick={save} loading={saving}>{saveLabel}</Btn>
+          </div>
+        )}
+      </Card>
+
+      {content && (
+        <Card>
+          <h3 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: c.textSoft }}>Previzualizare</h3>
+          <div className="space-y-5 max-h-96 overflow-y-auto pr-2">
+            {parseSections(content).map((s, i) => (
+              <div key={i}>
+                {s.h2 && <h2 className="text-base font-bold mb-2" style={{ color: c.text }}>{s.h2}</h2>}
+                {s.h3 && <h3 className="text-sm font-semibold mb-1.5" style={{ color: c.text }}>{s.h3}</h3>}
+                {s.body && (
+                  <div className="space-y-1.5">
+                    {s.body.split('\n').filter(Boolean).map((line, j) => (
+                      <p key={j} className="text-sm leading-relaxed" style={{ color: c.textMid }}>{line}</p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+    </div>
+  )
+}
+
+function CookiesTab() {
+  return (
+    <LegalContentTab
+      title="Politica de Cookies"
+      description="Conținut afișat pe pagina /politica-cookies. Suportă Markdown."
+      apiPath="/api/admin/cookies"
+      saveLabel="Salvează politica cookies"
+    />
+  )
+}
+
+function GdprTab() {
+  return (
+    <LegalContentTab
+      title="Politica GDPR"
+      description="Conținut afișat pe pagina /politica-gdpr. Suportă Markdown."
+      apiPath="/api/admin/gdpr"
+      saveLabel="Salvează politica GDPR"
+    />
+  )
+}
+
 // ─── Menu Tab (WordPress-style drag-to-order) ─────────────────────────────────
 
 // Hardcoded static pages that always exist on the site
 const STATIC_PAGES: { id: string; title: string; slug: string }[] = [
-  { id: '__despre-noi__',           title: 'Despre noi',         slug: 'despre-noi' },
-  { id: '__contact__',              title: 'Contact',            slug: 'contact' },
+  { id: '__despre-noi__',           title: 'Despre noi',          slug: 'despre-noi' },
+  { id: '__contact__',              title: 'Contact',             slug: 'contact' },
   { id: '__termeni-si-conditii__',  title: 'Termeni și Condiții', slug: 'termeni-si-conditii' },
+  { id: '__politica-cookies__',     title: 'Politica Cookies',    slug: 'politica-cookies' },
+  { id: '__politica-gdpr__',        title: 'Politica GDPR',       slug: 'politica-gdpr' },
 ]
 
 interface MenuItem {

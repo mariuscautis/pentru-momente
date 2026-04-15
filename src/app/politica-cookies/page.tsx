@@ -1,6 +1,9 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
 import { Nav } from '@/components/Nav'
+import { supabaseAdmin } from '@/lib/db/supabase'
+
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Politica de Cookies · pentrumomente.ro',
@@ -13,55 +16,48 @@ export const metadata: Metadata = {
   },
 }
 
-const sections = [
-  {
-    title: '1. Ce sunt cookie-urile?',
-    content: `Cookie-urile sunt fișiere text de mici dimensiuni stocate pe dispozitivul dumneavoastră (calculator, telefon sau tabletă) atunci când vizitați un site web. Ele permit site-ului să vă recunoască dispozitivul la vizitele ulterioare și să rețină anumite preferințe sau acțiuni efectuate anterior.`,
-  },
-  {
-    title: '2. Ce tipuri de cookie-uri folosim?',
-    subsections: [
-      {
-        subtitle: '2.1 Cookie-uri strict necesare',
-        text: `Aceste cookie-uri sunt esențiale pentru funcționarea platformei. Fără ele, serviciile pe care le-ați solicitat nu pot fi furnizate. Ele includ cookie-uri de sesiune pentru autentificarea organizatorilor și cookie-uri de securitate pentru protejarea formularelor de plată. Nu pot fi dezactivate.`,
-      },
-      {
-        subtitle: '2.2 Cookie-uri funcționale',
-        text: `Aceste cookie-uri permit platformei să rețină alegerile pe care le faceți (de exemplu, preferința de limbă sau starea sesiunii) și să ofere funcții îmbunătățite și mai personalizate. Datele colectate de aceste cookie-uri nu vă pot urmări activitatea pe alte site-uri web.`,
-      },
-      {
-        subtitle: '2.3 Cookie-uri analitice',
-        text: `Utilizăm servicii de analiză anonimă pentru a înțelege cum este folosită platforma și pentru a îmbunătăți experiența utilizatorilor. Datele colectate sunt agregate și anonimizate — nu permit identificarea dumneavoastră personală.`,
-      },
-      {
-        subtitle: '2.4 Cookie-uri de la terți',
-        text: `Stripe (procesatorul nostru de plăți) poate plasa cookie-uri tehnice în cadrul fluxului de plată, necesare pentru securitatea tranzacțiilor. Aceste cookie-uri sunt guvernate de politica de confidențialitate a Stripe.`,
-      },
-    ],
-  },
-  {
-    title: '3. Durata de stocare',
-    content: `Cookie-urile de sesiune sunt șterse automat la închiderea browserului. Cookie-urile persistente rămân pe dispozitivul dumneavoastră pentru o perioadă determinată (de regulă între 30 de zile și 12 luni), după care expiră automat sau pot fi șterse manual.`,
-  },
-  {
-    title: '4. Cum puteți gestiona cookie-urile?',
-    content: `Puteți controla și/sau șterge cookie-urile după preferință. Puteți șterge toate cookie-urile deja stocate pe computerul dumneavoastră și puteți seta majoritatea browserelor să blocheze plasarea lor. Dacă faceți acest lucru, este posibil să fie necesar să ajustați manual unele preferințe la fiecare vizită pe site, iar unele servicii și funcționalități ar putea să nu funcționeze corespunzător.\n\nPentru informații despre gestionarea cookie-urilor în browserul dumneavoastră, accesați secțiunea de ajutor a acestuia sau consultați resurse precum www.allaboutcookies.org.`,
-  },
-  {
-    title: '5. Consimțământul dumneavoastră',
-    content: `Prin continuarea utilizării platformei pentrumomente.ro după afișarea notificării privind cookie-urile, vă exprimați acordul cu privire la utilizarea cookie-urilor strict necesare și funcționale. Cookie-urile analitice sunt activate doar dacă acordați consimțământul explicit prin bannerul de cookie-uri.`,
-  },
-  {
-    title: '6. Actualizări ale politicii',
-    content: `Ne rezervăm dreptul de a actualiza această politică periodic pentru a reflecta modificările aduse practicilor noastre sau cerințelor legale. Vă recomandăm să consultați această pagină în mod regulat. Data ultimei actualizări este indicată mai jos.`,
-  },
-  {
-    title: '7. Contact',
-    content: `Pentru orice întrebări legate de utilizarea cookie-urilor pe platforma noastră, ne puteți contacta la adresa info@pentrumomente.ro.`,
-  },
-]
+async function getCookiesContent(): Promise<string> {
+  try {
+    const { data } = await supabaseAdmin
+      .from('cookies_content')
+      .select('content')
+      .eq('id', 1)
+      .single()
+    return data?.content ?? DEFAULT_COOKIES
+  } catch {
+    return DEFAULT_COOKIES
+  }
+}
 
-export default function PoliticaCookiesPage() {
+function parseSections(md: string): Array<{ h2?: string; h3?: string; body?: string }> {
+  const lines = md.split('\n')
+  const sections: Array<{ h2?: string; h3?: string; body?: string }> = []
+  let cur: { h2?: string; h3?: string; bodyLines: string[] } = { bodyLines: [] }
+  for (const line of lines) {
+    if (line.startsWith('## ')) {
+      if (cur.bodyLines.length || cur.h2 || cur.h3)
+        sections.push({ h2: cur.h2, h3: cur.h3, body: cur.bodyLines.join('\n') })
+      cur = { h2: line.replace('## ', ''), bodyLines: [] }
+    } else if (line.startsWith('### ')) {
+      if (cur.bodyLines.length) {
+        sections.push({ h2: cur.h2, h3: cur.h3, body: cur.bodyLines.join('\n') })
+        cur = { h2: cur.h2, bodyLines: [] }
+      }
+      cur.h3 = line.replace('### ', '')
+    } else if (!line.startsWith('#')) {
+      cur.bodyLines.push(line)
+    }
+  }
+  if (cur.bodyLines.length || cur.h2 || cur.h3)
+    sections.push({ h2: cur.h2, h3: cur.h3, body: cur.bodyLines.join('\n') })
+  return sections
+}
+
+export default async function PoliticaCookiesPage() {
+  const content = await getCookiesContent()
+  const sections = parseSections(content)
+  const h2Sections = sections.filter(s => s.h2)
+
   return (
     <>
       <Nav />
@@ -83,60 +79,43 @@ export default function PoliticaCookiesPage() {
           </div>
         </section>
 
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12 md:py-16">
-
-          {/* Table of contents — sticky on desktop */}
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12 md:py-16">
           <div className="grid md:grid-cols-4 gap-8">
-            <aside className="hidden md:block md:col-span-1">
-              <div className="sticky top-6 rounded-2xl p-5" style={{ backgroundColor: '#F5EDE3', border: '1px solid #EAD8C8' }}>
-                <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#9A7B60' }}>Cuprins</h3>
-                <nav className="space-y-1">
-                  {sections.map((s, i) => (
-                    <a
-                      key={i}
-                      href={`#section-${i}`}
-                      className="block text-sm py-1 transition-colors hover:underline"
-                      style={{ color: '#5A4030' }}
-                    >
-                      {s.title}
-                    </a>
-                  ))}
-                </nav>
-              </div>
-            </aside>
 
-            <article className="md:col-span-3">
-              <div
-                className="rounded-2xl p-6 md:p-10 shadow-sm"
-                style={{ backgroundColor: '#FFFFFF', border: '1px solid #F0EBE3' }}
-              >
+            {h2Sections.length > 0 && (
+              <aside className="hidden md:block md:col-span-1">
+                <div className="sticky top-6 rounded-2xl p-5" style={{ backgroundColor: '#F5EDE3', border: '1px solid #EAD8C8' }}>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#9A7B60' }}>Cuprins</h3>
+                  <nav className="space-y-1">
+                    {h2Sections.map((s, i) => (
+                      <a key={i} href={`#section-${i}`} className="block text-sm py-1 transition-colors hover:underline" style={{ color: '#5A4030' }}>
+                        {s.h2}
+                      </a>
+                    ))}
+                  </nav>
+                </div>
+              </aside>
+            )}
+
+            <article className={h2Sections.length > 0 ? 'md:col-span-3' : 'md:col-span-4'}>
+              <div className="rounded-2xl p-6 md:p-10 shadow-sm" style={{ backgroundColor: '#FFFFFF', border: '1px solid #F0EBE3' }}>
                 <p className="text-xs mb-8 pb-4" style={{ color: '#9A7B60', borderBottom: '1px solid #F0EBE3' }}>
                   Ultima actualizare: {new Date().toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </p>
 
                 <div className="space-y-8">
                   {sections.map((s, i) => (
-                    <section key={i} id={`section-${i}`}>
-                      <h2
-                        className="text-xl font-bold mb-4 pb-2"
-                        style={{ color: '#2D1A0E', borderBottom: '2px solid #F5EDE3' }}
-                      >
-                        {s.title}
-                      </h2>
-
-                      {'subsections' in s && s.subsections ? (
-                        <div className="space-y-5">
-                          {s.subsections.map((sub, j) => (
-                            <div key={j}>
-                              <h3 className="text-base font-semibold mb-2" style={{ color: '#2D1A0E' }}>{sub.subtitle}</h3>
-                              <p className="text-sm leading-relaxed" style={{ color: '#5A4030' }}>{sub.text}</p>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
+                    <section key={i} id={s.h2 ? `section-${h2Sections.indexOf(s)}` : undefined}>
+                      {s.h2 && (
+                        <h2 className="text-xl font-bold mb-4 pb-2" style={{ color: '#2D1A0E', borderBottom: '2px solid #F5EDE3' }}>
+                          {s.h2}
+                        </h2>
+                      )}
+                      {s.h3 && <h3 className="text-base font-semibold mb-3 mt-5" style={{ color: '#2D1A0E' }}>{s.h3}</h3>}
+                      {s.body && (
                         <div className="space-y-3">
-                          {(s.content ?? '').split('\n\n').map((para, j) => (
-                            <p key={j} className="text-sm leading-relaxed" style={{ color: '#5A4030' }}>{para}</p>
+                          {s.body.split('\n').filter(line => line.trim()).map((line, j) => (
+                            <p key={j} className="text-sm leading-relaxed" style={{ color: '#5A4030' }}>{line}</p>
                           ))}
                         </div>
                       )}
@@ -168,3 +147,46 @@ export default function PoliticaCookiesPage() {
     </>
   )
 }
+
+const DEFAULT_COOKIES = `## 1. Ce sunt cookie-urile?
+
+Cookie-urile sunt fișiere text de mici dimensiuni stocate pe dispozitivul dumneavoastră atunci când vizitați un site web. Ele permit site-ului să vă recunoască dispozitivul la vizitele ulterioare și să rețină anumite preferințe sau acțiuni efectuate anterior.
+
+## 2. Ce tipuri de cookie-uri folosim?
+
+### 2.1 Cookie-uri strict necesare
+
+Aceste cookie-uri sunt esențiale pentru funcționarea platformei. Fără ele, serviciile solicitate nu pot fi furnizate. Includ cookie-uri de sesiune pentru autentificarea organizatorilor și cookie-uri de securitate pentru protejarea formularelor de plată. Nu pot fi dezactivate.
+
+### 2.2 Cookie-uri funcționale
+
+Permit platformei să rețină alegerile dumneavoastră și să ofere funcții îmbunătățite. Datele colectate nu vă pot urmări activitatea pe alte site-uri.
+
+### 2.3 Cookie-uri analitice
+
+Utilizăm servicii de analiză anonimă pentru a îmbunătăți experiența utilizatorilor. Datele sunt agregate și anonimizate — nu permit identificarea personală.
+
+### 2.4 Cookie-uri de la terți
+
+Stripe (procesatorul de plăți) poate plasa cookie-uri tehnice în cadrul fluxului de plată, necesare pentru securitatea tranzacțiilor. Acestea sunt guvernate de politica de confidențialitate a Stripe.
+
+## 3. Durata de stocare
+
+Cookie-urile de sesiune sunt șterse automat la închiderea browserului. Cookie-urile persistente rămân pe dispozitiv pentru o perioadă determinată (30 de zile – 12 luni), după care expiră automat sau pot fi șterse manual.
+
+## 4. Cum puteți gestiona cookie-urile?
+
+Puteți controla și/sau șterge cookie-urile după preferință din setările browserului dumneavoastră. Rețineți că dezactivarea unor cookie-uri poate afecta funcționalitatea platformei.
+
+## 5. Consimțământul dumneavoastră
+
+Prin continuarea utilizării platformei pentrumomente.ro, vă exprimați acordul cu privire la utilizarea cookie-urilor strict necesare și funcționale. Cookie-urile analitice sunt activate doar cu consimțământul explicit.
+
+## 6. Actualizări ale politicii
+
+Ne rezervăm dreptul de a actualiza această politică periodic. Vă recomandăm să consultați această pagină în mod regulat.
+
+## 7. Contact
+
+Pentru orice întrebări legate de utilizarea cookie-urilor, ne puteți contacta la info@pentrumomente.ro.
+`

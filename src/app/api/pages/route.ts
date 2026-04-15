@@ -9,6 +9,8 @@ const STATIC_FALLBACK = [
   { id: '__despre-noi__',          title: 'Despre noi',          slug: 'despre-noi',          parentId: null, menuPosition: 10 },
   { id: '__contact__',             title: 'Contact',             slug: 'contact',             parentId: null, menuPosition: 20 },
   { id: '__termeni-si-conditii__', title: 'Termeni și Condiții', slug: 'termeni-si-conditii', parentId: null, menuPosition: 30 },
+  { id: '__politica-cookies__',    title: 'Politica Cookies',    slug: 'politica-cookies',    parentId: null, menuPosition: 40 },
+  { id: '__politica-gdpr__',       title: 'Politica GDPR',       slug: 'politica-gdpr',       parentId: null, menuPosition: 50 },
 ]
 
 export async function GET(): Promise<NextResponse> {

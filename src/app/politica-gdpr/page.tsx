@@ -1,6 +1,9 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
 import { Nav } from '@/components/Nav'
+import { supabaseAdmin } from '@/lib/db/supabase'
+
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Politica GDPR · pentrumomente.ro',
@@ -13,84 +16,48 @@ export const metadata: Metadata = {
   },
 }
 
-const sections = [
-  {
-    title: '1. Operatorul de date',
-    content: `Operatorul de date cu caracter personal este pentrumomente.ro, platformă online de strângere de fonduri pentru evenimente de viață, cu sediul în România. Ne puteți contacta la adresa info@pentrumomente.ro pentru orice solicitare legată de prelucrarea datelor dumneavoastră.`,
-  },
-  {
-    title: '2. Ce date colectăm?',
-    subsections: [
-      {
-        subtitle: '2.1 Date furnizate de organizatori',
-        text: `La crearea unui cont de organizator, colectăm: adresa de e-mail, numele și prenumele, codul IBAN al contului bancar destinat încasărilor. Aceste date sunt necesare pentru furnizarea serviciului și efectuarea plăților.`,
-      },
-      {
-        subtitle: '2.2 Date furnizate de donatori',
-        text: `Donatorii pot dona fără a-și crea un cont. La efectuarea unei donații, colectăm: numele afișat (opțional, dacă donatorul alege să fie vizibil), mesajul personal (opțional), suma donată, datele de plată procesate de Stripe (pentrumomente.ro nu stochează date de card — acestea sunt gestionate exclusiv de Stripe, certificat PCI DSS Level 1).`,
-      },
-      {
-        subtitle: '2.3 Date tehnice',
-        text: `Ca orice platformă web, colectăm în mod automat date tehnice anonimizate: adresa IP (anonimizată), tipul browserului și sistemul de operare, paginile vizitate și durata sesiunii. Aceste date sunt folosite exclusiv pentru securitate și analiză agregată.`,
-      },
-    ],
-  },
-  {
-    title: '3. Scopul și temeiul prelucrării',
-    subsections: [
-      {
-        subtitle: '3.1 Executarea contractului',
-        text: `Prelucrăm datele organizatorilor pentru a furniza serviciul de creare și gestionare a paginilor de strângere de fonduri, inclusiv pentru efectuarea transferurilor bancare prin Wise Business. Temeiul legal este executarea contractului (Art. 6(1)(b) GDPR).`,
-      },
-      {
-        subtitle: '3.2 Obligații legale',
-        text: `Păstrăm datele tranzacționale (donații, transferuri) pentru o perioadă de 5 ani, conform obligațiilor fiscale și contabile prevăzute de legislația română. Temeiul legal este respectarea unei obligații legale (Art. 6(1)(c) GDPR).`,
-      },
-      {
-        subtitle: '3.3 Interesul legitim',
-        text: `Prelucrăm date tehnice anonimizate în scopul securizării platformei și prevenirii fraudelor. Temeiul legal este interesul legitim (Art. 6(1)(f) GDPR).`,
-      },
-      {
-        subtitle: '3.4 Consimțământul',
-        text: `Trimiterea de comunicări de marketing (dacă este cazul) se face exclusiv pe baza consimțământului explicit al utilizatorului, care poate fi retras oricând. Temeiul legal este consimțământul (Art. 6(1)(a) GDPR).`,
-      },
-    ],
-  },
-  {
-    title: '4. Cine are acces la datele dumneavoastră?',
-    content: `Datele dumneavoastră nu sunt vândute sau închiriate unor terți. Le partajăm doar cu furnizorii de servicii strict necesari operării platformei:\n\n• Stripe Inc. — procesarea plăților cu cardul (certificat PCI DSS Level 1, sediu în UE/EEA)\n• Wise Europe SA — transferuri bancare internaționale și naționale (instituție de plată autorizată de Banca Centrală a Belgiei)\n• Brevo (Sendinblue) — trimiterea e-mailurilor tranzacționale (date stocate în UE)\n• Supabase Inc. — stocarea datelor (servere în UE)\n• Vercel Inc. — găzduirea aplicației (servere în UE)\n\nToți furnizorii sunt legați prin acorduri de prelucrare a datelor (DPA) conforme GDPR.`,
-  },
-  {
-    title: '5. Transferuri internaționale de date',
-    content: `Datele sunt stocate și prelucrate în principal pe servere situate în Uniunea Europeană. Acolo unde este necesar un transfer în afara UE/EEA (de exemplu, anumite servicii cloud), ne asigurăm că sunt implementate garanții adecvate conform GDPR, inclusiv Clauzele Contractuale Standard (SCC) aprobate de Comisia Europeană.`,
-  },
-  {
-    title: '6. Cât timp păstrăm datele?',
-    content: `• Datele contului de organizator: pe durata activității contului + 30 de zile după ștergere\n• Datele tranzacționale (donații, transferuri): 5 ani, conform obligațiilor fiscale\n• Datele tehnice anonimizate: maximum 12 luni\n• Datele donatorilor care nu au cont: păstrate în legătură cu donația timp de 5 ani\n\nDupă expirarea perioadelor de retenție, datele sunt șterse sau anonimizate definitiv.`,
-  },
-  {
-    title: '7. Drepturile dumneavoastră',
-    content: `Conform GDPR, beneficiați de următoarele drepturi:\n\n• Dreptul de acces — puteți solicita o copie a datelor pe care le deținem despre dumneavoastră\n• Dreptul la rectificare — puteți solicita corectarea datelor inexacte\n• Dreptul la ștergere (dreptul de a fi uitat) — puteți solicita ștergerea datelor, în limitele obligațiilor legale\n• Dreptul la restricționarea prelucrării — puteți solicita suspendarea prelucrării datelor în anumite circumstanțe\n• Dreptul la portabilitatea datelor — puteți primi datele furnizate de dumneavoastră în format structurat, lizibil automat\n• Dreptul la opoziție — puteți obiecta față de prelucrarea bazată pe interes legitim\n• Dreptul de a retrage consimțământul — oricând, fără a afecta legalitatea prelucrării anterioare\n\nPentru exercitarea oricăruia dintre aceste drepturi, ne contactați la info@pentrumomente.ro. Vom răspunde în termen de 30 de zile calendaristice.`,
-  },
-  {
-    title: '8. Dreptul de a depune o plângere',
-    content: `Dacă considerați că prelucrarea datelor dumneavoastră încalcă GDPR, aveți dreptul de a depune o plângere la Autoritatea Națională de Supraveghere a Prelucrării Datelor cu Caracter Personal (ANSPDCP), cu sediul în București, str. Olari nr. 32, sector 2. www.dataprotection.ro`,
-  },
-  {
-    title: '9. Securitatea datelor',
-    content: `Implementăm măsuri tehnice și organizatorice adecvate pentru protejarea datelor dumneavoastră împotriva accesului neautorizat, pierderii sau distrugerii: conexiuni criptate HTTPS (TLS 1.2+), acces bazat pe roluri cu autentificare cu doi factori pentru administratori, jurnale de audit pentru accesul la date sensibile, izolarea datelor de plată prin delegarea exclusivă către Stripe.`,
-  },
-  {
-    title: '10. Modificări ale politicii',
-    content: `Ne rezervăm dreptul de a actualiza această politică pentru a reflecta modificări legislative sau schimbări ale practicilor noastre. Vă vom notifica prin e-mail în cazul unor modificări semnificative. Continuarea utilizării platformei după notificare constituie acceptarea noii politici.`,
-  },
-  {
-    title: '11. Contact',
-    content: `Pentru orice întrebări sau solicitări privind prelucrarea datelor cu caracter personal:\n\ne-mail: info@pentrumomente.ro\nRăspuns garantat în maximum 30 de zile calendaristice.`,
-  },
-]
+async function getGdprContent(): Promise<string> {
+  try {
+    const { data } = await supabaseAdmin
+      .from('gdpr_content')
+      .select('content')
+      .eq('id', 1)
+      .single()
+    return data?.content ?? DEFAULT_GDPR
+  } catch {
+    return DEFAULT_GDPR
+  }
+}
 
-export default function PoliticaGDPRPage() {
+function parseSections(md: string): Array<{ h2?: string; h3?: string; body?: string }> {
+  const lines = md.split('\n')
+  const sections: Array<{ h2?: string; h3?: string; body?: string }> = []
+  let cur: { h2?: string; h3?: string; bodyLines: string[] } = { bodyLines: [] }
+  for (const line of lines) {
+    if (line.startsWith('## ')) {
+      if (cur.bodyLines.length || cur.h2 || cur.h3)
+        sections.push({ h2: cur.h2, h3: cur.h3, body: cur.bodyLines.join('\n') })
+      cur = { h2: line.replace('## ', ''), bodyLines: [] }
+    } else if (line.startsWith('### ')) {
+      if (cur.bodyLines.length) {
+        sections.push({ h2: cur.h2, h3: cur.h3, body: cur.bodyLines.join('\n') })
+        cur = { h2: cur.h2, bodyLines: [] }
+      }
+      cur.h3 = line.replace('### ', '')
+    } else if (!line.startsWith('#')) {
+      cur.bodyLines.push(line)
+    }
+  }
+  if (cur.bodyLines.length || cur.h2 || cur.h3)
+    sections.push({ h2: cur.h2, h3: cur.h3, body: cur.bodyLines.join('\n') })
+  return sections
+}
+
+export default async function PoliticaGDPRPage() {
+  const content = await getGdprContent()
+  const sections = parseSections(content)
+  const h2Sections = sections.filter(s => s.h2)
+
   return (
     <>
       <Nav />
@@ -115,58 +82,40 @@ export default function PoliticaGDPRPage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12 md:py-16">
           <div className="grid md:grid-cols-4 gap-8">
 
-            {/* Table of contents */}
-            <aside className="hidden md:block md:col-span-1">
-              <div className="sticky top-6 rounded-2xl p-5" style={{ backgroundColor: '#F5EDE3', border: '1px solid #EAD8C8' }}>
-                <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#9A7B60' }}>Cuprins</h3>
-                <nav className="space-y-1">
-                  {sections.map((s, i) => (
-                    <a
-                      key={i}
-                      href={`#section-${i}`}
-                      className="block text-sm py-1 transition-colors hover:underline"
-                      style={{ color: '#5A4030' }}
-                    >
-                      {s.title}
-                    </a>
-                  ))}
-                </nav>
-              </div>
-            </aside>
+            {h2Sections.length > 0 && (
+              <aside className="hidden md:block md:col-span-1">
+                <div className="sticky top-6 rounded-2xl p-5" style={{ backgroundColor: '#F5EDE3', border: '1px solid #EAD8C8' }}>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#9A7B60' }}>Cuprins</h3>
+                  <nav className="space-y-1">
+                    {h2Sections.map((s, i) => (
+                      <a key={i} href={`#section-${i}`} className="block text-sm py-1 transition-colors hover:underline" style={{ color: '#5A4030' }}>
+                        {s.h2}
+                      </a>
+                    ))}
+                  </nav>
+                </div>
+              </aside>
+            )}
 
-            {/* Content */}
-            <article className="md:col-span-3">
-              <div
-                className="rounded-2xl p-6 md:p-10 shadow-sm"
-                style={{ backgroundColor: '#FFFFFF', border: '1px solid #F0EBE3' }}
-              >
+            <article className={h2Sections.length > 0 ? 'md:col-span-3' : 'md:col-span-4'}>
+              <div className="rounded-2xl p-6 md:p-10 shadow-sm" style={{ backgroundColor: '#FFFFFF', border: '1px solid #F0EBE3' }}>
                 <p className="text-xs mb-8 pb-4" style={{ color: '#9A7B60', borderBottom: '1px solid #F0EBE3' }}>
                   Ultima actualizare: {new Date().toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </p>
 
                 <div className="space-y-8">
                   {sections.map((s, i) => (
-                    <section key={i} id={`section-${i}`}>
-                      <h2
-                        className="text-xl font-bold mb-4 pb-2"
-                        style={{ color: '#2D1A0E', borderBottom: '2px solid #F5EDE3' }}
-                      >
-                        {s.title}
-                      </h2>
-
-                      {'subsections' in s && s.subsections ? (
-                        <div className="space-y-5">
-                          {s.subsections.map((sub, j) => (
-                            <div key={j}>
-                              <h3 className="text-base font-semibold mb-2" style={{ color: '#2D1A0E' }}>{sub.subtitle}</h3>
-                              <p className="text-sm leading-relaxed" style={{ color: '#5A4030' }}>{sub.text}</p>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
+                    <section key={i} id={s.h2 ? `section-${h2Sections.indexOf(s)}` : undefined}>
+                      {s.h2 && (
+                        <h2 className="text-xl font-bold mb-4 pb-2" style={{ color: '#2D1A0E', borderBottom: '2px solid #F5EDE3' }}>
+                          {s.h2}
+                        </h2>
+                      )}
+                      {s.h3 && <h3 className="text-base font-semibold mb-3 mt-5" style={{ color: '#2D1A0E' }}>{s.h3}</h3>}
+                      {s.body && (
                         <div className="space-y-3">
-                          {(s.content ?? '').split('\n\n').map((para, j) => (
-                            <p key={j} className="text-sm leading-relaxed whitespace-pre-line" style={{ color: '#5A4030' }}>{para}</p>
+                          {s.body.split('\n').filter(line => line.trim()).map((line, j) => (
+                            <p key={j} className="text-sm leading-relaxed" style={{ color: '#5A4030' }}>{line}</p>
                           ))}
                         </div>
                       )}
@@ -198,3 +147,68 @@ export default function PoliticaGDPRPage() {
     </>
   )
 }
+
+const DEFAULT_GDPR = `## 1. Operatorul de date
+
+Operatorul de date cu caracter personal este pentrumomente.ro, platformă online de strângere de fonduri pentru evenimente de viață, cu sediul în România. Ne puteți contacta la info@pentrumomente.ro.
+
+## 2. Ce date colectăm?
+
+### 2.1 Date furnizate de organizatori
+
+La crearea unui cont, colectăm: adresa de e-mail, numele și prenumele, codul IBAN al contului bancar destinat încasărilor.
+
+### 2.2 Date furnizate de donatori
+
+Donatorii pot dona fără a-și crea un cont. Colectăm: numele afișat (opțional), mesajul personal (opțional), suma donată. Datele de card sunt gestionate exclusiv de Stripe (certificat PCI DSS Level 1) — pentrumomente.ro nu stochează date de card.
+
+### 2.3 Date tehnice
+
+Colectăm date tehnice anonimizate: adresa IP (anonimizată), tipul browserului, paginile vizitate și durata sesiunii. Acestea sunt folosite exclusiv pentru securitate și analiză agregată.
+
+## 3. Scopul și temeiul prelucrării
+
+### 3.1 Executarea contractului
+
+Prelucrăm datele organizatorilor pentru furnizarea serviciului, inclusiv transferurile bancare prin Wise Business. Temei legal: Art. 6(1)(b) GDPR.
+
+### 3.2 Obligații legale
+
+Păstrăm datele tranzacționale 5 ani, conform obligațiilor fiscale. Temei legal: Art. 6(1)(c) GDPR.
+
+### 3.3 Interesul legitim
+
+Prelucrăm date tehnice anonimizate pentru securizarea platformei și prevenirea fraudelor. Temei legal: Art. 6(1)(f) GDPR.
+
+## 4. Cine are acces la datele dumneavoastră?
+
+Datele nu sunt vândute sau închiriate. Le partajăm doar cu furnizorii strict necesari: Stripe Inc. (procesarea plăților), Wise Europe SA (transferuri bancare), Brevo (e-mailuri tranzacționale), Supabase Inc. (stocarea datelor), Vercel Inc. (găzduire). Toți furnizorii sunt legați prin acorduri DPA conforme GDPR.
+
+## 5. Transferuri internaționale de date
+
+Datele sunt stocate în principal în UE. Acolo unde este necesar un transfer în afara UE/EEA, implementăm Clauzele Contractuale Standard (SCC) aprobate de Comisia Europeană.
+
+## 6. Cât timp păstrăm datele?
+
+Datele contului de organizator: pe durata activității + 30 de zile după ștergere. Datele tranzacționale: 5 ani. Datele tehnice anonimizate: maximum 12 luni.
+
+## 7. Drepturile dumneavoastră
+
+Conform GDPR, beneficiați de: dreptul de acces, dreptul la rectificare, dreptul la ștergere, dreptul la restricționarea prelucrării, dreptul la portabilitatea datelor, dreptul la opoziție și dreptul de a retrage consimțământul. Pentru exercitarea acestor drepturi, contactați-ne la info@pentrumomente.ro. Vom răspunde în termen de 30 de zile.
+
+## 8. Dreptul de a depune o plângere
+
+Puteți depune o plângere la Autoritatea Națională de Supraveghere a Prelucrării Datelor cu Caracter Personal (ANSPDCP), str. Olari nr. 32, sector 2, București. www.dataprotection.ro
+
+## 9. Securitatea datelor
+
+Implementăm: conexiuni criptate HTTPS (TLS 1.2+), acces bazat pe roluri cu autentificare în doi factori pentru administratori, jurnale de audit și izolarea datelor de plată prin delegarea exclusivă către Stripe.
+
+## 10. Modificări ale politicii
+
+Ne rezervăm dreptul de a actualiza această politică. Veți fi notificați prin e-mail în cazul unor modificări semnificative.
+
+## 11. Contact
+
+e-mail: info@pentrumomente.ro. Răspuns garantat în maximum 30 de zile calendaristice.
+`
