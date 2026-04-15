@@ -22,6 +22,7 @@ export interface DonationState {
   // General fund amount when no items selected
   amount: number
   tipAmount: number
+  stripeFee: number      // Stripe processing fee passed through to donor
   displayName: string
   message: string
   isAnonymous: boolean
@@ -51,6 +52,7 @@ export function DonationFlow({ event, items, config, initialCart, onClose }: Don
     selectedItems: initialCart ?? [],
     amount: 100,
     tipAmount: 20,
+    stripeFee: 0,
     displayName: '',
     message: '',
     isAnonymous: config.donationVisibilityDefault === 'hidden',

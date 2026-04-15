@@ -4,6 +4,13 @@ import { Dispatch, SetStateAction, useState } from 'react'
 import { EventTypeConfig } from '@/types'
 import { DonationState, totalDonationAmount } from './DonationFlow'
 
+// Mirror of the server-side formula in src/lib/payments/stripe.ts
+function estimateStripeFee(donationRon: number, tipRon: number): number {
+  const base = donationRon + tipRon
+  const raw = base * 0.015 + 1.25
+  return Math.ceil(raw * 2) / 2
+}
+
 const QUICK_PCTS = [1, 2, 3, 5]
 
 interface StepTipProps {
@@ -55,7 +62,8 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
   }
 
   const tipRon = ronFromPct(pct)
-  const total = donationTotal + tipRon
+  const stripeFeeEstimate = estimateStripeFee(donationTotal, tipRon)
+  const total = donationTotal + tipRon + stripeFeeEstimate
 
   return (
     <div className="space-y-6">
@@ -141,13 +149,20 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
           <span>Contribuție platformă ({pct}%)</span>
           <span className="font-medium">{tipRon} Lei</span>
         </div>
+        <div className="flex justify-between text-sm" style={{ color: '#7A6652' }}>
+          <span>Comision procesare card</span>
+          <span className="font-medium">~{stripeFeeEstimate} Lei</span>
+        </div>
         <div
           className="flex justify-between text-sm font-bold pt-2"
           style={{ borderTop: '1px solid #EDE0D0', color: '#2D2016' }}
         >
           <span>Total de plătit</span>
-          <span>{total} Lei</span>
+          <span>~{total} Lei</span>
         </div>
+        <p className="text-xs pt-1" style={{ color: '#B09070' }}>
+          Familia primește {donationTotal} Lei, minus taxa de transfer Wise (~1–2 Lei).
+        </p>
       </div>
 
       <div className="flex gap-3 pt-1">

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createPaymentIntent } from '@/lib/payments/stripe'
+import { createPaymentIntent, calculateStripeFee } from '@/lib/payments/stripe'
 import { createDonation } from '@/lib/db/donations'
 import { getEventBySlug } from '@/lib/db/events'
 import { isValidEventType } from '@/config/event-types'
@@ -58,12 +58,16 @@ async function handlePost(req: NextRequest): Promise<NextResponse> {
 
   const selectedItems = body.selectedItems ?? []
 
-  // One payment intent for the full total
+  const tipAmount = body.tipAmount ?? 0
+  const stripeFee = calculateStripeFee(body.amount, tipAmount)
+
+  // One payment intent for the full total (donation + tip + Stripe fee)
   let paymentIntent
   try {
     paymentIntent = await createPaymentIntent({
       amountRon: body.amount,
-      tipAmountRon: body.tipAmount ?? 0,
+      tipAmountRon: tipAmount,
+      stripeFeeRon: stripeFee,
       eventId: event.id,
       itemId: selectedItems.length === 1 ? selectedItems[0].itemId : undefined,
       displayName: body.displayName,
@@ -110,5 +114,6 @@ async function handlePost(req: NextRequest): Promise<NextResponse> {
   return NextResponse.json({
     clientSecret: paymentIntent.client_secret,
     paymentIntentId: paymentIntent.id,
+    stripeFee,
   })
 }

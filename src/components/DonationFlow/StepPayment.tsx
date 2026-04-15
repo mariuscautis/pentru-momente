@@ -51,9 +51,9 @@ export function StepPayment({ state, setState, event, config, onBack, onSuccess 
           }),
         })
 
-        let data: { clientSecret?: string; error?: string }
+        let data: { clientSecret?: string; error?: string; stripeFee?: number }
         try {
-          data = (await res.json()) as { clientSecret?: string; error?: string }
+          data = (await res.json()) as { clientSecret?: string; error?: string; stripeFee?: number }
         } catch {
           setError(`Eroare server (${res.status}). Încearcă din nou.`)
           return
@@ -64,7 +64,7 @@ export function StepPayment({ state, setState, event, config, onBack, onSuccess 
           return
         }
 
-        setState((prev) => ({ ...prev, clientSecret: data.clientSecret }))
+        setState((prev) => ({ ...prev, clientSecret: data.clientSecret, stripeFee: data.stripeFee ?? 0 }))
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Eroare de rețea. Încearcă din nou.')
       } finally {
@@ -114,6 +114,7 @@ export function StepPayment({ state, setState, event, config, onBack, onSuccess 
         config={config}
         amount={totalDonationAmount(state)}
         tipAmount={state.tipAmount}
+        stripeFee={state.stripeFee}
         onBack={onBack}
         onSuccess={onSuccess}
       />
@@ -125,11 +126,12 @@ interface CheckoutFormProps {
   config: EventTypeConfig
   amount: number
   tipAmount: number
+  stripeFee: number
   onBack: () => void
   onSuccess: () => void
 }
 
-function CheckoutForm({ config, amount, tipAmount, onBack, onSuccess }: CheckoutFormProps) {
+function CheckoutForm({ config, amount, tipAmount, stripeFee, onBack, onSuccess }: CheckoutFormProps) {
   const stripe = useStripe()
   const elements = useElements()
   const [submitting, setSubmitting] = useState(false)
@@ -156,23 +158,35 @@ function CheckoutForm({ config, amount, tipAmount, onBack, onSuccess }: Checkout
     onSuccess()
   }
 
+  const grandTotal = amount + tipAmount + stripeFee
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="rounded-lg bg-gray-50 p-3 text-sm">
-        <div className="flex justify-between">
-          <span className="text-gray-600">Donație</span>
+      <div className="rounded-xl p-4 space-y-2" style={{ backgroundColor: '#F5EDE3' }}>
+        <div className="flex justify-between text-sm" style={{ color: '#7A6652' }}>
+          <span>Donație</span>
           <span className="font-medium">{amount} RON</span>
         </div>
         {tipAmount > 0 && (
-          <div className="flex justify-between mt-1">
-            <span className="text-gray-600">Platformă</span>
+          <div className="flex justify-between text-sm" style={{ color: '#7A6652' }}>
+            <span>Contribuție platformă</span>
             <span className="font-medium">{tipAmount} RON</span>
           </div>
         )}
-        <div className="flex justify-between mt-2 pt-2 border-t border-gray-200 font-semibold">
-          <span>Total</span>
-          <span>{amount + tipAmount} RON</span>
+        <div className="flex justify-between text-sm" style={{ color: '#7A6652' }}>
+          <span>Comision procesare card (Stripe)</span>
+          <span className="font-medium">{stripeFee} RON</span>
         </div>
+        <div
+          className="flex justify-between text-sm font-bold pt-2"
+          style={{ borderTop: '1px solid #EDE0D0', color: '#2D2016' }}
+        >
+          <span>Total de plătit</span>
+          <span>{grandTotal} RON</span>
+        </div>
+        <p className="text-xs pt-1" style={{ color: '#B09070' }}>
+          Familia primește {amount} RON, minus taxa de transfer Wise (~1–2 RON).
+        </p>
       </div>
 
       <PaymentElement />
@@ -190,7 +204,7 @@ function CheckoutForm({ config, amount, tipAmount, onBack, onSuccess }: Checkout
           className="flex-grow"
           style={{ backgroundColor: config.palette.primary }}
         >
-          Plătește {amount + tipAmount} RON
+          Plătește {grandTotal} RON
         </Button>
       </div>
     </form>
