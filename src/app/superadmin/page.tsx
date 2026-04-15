@@ -708,6 +708,7 @@ const ALL_STATIC_PAGES: { id: string; title: string; slug: string }[] = [
   { id: '__termeni-si-conditii__',  title: 'Termeni și Condiții', slug: 'termeni-si-conditii' },
   { id: '__politica-cookies__',     title: 'Politica Cookies',    slug: 'politica-cookies' },
   { id: '__politica-gdpr__',        title: 'Politica GDPR',       slug: 'politica-gdpr' },
+  { id: '__stergere-date__',        title: 'Ștergere Date',        slug: 'stergere-date' },
 ]
 
 interface MenuItem {
