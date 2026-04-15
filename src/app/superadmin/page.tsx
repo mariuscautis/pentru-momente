@@ -699,10 +699,12 @@ function GdprTab() {
 
 // ─── Menu Tab (WordPress-style drag-to-order) ─────────────────────────────────
 
-// Hardcoded static pages that always exist on the site
-const STATIC_PAGES: { id: string; title: string; slug: string }[] = [
+// All known static pages (hardcoded Next.js routes). Shown in the library
+// so the admin can pick which ones appear in the nav menu.
+const ALL_STATIC_PAGES: { id: string; title: string; slug: string }[] = [
   { id: '__despre-noi__',           title: 'Despre noi',          slug: 'despre-noi' },
   { id: '__contact__',              title: 'Contact',             slug: 'contact' },
+  { id: '__blog__',                 title: 'Blog',                slug: 'blogs' },
   { id: '__termeni-si-conditii__',  title: 'Termeni și Condiții', slug: 'termeni-si-conditii' },
   { id: '__politica-cookies__',     title: 'Politica Cookies',    slug: 'politica-cookies' },
   { id: '__politica-gdpr__',        title: 'Politica GDPR',       slug: 'politica-gdpr' },
@@ -714,46 +716,72 @@ interface MenuItem {
   slug: string
   menuPosition: number
   parentId: string | null
-  isStatic: boolean   // hardcoded pages — no DB, cannot be deleted
+  isStatic: boolean
 }
 
 function MenuTab() {
-  const [items, setItems] = useState<MenuItem[]>([])
+  const [items, setItems] = useState<MenuItem[]>([])       // items IN the menu
+  const [dbPages, setDbPages] = useState<{ id: string; title: string; slug: string }[]>([])  // extra DB pages
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null)
   const dragItem = useRef<number | null>(null)
   const dragOver = useRef<number | null>(null)
 
   const load = useCallback(async () => {
-    // Fetch saved menu order from DB (site_pages stores position/parent for static pages too)
-    const res = await apiFetch('/api/admin/menu')
-    type DbItem = { id: string; title: string; slug: string; menuPosition: number; parentId: string | null }
-    const dbItems: DbItem[] =
-      res.ok ? ((await res.json()) as { items: DbItem[] }).items ?? [] : []
+    const [menuRes, pagesRes] = await Promise.all([
+      apiFetch('/api/admin/menu'),
+      apiFetch('/api/admin/pages'),
+    ])
 
-    // Merge: static pages always present; use saved position/parent if available
-    const merged: MenuItem[] = STATIC_PAGES.map((sp, i) => {
-      const saved = dbItems.find(d => d.id === sp.id)
+    type DbItem = { id: string; title: string; slug: string; menuPosition: number; parentId: string | null }
+    const savedItems: DbItem[] = menuRes.ok ? ((await menuRes.json()) as { items: DbItem[] }).items ?? [] : []
+
+    type PageRow = { id: string; title: string; slug: string }
+    const allDbPages: PageRow[] = pagesRes.ok ? ((await pagesRes.json()) as { pages: PageRow[] }).pages ?? [] : []
+    setDbPages(allDbPages)
+
+    // Rebuild menu: only pages that were explicitly saved in menu_items
+    const menuItems: MenuItem[] = savedItems.map((d, idx) => {
+      const isStatic = ALL_STATIC_PAGES.some(sp => sp.id === d.id)
       return {
-        id: sp.id, title: sp.title, slug: sp.slug,
-        menuPosition: saved?.menuPosition ?? (i + 1) * 10,
-        parentId: saved?.parentId ?? null,
-        isStatic: true,
+        id: d.id, title: d.title, slug: d.slug,
+        menuPosition: d.menuPosition ?? (idx + 1) * 10,
+        parentId: d.parentId,
+        isStatic,
       }
     })
 
-    // Add any extra DB-only pages
-    for (const d of dbItems) {
-      if (!merged.find(m => m.id === d.id)) {
-        merged.push({ ...d, isStatic: false })
-      }
-    }
-
-    merged.sort((a, b) => a.menuPosition - b.menuPosition)
-    setItems(merged)
+    menuItems.sort((a, b) => a.menuPosition - b.menuPosition)
+    setItems(menuItems)
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  // Pages available in the library (not yet added to the menu)
+  const inMenuIds = new Set(items.map(i => i.id))
+
+  const libraryPages: { id: string; title: string; slug: string; isStatic: boolean }[] = [
+    // Static pages not in menu
+    ...ALL_STATIC_PAGES
+      .filter(sp => !inMenuIds.has(sp.id))
+      .map(sp => ({ ...sp, isStatic: true })),
+    // DB-created pages not in menu
+    ...dbPages
+      .filter(p => !inMenuIds.has(p.id) && !ALL_STATIC_PAGES.some(sp => sp.id === p.id))
+      .map(p => ({ ...p, isStatic: false })),
+  ]
+
+  function addToMenu(page: { id: string; title: string; slug: string; isStatic: boolean }) {
+    const maxPos = items.reduce((m, i) => Math.max(m, i.menuPosition), 0)
+    setItems(prev => [...prev, {
+      id: page.id, title: page.title, slug: page.slug,
+      menuPosition: maxPos + 10, parentId: null, isStatic: page.isStatic,
+    }])
+  }
+
+  function removeFromMenu(id: string) {
+    setItems(prev => prev.filter(i => i.id !== id))
+  }
 
   const topLevel = items.filter(i => !i.parentId)
   const childrenOf = (id: string) => items.filter(i => i.parentId === id)
@@ -810,87 +838,159 @@ function MenuTab() {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <PageHeader title="Meniu Site" description="Trage elementele pentru a reordona. Setează pagina părinte din dropdown." />
+      <PageHeader
+        title="Meniu Site"
+        description="Adaugă pagini din bibliotecă, trage pentru a reordona, setează ierarhia din dropdown."
+      />
 
+      {/* Active menu */}
       <Card>
-        <p className="text-xs mb-4" style={{ color: c.textSoft }}>
-          Paginile statice (Despre noi, Contact, Termeni) sunt întotdeauna prezente. Trage pentru a reordona.
+        <p className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: c.textSoft }}>
+          Pagini active în meniu ({flat.length})
         </p>
 
-        <div className="space-y-1.5">
-          {flat.map((item, idx) => (
-            <div
-              key={item.id}
-              draggable
-              onDragStart={() => handleDragStart(idx)}
-              onDragEnter={() => handleDragEnter(idx)}
-              onDragEnd={handleDrop}
-              onDragOver={(e) => e.preventDefault()}
-              className="flex items-center gap-3 px-3 py-3 rounded-xl cursor-grab active:cursor-grabbing select-none"
-              style={{
-                backgroundColor: c.surface, border: `1px solid ${c.border}`,
-                marginLeft: item.parentId ? '2rem' : '0',
-                borderLeft: item.parentId ? `3px solid ${c.accent}` : `1px solid ${c.border}`,
-              }}
-            >
-              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} style={{ color: c.textSoft, flexShrink: 0 }}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 8h16M4 16h16" />
-              </svg>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  {item.parentId && <span className="text-xs" style={{ color: c.textSoft }}>↳</span>}
-                  <span className="text-sm font-medium truncate" style={{ color: c.text }}>{item.title}</span>
-                  {item.isStatic && (
-                    <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ backgroundColor: c.badge, color: c.badgeText }}>static</span>
-                  )}
-                </div>
-                <p className="text-xs mt-0.5" style={{ color: c.textSoft }}>/{item.slug}</p>
-              </div>
-
-              <select
-                value={item.parentId ?? ''}
-                onChange={(e) => setParent(item.id, e.target.value)}
-                className="text-xs rounded-lg px-2 py-1.5 outline-none shrink-0"
-                style={{ backgroundColor: c.bg, border: `1px solid ${c.border}`, color: c.textMid, maxWidth: '130px' }}
-                onClick={(e) => e.stopPropagation()}
+        {flat.length === 0 ? (
+          <div
+            className="rounded-xl py-8 text-center"
+            style={{ border: `2px dashed ${c.border}` }}
+          >
+            <p className="text-sm" style={{ color: c.textSoft }}>Nicio pagină în meniu. Adaugă din biblioteca de mai jos.</p>
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            {flat.map((item, idx) => (
+              <div
+                key={item.id}
+                draggable
+                onDragStart={() => handleDragStart(idx)}
+                onDragEnter={() => handleDragEnter(idx)}
+                onDragEnd={handleDrop}
+                onDragOver={(e) => e.preventDefault()}
+                className="flex items-center gap-3 px-3 py-3 rounded-xl cursor-grab active:cursor-grabbing select-none"
+                style={{
+                  backgroundColor: c.surface, border: `1px solid ${c.border}`,
+                  marginLeft: item.parentId ? '2rem' : '0',
+                  borderLeft: item.parentId ? `3px solid ${c.accent}` : `1px solid ${c.border}`,
+                }}
               >
-                <option value="">— Fără părinte —</option>
-                {items.filter(p => !p.parentId && p.id !== item.id).map(p => (
-                  <option key={p.id} value={p.id}>{p.title}</option>
-                ))}
-              </select>
+                {/* Drag handle */}
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} style={{ color: c.textSoft, flexShrink: 0 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 8h16M4 16h16" />
+                </svg>
 
-              <span className="text-xs w-6 text-center shrink-0" style={{ color: c.textSoft }}>{idx + 1}</span>
-            </div>
-          ))}
-        </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    {item.parentId && <span className="text-xs" style={{ color: c.textSoft }}>↳</span>}
+                    <span className="text-sm font-medium truncate" style={{ color: c.text }}>{item.title}</span>
+                    {item.isStatic && (
+                      <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ backgroundColor: c.badge, color: c.badgeText }}>static</span>
+                    )}
+                  </div>
+                  <p className="text-xs mt-0.5" style={{ color: c.textSoft }}>/{item.slug}</p>
+                </div>
+
+                {/* Parent selector */}
+                <select
+                  value={item.parentId ?? ''}
+                  onChange={(e) => setParent(item.id, e.target.value)}
+                  className="text-xs rounded-lg px-2 py-1.5 outline-none shrink-0"
+                  style={{ backgroundColor: c.bg, border: `1px solid ${c.border}`, color: c.textMid, maxWidth: '120px' }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <option value="">— Top-level —</option>
+                  {items.filter(p => !p.parentId && p.id !== item.id).map(p => (
+                    <option key={p.id} value={p.id}>{p.title}</option>
+                  ))}
+                </select>
+
+                {/* Remove button */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); removeFromMenu(item.id) }}
+                  className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg transition-colors hover:bg-red-50"
+                  style={{ color: c.danger }}
+                  title="Elimină din meniu"
+                >
+                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {msg && <div className="mt-4"><Msg ok={msg.ok} text={msg.text} /></div>}
         <div className="mt-5"><Btn onClick={saveMenu} loading={saving}>Salvează meniu</Btn></div>
       </Card>
 
+      {/* Library — pages not yet in menu */}
       <Card>
-        <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: c.textSoft }}>Previzualizare structură</h3>
-        <div className="space-y-1">
-          {items.filter(i => !i.parentId).sort((a, b) => a.menuPosition - b.menuPosition).map(item => (
-            <div key={item.id}>
-              <div className="flex items-center gap-2 py-1">
-                <span className="w-4 h-0.5 rounded" style={{ backgroundColor: c.accent }} />
-                <span className="text-sm font-medium" style={{ color: c.text }}>{item.title}</span>
-                <span className="text-xs" style={{ color: c.textSoft }}>/{item.slug}</span>
-              </div>
-              {items.filter(i => i.parentId === item.id).sort((a, b) => a.menuPosition - b.menuPosition).map(child => (
-                <div key={child.id} className="flex items-center gap-2 py-1 ml-6">
-                  <span className="text-xs" style={{ color: c.textSoft }}>↳</span>
-                  <span className="text-sm" style={{ color: c.textMid }}>{child.title}</span>
-                  <span className="text-xs" style={{ color: c.textSoft }}>/{child.slug}</span>
+        <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: c.textSoft }}>
+          Bibliotecă pagini disponibile
+        </p>
+        <p className="text-xs mb-4" style={{ color: c.textSoft }}>
+          Pagini existente pe site care nu sunt încă în meniu. Apasă + pentru a le adăuga.
+        </p>
+
+        {libraryPages.length === 0 ? (
+          <p className="text-sm py-3 text-center" style={{ color: c.textSoft }}>Toate paginile sunt deja în meniu.</p>
+        ) : (
+          <div className="space-y-1.5">
+            {libraryPages.map(page => (
+              <div
+                key={page.id}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
+                style={{ backgroundColor: c.bg, border: `1px dashed ${c.border}` }}
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium truncate" style={{ color: c.textMid }}>{page.title}</span>
+                    {page.isStatic && (
+                      <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ backgroundColor: c.badge, color: c.badgeText }}>static</span>
+                    )}
+                  </div>
+                  <p className="text-xs mt-0.5" style={{ color: c.textSoft }}>/{page.slug}</p>
                 </div>
-              ))}
-            </div>
-          ))}
-        </div>
+                <button
+                  onClick={() => addToMenu(page)}
+                  className="shrink-0 flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors hover:opacity-80"
+                  style={{ backgroundColor: c.accent, color: '#fff' }}
+                >
+                  <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  Adaugă
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </Card>
+
+      {/* Structure preview */}
+      {flat.length > 0 && (
+        <Card>
+          <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: c.textSoft }}>Previzualizare structură</h3>
+          <div className="space-y-1">
+            {items.filter(i => !i.parentId).sort((a, b) => a.menuPosition - b.menuPosition).map(item => (
+              <div key={item.id}>
+                <div className="flex items-center gap-2 py-1">
+                  <span className="w-4 h-0.5 rounded" style={{ backgroundColor: c.accent }} />
+                  <span className="text-sm font-medium" style={{ color: c.text }}>{item.title}</span>
+                  <span className="text-xs" style={{ color: c.textSoft }}>/{item.slug}</span>
+                </div>
+                {items.filter(i => i.parentId === item.id).sort((a, b) => a.menuPosition - b.menuPosition).map(child => (
+                  <div key={child.id} className="flex items-center gap-2 py-1 ml-6">
+                    <span className="text-xs" style={{ color: c.textSoft }}>↳</span>
+                    <span className="text-sm" style={{ color: c.textMid }}>{child.title}</span>
+                    <span className="text-xs" style={{ color: c.textSoft }}>/{child.slug}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
     </div>
   )
 }

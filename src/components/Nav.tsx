@@ -25,7 +25,7 @@ export function Nav() {
       .catch(() => {})
   }, [])
 
-  // Close on outside click — must exclude mobile button to avoid race
+  // Close on outside click — exclude mobile button to avoid race
   useEffect(() => {
     function handler(e: MouseEvent) {
       const target = e.target as Node
@@ -43,60 +43,9 @@ export function Nav() {
   const topLevel = pages.filter(p => !p.parentId).sort((a, b) => a.menuPosition - b.menuPosition)
   const childrenOf = (id: string) => pages.filter(p => p.parentId === id).sort((a, b) => a.menuPosition - b.menuPosition)
 
-  // Panel item count for height animation
+  // Mobile panel height for CSS transition
   const panelItemCount = 2 + pages.length
   const panelMaxHeight = panelItemCount * 60 + 80
-
-  const PagesList = ({ onNavigate }: { onNavigate: () => void }) => (
-    <>
-      {topLevel.map(page => {
-        const children = childrenOf(page.id)
-        return (
-          <div key={page.id}>
-            <Link
-              href={`/${page.slug}`}
-              onClick={onNavigate}
-              className="flex items-center justify-between px-4 py-2.5 text-sm transition-colors hover:bg-white"
-              style={{ color: '#2D2016', fontWeight: children.length > 0 ? 600 : 400 }}
-            >
-              {page.title}
-              {children.length > 0 && (
-                <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} style={{ color: '#C4956A' }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-              )}
-            </Link>
-            {children.map(child => (
-              <Link
-                key={child.id}
-                href={`/${child.slug}`}
-                onClick={onNavigate}
-                className="flex items-center gap-2 pl-7 pr-4 py-2 text-sm transition-colors hover:bg-white"
-                style={{ color: '#7A6652' }}
-              >
-                <span style={{ color: '#C4956A' }}>↳</span>
-                {child.title}
-              </Link>
-            ))}
-          </div>
-        )
-      })}
-      {topLevel.length === 0 && (
-        <p className="px-4 py-3 text-sm" style={{ color: '#9A7B60' }}>Nicio pagină.</p>
-      )}
-    </>
-  )
-
-  const HamburgerIcon = ({ size = 22, thickness = 3 }: { size?: number; thickness?: number }) => (
-    <>
-      <span className="block rounded-full transition-all duration-300 ease-in-out origin-center"
-        style={{ height: thickness, width: size, backgroundColor: '#5A4030', transform: menuOpen ? `translateY(${thickness * 2 + 2}px) rotate(45deg)` : 'none' }} />
-      <span className="block rounded-full transition-all duration-300 ease-in-out"
-        style={{ height: thickness, width: size, backgroundColor: '#5A4030', opacity: menuOpen ? 0 : 1, transform: menuOpen ? 'scaleX(0)' : 'scaleX(1)' }} />
-      <span className="block rounded-full transition-all duration-300 ease-in-out origin-center"
-        style={{ height: thickness, width: size, backgroundColor: '#5A4030', transform: menuOpen ? `translateY(-${thickness * 2 + 2}px) rotate(-45deg)` : 'none' }} />
-    </>
-  )
 
   return (
     <nav style={{ borderBottom: '1px solid #F0EBE3', backgroundColor: '#FDFAF7' }}>
@@ -122,44 +71,179 @@ export function Nav() {
             Creează pagina
           </Link>
 
-          {/* Desktop hamburger + dropdown */}
+          {/* Desktop hamburger + animated dropdown */}
           <div className="relative ml-1" ref={desktopMenuRef}>
             <button
               onClick={() => setMenuOpen(v => !v)}
-              className="flex flex-col justify-center items-center w-10 h-10 gap-[5px] rounded-lg transition-colors hover:bg-white"
               aria-label={menuOpen ? 'Închide meniu' : 'Deschide meniu'}
-              style={{ border: '1px solid #F0EBE3' }}
+              aria-expanded={menuOpen}
+              className="relative flex flex-col justify-center items-center w-9 h-9 rounded-lg transition-colors hover:bg-white"
+              style={{ border: '1px solid #E8DDD4', gap: 0 }}
             >
-              <HamburgerIcon size={18} thickness={2} />
+              {/* Three lines that animate into an X */}
+              <span
+                style={{
+                  display: 'block',
+                  position: 'absolute',
+                  height: '2px',
+                  width: '16px',
+                  backgroundColor: '#5A4030',
+                  borderRadius: '2px',
+                  transition: 'transform 0.25s ease, opacity 0.25s ease, top 0.25s ease',
+                  top: menuOpen ? '50%' : 'calc(50% - 5px)',
+                  transform: menuOpen ? 'translateY(-50%) rotate(45deg)' : 'translateY(0) rotate(0)',
+                }}
+              />
+              <span
+                style={{
+                  display: 'block',
+                  position: 'absolute',
+                  height: '2px',
+                  width: '16px',
+                  backgroundColor: '#5A4030',
+                  borderRadius: '2px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  transition: 'opacity 0.15s ease',
+                  opacity: menuOpen ? 0 : 1,
+                }}
+              />
+              <span
+                style={{
+                  display: 'block',
+                  position: 'absolute',
+                  height: '2px',
+                  width: '16px',
+                  backgroundColor: '#5A4030',
+                  borderRadius: '2px',
+                  transition: 'transform 0.25s ease, opacity 0.25s ease, top 0.25s ease',
+                  top: menuOpen ? '50%' : 'calc(50% + 5px)',
+                  transform: menuOpen ? 'translateY(-50%) rotate(-45deg)' : 'translateY(0) rotate(0)',
+                }}
+              />
             </button>
 
-            {menuOpen && (
-              <div
-                className="absolute top-full right-0 mt-1 rounded-xl shadow-lg overflow-hidden z-50 min-w-[220px]"
-                style={{ backgroundColor: '#FDFAF7', border: '1px solid #F0EBE3' }}
-              >
-                <PagesList onNavigate={() => setMenuOpen(false)} />
-              </div>
-            )}
+            {/* Animated dropdown panel */}
+            <div
+              style={{
+                position: 'absolute',
+                top: 'calc(100% + 8px)',
+                right: 0,
+                minWidth: '220px',
+                backgroundColor: '#FDFAF7',
+                border: '1px solid #F0EBE3',
+                borderRadius: '16px',
+                boxShadow: '0 8px 32px rgba(45,26,14,0.12)',
+                overflow: 'hidden',
+                transformOrigin: 'top right',
+                transition: 'opacity 0.18s ease, transform 0.18s ease',
+                opacity: menuOpen ? 1 : 0,
+                transform: menuOpen ? 'scale(1) translateY(0)' : 'scale(0.95) translateY(-6px)',
+                pointerEvents: menuOpen ? 'auto' : 'none',
+                zIndex: 50,
+              }}
+            >
+              {topLevel.length > 0 ? (
+                topLevel.map(page => {
+                  const children = childrenOf(page.id)
+                  return (
+                    <div key={page.id}>
+                      <Link
+                        href={`/${page.slug}`}
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center justify-between px-4 py-2.5 text-sm transition-colors hover:bg-white"
+                        style={{ color: '#2D2016', fontWeight: children.length > 0 ? 600 : 400 }}
+                      >
+                        {page.title}
+                        {children.length > 0 && (
+                          <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} style={{ color: '#C4956A' }}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                          </svg>
+                        )}
+                      </Link>
+                      {children.map(child => (
+                        <Link
+                          key={child.id}
+                          href={`/${child.slug}`}
+                          onClick={() => setMenuOpen(false)}
+                          className="flex items-center gap-2 pl-7 pr-4 py-2 text-sm transition-colors hover:bg-white"
+                          style={{ color: '#7A6652' }}
+                        >
+                          <span style={{ color: '#C4956A' }}>↳</span>
+                          {child.title}
+                        </Link>
+                      ))}
+                    </div>
+                  )
+                })
+              ) : (
+                <p className="px-4 py-3 text-sm" style={{ color: '#9A7B60' }}>Nicio pagină adăugată.</p>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Mobile hamburger */}
         <button
           ref={mobileButtonRef}
-          className="sm:hidden flex flex-col justify-center items-center w-10 h-10 gap-[5px] rounded-lg"
+          className="sm:hidden relative flex flex-col justify-center items-center w-9 h-9 rounded-lg"
           onClick={() => setMenuOpen(v => !v)}
           aria-label={menuOpen ? 'Închide meniu' : 'Deschide meniu'}
+          aria-expanded={menuOpen}
+          style={{ border: '1px solid #E8DDD4' }}
         >
-          <HamburgerIcon size={22} thickness={3} />
+          <span
+            style={{
+              display: 'block',
+              position: 'absolute',
+              height: '2px',
+              width: '16px',
+              backgroundColor: '#5A4030',
+              borderRadius: '2px',
+              transition: 'transform 0.25s ease, top 0.25s ease',
+              top: menuOpen ? '50%' : 'calc(50% - 5px)',
+              transform: menuOpen ? 'translateY(-50%) rotate(45deg)' : 'translateY(0) rotate(0)',
+            }}
+          />
+          <span
+            style={{
+              display: 'block',
+              position: 'absolute',
+              height: '2px',
+              width: '16px',
+              backgroundColor: '#5A4030',
+              borderRadius: '2px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              transition: 'opacity 0.15s ease',
+              opacity: menuOpen ? 0 : 1,
+            }}
+          />
+          <span
+            style={{
+              display: 'block',
+              position: 'absolute',
+              height: '2px',
+              width: '16px',
+              backgroundColor: '#5A4030',
+              borderRadius: '2px',
+              transition: 'transform 0.25s ease, top 0.25s ease',
+              top: menuOpen ? '50%' : 'calc(50% + 5px)',
+              transform: menuOpen ? 'translateY(-50%) rotate(-45deg)' : 'translateY(0) rotate(0)',
+            }}
+          />
         </button>
       </div>
 
-      {/* Mobile dropdown */}
+      {/* Mobile dropdown — slide down */}
       <div
         ref={mobileMenuRef}
-        className="sm:hidden overflow-hidden transition-all duration-300 ease-in-out"
-        style={{ maxHeight: menuOpen ? panelMaxHeight : 0, opacity: menuOpen ? 1 : 0 }}
+        className="sm:hidden overflow-hidden"
+        style={{
+          maxHeight: menuOpen ? `${panelMaxHeight}px` : '0px',
+          opacity: menuOpen ? 1 : 0,
+          transition: 'max-height 0.3s ease, opacity 0.2s ease',
+        }}
       >
         <div className="px-4 pb-4 pt-2 space-y-2" style={{ borderTop: '1px solid #F0EBE3' }}>
           <Link

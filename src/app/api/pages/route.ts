@@ -5,13 +5,8 @@ import { supabaseAdmin } from '@/lib/db/supabase'
 // Reads from menu_items (which includes both static hardcoded pages and any DB pages).
 // Falls back to the hardcoded static pages if no saved menu order exists yet.
 
-const STATIC_FALLBACK = [
-  { id: '__despre-noi__',          title: 'Despre noi',          slug: 'despre-noi',          parentId: null, menuPosition: 10 },
-  { id: '__contact__',             title: 'Contact',             slug: 'contact',             parentId: null, menuPosition: 20 },
-  { id: '__termeni-si-conditii__', title: 'Termeni și Condiții', slug: 'termeni-si-conditii', parentId: null, menuPosition: 30 },
-  { id: '__politica-cookies__',    title: 'Politica Cookies',    slug: 'politica-cookies',    parentId: null, menuPosition: 40 },
-  { id: '__politica-gdpr__',       title: 'Politica GDPR',       slug: 'politica-gdpr',       parentId: null, menuPosition: 50 },
-]
+// No forced fallback — the nav only shows what the admin has explicitly added via the Menu tab.
+const STATIC_FALLBACK: never[] = []
 
 export async function GET(): Promise<NextResponse> {
   const { data } = await supabaseAdmin

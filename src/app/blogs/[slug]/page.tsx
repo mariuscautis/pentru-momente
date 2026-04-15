@@ -93,14 +93,9 @@ export default async function BlogPostPage({ params }: PageParams) {
                   {minutes} min citire
                 </p>
               )}
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight text-white mb-4">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight text-white">
                 {post.title}
               </h1>
-              {post.summary && (
-                <p className="text-base sm:text-lg leading-relaxed max-w-2xl" style={{ color: 'rgba(255,255,255,0.80)' }}>
-                  {post.summary}
-                </p>
-              )}
             </div>
           </section>
         ) : (
@@ -128,14 +123,9 @@ export default async function BlogPostPage({ params }: PageParams) {
                   {minutes} min citire
                 </p>
               )}
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight text-white mb-4">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight text-white">
                 {post.title}
               </h1>
-              {post.summary && (
-                <p className="text-lg leading-relaxed" style={{ color: '#D4B89A' }}>
-                  {post.summary}
-                </p>
-              )}
             </div>
           </section>
         )}
