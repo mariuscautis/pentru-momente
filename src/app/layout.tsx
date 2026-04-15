@@ -13,10 +13,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "pentrumomente.ro — Strânge fonduri pentru momentele care contează",
+  title: "Strânge fonduri pentru momentele care contează -pentrumomente.ro",
   description: "Creează o pagină de donații pentru un eveniment de viață în 3 minute. Distribuie link-ul. Primești banii direct în contul tău românesc.",
   openGraph: {
-    title: "pentrumomente.ro — Strânge fonduri pentru momentele care contează",
+    title: "Strânge fonduri pentru momentele care contează - pentrumomente.ro",
     description: "Creează o pagină de donații pentru un eveniment de viață în 3 minute. Familia primește tot — platforma se susține printr-o mică contribuție a donatorilor.",
     url: "https://pentrumomente.ro",
     siteName: "pentrumomente.ro",
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "pentrumomente.ro — Strânge fonduri pentru momentele care contează",
+    title: "Strânge fonduri pentru momentele care contează -pentrumomente.ro",
     description: "Creează o pagină de donații pentru un eveniment de viață în 3 minute.",
     images: ["/og-image.svg"],
   },
