@@ -38,18 +38,22 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json<ApiError>({ error: 'items array required' }, { status: 400 })
   }
 
-  // Upsert all items
-  await supabaseAdmin.from('menu_items').upsert(
-    body.items.map(item => ({
-      id: item.id,
-      title: item.title,
-      slug: item.slug,
-      menu_position: item.menuPosition,
-      parent_id: item.parentId,
-      updated_at: new Date().toISOString(),
-    })),
-    { onConflict: 'id' }
-  )
+  // Replace the entire menu: delete all existing rows, then insert the new set.
+  // This ensures removed items are actually gone rather than persisting from a prior save.
+  await supabaseAdmin.from('menu_items').delete().neq('id', '__never_matches__')
+
+  if (body.items.length > 0) {
+    await supabaseAdmin.from('menu_items').insert(
+      body.items.map(item => ({
+        id: item.id,
+        title: item.title,
+        slug: item.slug,
+        menu_position: item.menuPosition,
+        parent_id: item.parentId,
+        updated_at: new Date().toISOString(),
+      }))
+    )
+  }
 
   return NextResponse.json({ ok: true })
 }
