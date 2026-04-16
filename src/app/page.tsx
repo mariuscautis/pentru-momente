@@ -5,6 +5,22 @@ import {
   BadgePercent, ShieldCheck, UserCheck, Landmark,
   Check, Star, Lock,
 } from 'lucide-react'
+import { supabaseAdmin } from '@/lib/db/supabase'
+
+export const dynamic = 'force-dynamic'
+
+async function getComingSoonEnabled(): Promise<boolean> {
+  try {
+    const { data } = await supabaseAdmin
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'coming_soon_enabled')
+      .single()
+    return data?.value === 'true'
+  } catch {
+    return false
+  }
+}
 
 const HOW_IT_WORKS = [
   {
@@ -74,7 +90,9 @@ const TRUST_POINTS = [
   { Icon: Landmark,     title: 'Retragere directă în cont', description: 'Fondurile ajung direct în IBAN-ul tău românesc prin transfer bancar securizat.' },
 ]
 
-export default function HomePage() {
+export default async function HomePage() {
+  const comingSoon = await getComingSoonEnabled()
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#FDFAF7' }}>
 
@@ -381,6 +399,34 @@ export default function HomePage() {
       >
         <p>© 2026 pentrumomente.ro · Plăți procesate de Stripe · Transferuri bancare prin Wise</p>
       </footer>
+
+      {/* Coming soon overlay */}
+      {comingSoon && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          style={{ backgroundColor: 'rgba(253,250,247,0.80)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
+        >
+          <div
+            className="rounded-3xl text-center px-8 py-10 max-w-sm w-full"
+            style={{ backgroundColor: 'rgba(255,255,255,0.72)', border: '1px solid rgba(196,149,106,0.25)', boxShadow: '0 8px 40px rgba(45,26,14,0.10)' }}
+          >
+            <div className="text-4xl mb-4">🚧</div>
+            <h2 className="text-xl font-bold mb-2" style={{ color: '#2D1A0E' }}>
+              Lansăm în curând
+            </h2>
+            <p className="text-sm leading-relaxed mb-6" style={{ color: '#7A6652' }}>
+              Platforma pentrumomente.ro este în curs de pregătire. Revino în curând pentru a strânge fonduri pentru momentele care contează.
+            </p>
+            <div
+              className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium"
+              style={{ backgroundColor: '#F5EDE3', color: '#9A6B45', border: '1px solid #E8D5C0' }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: '#C4956A' }} />
+              Lucrăm la lansare
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )

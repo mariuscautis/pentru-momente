@@ -42,7 +42,7 @@ interface AdminEvent {
   blockInfo: { reason: string | null; blockedBy: string; blockedAt: string } | null
 }
 
-type Tab = 'seo' | 'blog' | 'terms' | 'cookies' | 'gdpr' | 'menu' | 'events'
+type Tab = 'seo' | 'blog' | 'terms' | 'cookies' | 'gdpr' | 'menu' | 'events' | 'coming-soon'
 
 // ─── Design tokens ─────────────────────────────────────────────────────────────
 
@@ -148,13 +148,14 @@ export default function SuperAdminPage() {
   }
 
   const navItems: { id: Tab; label: string; icon: string }[] = [
-    { id: 'seo',     label: 'SEO',               icon: '⚙️' },
-    { id: 'blog',    label: 'Blog',              icon: '📝' },
-    { id: 'terms',   label: 'Termeni & Condiții', icon: '📋' },
-    { id: 'cookies', label: 'Politica Cookies',  icon: '🍪' },
-    { id: 'gdpr',    label: 'Politica GDPR',     icon: '🔒' },
-    { id: 'menu',    label: 'Meniu',             icon: '☰' },
-    { id: 'events',  label: 'Statistici Donații', icon: '📊' },
+    { id: 'seo',          label: 'SEO',               icon: '⚙️' },
+    { id: 'blog',         label: 'Blog',              icon: '📝' },
+    { id: 'terms',        label: 'Termeni & Condiții', icon: '📋' },
+    { id: 'cookies',      label: 'Politica Cookies',  icon: '🍪' },
+    { id: 'gdpr',         label: 'Politica GDPR',     icon: '🔒' },
+    { id: 'menu',         label: 'Meniu',             icon: '☰' },
+    { id: 'coming-soon',  label: 'Coming Soon',       icon: '🚧' },
+    { id: 'events',       label: 'Statistici Donații', icon: '📊' },
   ]
 
   return (
@@ -220,13 +221,14 @@ export default function SuperAdminPage() {
 
         <main className="flex-1 overflow-auto">
           <div className="px-4 md:px-8 py-8">
-            {tab === 'seo'     && <SeoTab />}
-            {tab === 'blog'    && <BlogTab />}
-            {tab === 'terms'   && <TermsTab />}
-            {tab === 'cookies' && <CookiesTab />}
-            {tab === 'gdpr'    && <GdprTab />}
-            {tab === 'menu'    && <MenuTab />}
-            {tab === 'events'  && <EventsTab />}
+            {tab === 'seo'          && <SeoTab />}
+            {tab === 'blog'         && <BlogTab />}
+            {tab === 'terms'        && <TermsTab />}
+            {tab === 'cookies'      && <CookiesTab />}
+            {tab === 'gdpr'         && <GdprTab />}
+            {tab === 'menu'         && <MenuTab />}
+            {tab === 'coming-soon'  && <ComingSoonTab />}
+            {tab === 'events'       && <EventsTab />}
           </div>
         </main>
       </div>
@@ -995,6 +997,111 @@ function MenuTab() {
           </div>
         </Card>
       )}
+    </div>
+  )
+}
+
+// ─── Coming Soon Tab ──────────────────────────────────────────────────────────
+
+function ComingSoonTab() {
+  const [enabled, setEnabled] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null)
+
+  useEffect(() => {
+    apiFetch('/api/admin/coming-soon')
+      .then(r => r.json())
+      .then((j: { enabled: boolean }) => { setEnabled(j.enabled); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [])
+
+  async function save(value: boolean) {
+    setSaving(true); setMsg(null)
+    const res = await apiFetch('/api/admin/coming-soon', {
+      method: 'POST',
+      body: JSON.stringify({ enabled: value }),
+    })
+    if (res.ok) {
+      setEnabled(value)
+      setMsg({ text: value ? 'Banner-ul "În curând" este acum activ.' : 'Banner-ul "În curând" a fost dezactivat.', ok: true })
+    } else {
+      setMsg({ text: 'Eroare la salvare.', ok: false })
+    }
+    setSaving(false)
+  }
+
+  return (
+    <div className="max-w-xl space-y-6">
+      <div>
+        <h2 className="text-lg font-bold mb-1" style={{ color: c.text }}>Banner „În curând"</h2>
+        <p className="text-sm" style={{ color: c.textSoft }}>
+          Activează un overlay semitransparent pe homepage care informează vizitatorii că platforma este în curs de lansare.
+        </p>
+      </div>
+
+      <div
+        className="rounded-xl p-6 flex items-center justify-between gap-6"
+        style={{ backgroundColor: c.surface, border: `1px solid ${c.border}` }}
+      >
+        <div className="space-y-1">
+          <p className="text-sm font-semibold" style={{ color: c.text }}>Afișare banner pe homepage</p>
+          <p className="text-xs" style={{ color: c.textSoft }}>
+            {loading ? 'Se încarcă...' : enabled ? 'Banner activ — vizibil pentru toți vizitatorii.' : 'Banner inactiv — homepage-ul se afișează normal.'}
+          </p>
+        </div>
+
+        {/* Toggle switch */}
+        <button
+          disabled={loading || saving}
+          onClick={() => save(!enabled)}
+          aria-label="Toggle coming soon"
+          className="relative shrink-0 w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none"
+          style={{ backgroundColor: enabled ? c.accent : c.border }}
+        >
+          <span
+            className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200"
+            style={{ transform: enabled ? 'translateX(24px)' : 'translateX(0)' }}
+          />
+        </button>
+      </div>
+
+      {msg && (
+        <p
+          className="text-sm px-4 py-2.5 rounded-lg"
+          style={{ backgroundColor: msg.ok ? c.successBg : c.dangerBg, color: msg.ok ? c.success : c.danger }}
+        >
+          {msg.text}
+        </p>
+      )}
+
+      {/* Preview */}
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: c.textSoft }}>Previzualizare banner</p>
+        <div
+          className="relative rounded-xl overflow-hidden"
+          style={{ border: `1px solid ${c.border}`, minHeight: '160px', backgroundColor: '#FDFAF7' }}
+        >
+          {/* Fake homepage background */}
+          <div className="p-6 space-y-2 opacity-30">
+            <div className="h-3 rounded-full w-2/3" style={{ backgroundColor: '#C4956A' }} />
+            <div className="h-2 rounded-full w-full" style={{ backgroundColor: '#EAD8C8' }} />
+            <div className="h-2 rounded-full w-5/6" style={{ backgroundColor: '#EAD8C8' }} />
+            <div className="h-2 rounded-full w-4/6" style={{ backgroundColor: '#EAD8C8' }} />
+          </div>
+          {/* Overlay preview */}
+          <div
+            className="absolute inset-0 flex items-center justify-center"
+            style={{ backgroundColor: 'rgba(253,250,247,0.82)', backdropFilter: 'blur(2px)' }}
+          >
+            <div className="text-center px-4">
+              <div className="text-2xl mb-2">🚧</div>
+              <p className="text-sm font-bold" style={{ color: '#2D1A0E' }}>Lansăm în curând</p>
+              <p className="text-xs mt-1" style={{ color: '#7A6652' }}>Platforma este în curs de pregătire.</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
