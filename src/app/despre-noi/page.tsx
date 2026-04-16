@@ -47,8 +47,8 @@ export default function DespreNoiPage() {
             {[
               {
                 icon: '💛',
-                title: '100% ajunge la familie',
-                desc: 'Platforma percepe un comision fix per donație, afișat transparent donatorului. Niciun leu nu se scade din suma destinată familiei.',
+                title: 'Sprijin real, oferit în mod responsabil',
+                desc: 'Platforma nu percepe comision din donații. Taxele bancare de transfer sunt afișate transparent înainte de finalizare.',
               },
               {
                 icon: '⚡',

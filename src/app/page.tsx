@@ -38,7 +38,7 @@ const EVENT_TYPES = [
 ]
 
 const TRUST_POINTS = [
-  { Icon: BadgePercent, title: '100% ajunge la familie',    description: 'Nu reținem niciun procent din donații. Monetizarea platformei este printr-un bacșiș opțional al donatorului.' },
+  { Icon: BadgePercent, title: 'Sprijin real, oferit în mod responsabil', description: 'Platforma nu percepe comision din donații. Taxele bancare de transfer sunt afișate transparent.' },
   { Icon: ShieldCheck,  title: 'Plăți securizate',          description: 'Toate plățile sunt procesate prin Stripe — același sistem folosit de milioane de companii din lume.' },
   { Icon: UserCheck,    title: 'Fără cont pentru donatori', description: 'Oricine poate dona în 30 de secunde, fără înregistrare. Zero fricțiune pentru cei dragi.' },
   { Icon: Landmark,     title: 'Retragere directă în cont', description: 'Fondurile ajung direct în IBAN-ul tău românesc prin transfer bancar securizat.' },
@@ -57,7 +57,7 @@ export default function HomePage() {
             className="inline-flex items-center rounded-full px-4 py-1.5 text-xs sm:text-sm"
             style={{ backgroundColor: '#F5EDE3', color: '#9A6B45', border: '1px solid #E8D5C0' }}
           >
-            100% din donații ajunge la familie
+            Sprijin real, oferit în mod responsabil
           </div>
           <h1
             className="font-bold leading-tight tracking-tight"
