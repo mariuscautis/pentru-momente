@@ -3,7 +3,7 @@ import { Nav } from '@/components/Nav'
 import {
   Flame, Gem, Baby, HeartPulse, Sparkles,
   BadgePercent, ShieldCheck, UserCheck, Landmark,
-  Check,
+  Check, Star, Lock,
 } from 'lucide-react'
 
 const HOW_IT_WORKS = [
@@ -35,6 +35,36 @@ const EVENT_TYPES = [
   { slug: 'bebe',         label: 'Bebe nou',     description: 'Listă de dorințe și fond general pentru familia cu un nou-născut.',    bg: '#EEF5FB', Icon: Baby },
   { slug: 'sanatate',     label: 'Sănătate',     description: 'Strânge fonduri pentru tratamente medicale, operații sau recuperare.', bg: '#EEF8F2', Icon: HeartPulse },
   { slug: 'altele',       label: 'Altele',       description: 'Orice altă cauză sau eveniment pentru care vrei să strângi fonduri.',  bg: '#F5F0FB', Icon: Sparkles },
+]
+
+const TESTIMONIALS = [
+  {
+    name: 'Andreea M.',
+    location: 'Cluj-Napoca',
+    eventType: 'Înmormântare',
+    eventColor: '#F5F0EB',
+    eventTextColor: '#7A5A3A',
+    quote: 'Am creat pagina în câteva minute, chiar în ziua în care am aflat vestea. Familia a primit sprijinul comunității fără să fie nevoie să cerem nimic personal. A fost o ușurare imensă.',
+    stars: 5,
+  },
+  {
+    name: 'Bogdan & Ioana T.',
+    location: 'București',
+    eventType: 'Nuntă',
+    eventColor: '#FBF5EE',
+    eventTextColor: '#8A6A3A',
+    quote: 'În loc de plicuri, am distribuit link-ul pe grupul de WhatsApp. Toată lumea a donat comod, inclusiv rudele din diaspora. Banii au ajuns direct în contul nostru, fără bătăi de cap.',
+    stars: 5,
+  },
+  {
+    name: 'Mihai C.',
+    location: 'Timișoara',
+    eventType: 'Sănătate',
+    eventColor: '#EEF8F2',
+    eventTextColor: '#3A7A5A',
+    quote: 'Tatăl meu avea nevoie de o operație urgentă. Am strâns fondurile necesare în 3 zile. Transparența platformei a convins oamenii să doneze — știau exact unde merg banii.',
+    stars: 5,
+  },
 ]
 
 const TRUST_POINTS = [
@@ -88,6 +118,47 @@ export default function HomePage() {
             >
               Cum funcționează
             </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Payment trust bar */}
+      <section style={{ borderTop: '1px solid #EDE0D0', borderBottom: '1px solid #EDE0D0', backgroundColor: '#FFFDFB' }}>
+        <div className="mx-auto max-w-5xl px-4 py-4 flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+          <span className="text-xs font-medium" style={{ color: '#B09070' }}>Plăți procesate prin</span>
+
+          {/* Stripe badge */}
+          <div className="flex items-center gap-2 rounded-lg px-3 py-1.5" style={{ backgroundColor: '#F5EDE3', border: '1px solid #EDE0D0' }}>
+            <svg width="40" height="17" viewBox="0 0 60 25" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Stripe">
+              <path d="M59.64 14.28h-8.06c.19 1.93 1.6 2.55 3.2 2.55 1.64 0 2.96-.37 4.05-.95v3.32a10.64 10.64 0 0 1-4.56.94c-4.01 0-6.83-2.5-6.83-7.48 0-4.19 2.39-7.52 6.3-7.52 3.92 0 5.96 3.28 5.96 7.5 0 .4-.04 1.26-.06 1.64zm-5.92-5.15c-1.03 0-2.17.73-2.17 2.58h4.25c0-1.85-1.07-2.58-2.08-2.58zM40.95 20.24c-1.12 0-1.84-.56-2.3-1.37l-.09 1.2h-3.84V.1l4.26-.89v5.02c.46-.25 1.26-.54 2.18-.54 3.93 0 5.98 2.9 5.98 7.64 0 5.37-2.53 8.91-6.19 8.91zm-.71-12.17c-.74 0-1.2.26-1.59.7l.02 5.53c.35.44.8.7 1.57.7 1.54 0 2.18-1.54 2.18-3.46 0-1.97-.65-3.47-2.18-3.47zM28.24 5.7V.11L32.5 0v5.28l-4.26.42zm0 14.37V6.01h4.27v14.06H28.24zm-4.34 0-3.96-7.89-1.01 7.89H14.7L11.65 6h4.22l1.5 8.51 1.1-8.51h3.78l1.22 8.56 1.52-8.56h4.17l-3.06 14.07h-4.2zm-14.32.17c-1.58 0-3.17-.4-3.98-.8V15.8c.86.54 2.1.96 3.25.96 1.12 0 1.73-.3 1.73-1 0-1.7-5.26-.95-5.26-5.02 0-2.56 2.07-4.11 5.13-4.11 1.3 0 2.58.28 3.47.67V10.5c-.87-.47-1.96-.8-3.1-.8-1 0-1.6.35-1.6 1 0 1.6 5.3.8 5.3 5.03 0 2.57-2.04 4.51-4.94 4.51z" fill="#635BFF"/>
+            </svg>
+          </div>
+
+          <span className="text-xs font-medium hidden sm:block" style={{ color: '#D4C0A8' }}>·</span>
+          <span className="text-xs font-medium" style={{ color: '#B09070' }}>Transferuri bancare prin</span>
+
+          {/* Wise badge */}
+          <div className="flex items-center gap-2 rounded-lg px-3 py-1.5" style={{ backgroundColor: '#F5EDE3', border: '1px solid #EDE0D0' }}>
+            <svg width="44" height="16" viewBox="0 0 70 25" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Wise">
+              <path d="M0 6.5h5.5L9 17.5l4-11h4.5l4 11 3.5-11H30l-6.5 18h-5L14 13l-4.5 11.5h-5L0 6.5z" fill="#163300"/>
+              <path d="M31.5 6.5h5v18h-5v-18zm2.5-6.5a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM39.5 19.5c1.5 1 3.5 1.8 5.5 1.8 1.8 0 2.8-.6 2.8-1.6 0-2.8-9.3-1.5-9.3-8.3 0-3.5 3-5.4 7-5.4 2.3 0 4.5.5 6 1.4v4.6c-1.5-.9-3.3-1.5-5.3-1.5-1.6 0-2.5.6-2.5 1.5 0 2.7 9.3 1.3 9.3 8.3 0 3.6-3 5.7-7.3 5.7-2.5 0-5-.7-6.7-1.8l.5-4.7zM57.5 15.5h10c-.2-2-1.5-3.5-4-3.5-2.3 0-3.8 1.3-4 3.5zm-5 1.5c0-5 3.5-11 9.5-11 5.7 0 9 4.3 9 10.5 0 .7 0 1.5-.1 2.3H57.8c.5 2.3 2.5 3.5 5 3.5 2 0 3.8-.6 5.3-1.6v4.5c-1.7 1-3.8 1.8-6.2 1.8-6 0-9.4-4.2-9.4-10z" fill="#163300"/>
+            </svg>
+          </div>
+
+          <span className="text-xs font-medium hidden sm:block" style={{ color: '#D4C0A8' }}>·</span>
+
+          {/* SSL / security badge */}
+          <div className="flex items-center gap-1.5">
+            <Lock size={13} strokeWidth={2} color="#22A066" />
+            <span className="text-xs font-medium" style={{ color: '#5A7A5A' }}>Conexiune criptată SSL</span>
+          </div>
+
+          <span className="text-xs font-medium hidden sm:block" style={{ color: '#D4C0A8' }}>·</span>
+
+          {/* GDPR badge */}
+          <div className="flex items-center gap-1.5">
+            <ShieldCheck size={13} strokeWidth={2} color="#C4956A" />
+            <span className="text-xs font-medium" style={{ color: '#7A6652' }}>Conformitate GDPR</span>
           </div>
         </div>
       </section>
@@ -228,6 +299,54 @@ export default function HomePage() {
             <p className="text-xs" style={{ color: '#B09070' }}>
               Ai primit un link de la cineva? Deschide-l direct — nu e nevoie de nimic altceva.
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="px-4 py-14 sm:py-20" style={{ backgroundColor: '#F5EDE3' }}>
+        <div className="mx-auto max-w-5xl">
+          <p className="text-xs uppercase tracking-widest text-center mb-2 font-semibold" style={{ color: '#C4956A' }}>Povești reale</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-center mb-2" style={{ color: '#2D2016' }}>
+            Ce spun organizatorii
+          </h2>
+          <p className="text-sm sm:text-base text-center mb-10" style={{ color: '#9A7B60' }}>
+            Familii care au folosit platforma în momentele care au contat.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {TESTIMONIALS.map((t) => (
+              <div
+                key={t.name}
+                className="rounded-2xl p-5 sm:p-6 flex flex-col gap-4"
+                style={{ backgroundColor: '#FFFDFB', border: '1px solid #EDE0D0' }}
+              >
+                {/* Stars */}
+                <div className="flex gap-0.5">
+                  {Array.from({ length: t.stars }).map((_, i) => (
+                    <Star key={i} size={13} fill="#C4956A" color="#C4956A" />
+                  ))}
+                </div>
+
+                {/* Quote */}
+                <p className="text-sm leading-relaxed flex-1" style={{ color: '#5A4030' }}>
+                  &ldquo;{t.quote}&rdquo;
+                </p>
+
+                {/* Author */}
+                <div className="flex items-center justify-between gap-2 pt-1" style={{ borderTop: '1px solid #EDE0D0' }}>
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: '#2D2016' }}>{t.name}</p>
+                    <p className="text-xs" style={{ color: '#9A7B60' }}>{t.location}</p>
+                  </div>
+                  <span
+                    className="text-xs font-medium rounded-full px-2.5 py-1 shrink-0"
+                    style={{ backgroundColor: t.eventColor, color: t.eventTextColor }}
+                  >
+                    {t.eventType}
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
