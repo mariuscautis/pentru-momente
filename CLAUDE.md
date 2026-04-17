@@ -6,7 +6,7 @@ You are a senior Next.js developer helping build **pentrumomente.ro**, a Romania
 
 ## What this platform does
 
-pentrumomente.ro ("for moments") allows people to raise funds during emotionally significant life events. Organisers create a fundraise page for an event, add a list of items or a general fund, and share the URL. Donors visit the page, choose what to contribute to, and pay. Funds accumulate and are paid out to the organiser/family via Wise Business.
+pentrumomente.ro ("for moments") allows people to raise funds during emotionally significant life events. Organisers create a fundraise page for an event, add a list of items or a general fund, and share the URL. Donors visit the page, choose what to contribute to, and pay. Funds route directly to the organiser via Stripe Connect Express — the platform never holds donation funds.
 
 ### Supported event types (modular, config-driven — see architecture below)
 - **Funeral** (`inmormantare`) — digital wreaths, candles, tributes; proceeds to bereaved family
@@ -38,7 +38,7 @@ New event types are added by creating a new config file only — zero changes to
 | Styling | Tailwind CSS | No CSS-in-JS |
 | Database | Supabase (PostgreSQL) | Also handles auth and file storage |
 | Payments (in) | Stripe | Card, Apple Pay, Google Pay |
-| Payouts (out) | Wise Business API | Romanian IBAN transfers to organisers |
+| Payouts (out) | Stripe Connect Express | Destination charges direct to organiser's Romanian IBAN |
 | Email | Brevo (transactional) | One template per event type |
 | Hosting | Vercel | Auto-deploy from GitHub main branch |
 | Language | Romanian (primary UI), English (code and comments) |
@@ -56,11 +56,12 @@ src/
 │   ├── create/                   ← new event creation flow
 │   ├── login/                    ← auth (login + register)
 │   └── api/
+│       ├── connect/              ← Stripe Connect onboarding (create + refresh)
 │       ├── donations/
 │       ├── events/
-│       ├── payouts/
+│       ├── payouts/              ← read-only payout history (populated by webhook)
 │       └── webhooks/
-│           └── stripe/
+│           └── stripe/           ← handles both platform and Connect events
 ├── components/
 │   ├── EventPage/                ← renders any event type via config
 │   ├── DonationFlow/             ← 3-step donation checkout
@@ -76,10 +77,13 @@ src/
 │       ├── health.ts
 │       └── custom.ts
 ├── lib/
+│   ├── connect/                  ← Stripe Connect helpers
+│   │   ├── createAccount.ts      ← creates Express account for organiser
+│   │   ├── createOnboardingLink.ts ← generates Stripe-hosted onboarding URL
+│   │   └── createPaymentIntent.ts  ← destination charge (funds → organiser)
 │   ├── db/                       ← Supabase queries
 │   ├── email/                    ← Brevo integration
-│   ├── payments/                 ← Stripe integration
-│   └── payouts/                  ← Wise integration
+│   └── payments/                 ← Stripe client + fee calculator
 └── types/
     └── index.ts                  ← shared TypeScript types
 ```
@@ -131,8 +135,9 @@ export interface Event {
   coverImageUrl?: string
   goalAmount?: number          // optional, some events have no hard goal
   organiserId: string
-  organiserIban: string        // collected at creation, used for Wise payout
-  isActive: boolean
+  stripeConnectAccountId?: string       // set after Stripe Express onboarding starts
+  connectOnboardingComplete: boolean    // false until Stripe confirms via account.updated webhook
+  isActive: boolean                     // only true after onboarding complete
   createdAt: string
 }
 
@@ -157,6 +162,16 @@ export interface Donation {
   showAmount: boolean
   stripePaymentIntentId: string
   status: 'pending' | 'confirmed' | 'refunded'
+  createdAt: string
+}
+
+export interface Payout {
+  id: string
+  eventId: string
+  stripePayoutId?: string       // from Stripe Connect payout.created webhook
+  amount: number
+  status: 'pending' | 'paid' | 'failed'
+  arrivalDate?: string
   createdAt: string
 }
 ```
@@ -193,17 +208,17 @@ The dynamic route `app/[eventType]/[slug]/page.tsx` calls `getEventTypeConfig(pa
 ## Money flow
 
 ```
-Donor card payment
-    → Stripe (payment processor, handles card/Apple Pay/Google Pay)
-    → Stripe settles to Wise Business account (configured as Stripe payout destination)
-    → Funds sit in Wise RON balance
-    → On organiser withdrawal request → Wise API transfer to organiser IBAN
-    → Organiser's Romanian bank account
+Donor pays on event page
+    → Stripe charges donor card (destination charge)
+    → application_fee_amount deducted → goes to platform Stripe account (covers tip + Stripe processing fee)
+    → Remaining donation routes directly to organiser's Stripe Express account
+    → Stripe pays out to organiser's personal Romanian IBAN automatically
+    → Platform never holds donation funds
 ```
 
-**Stripe** = accepting money in (donor-facing)
-**Wise Business** = sending money out (organiser-facing)
-These are two separate integrations that never overlap.
+**Stripe** = accepting money in (donor-facing) AND paying out (organiser-facing)  
+**Stripe Connect Express** = organiser sub-account; Stripe manages KYC and Romanian IBAN payout  
+There is no separate payout integration — one provider handles the full flow.
 
 ---
 
@@ -215,14 +230,11 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 
-# Stripe
+# Stripe (payments + Connect)
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
-
-# Wise (payouts)
-WISE_API_KEY=
-WISE_PROFILE_ID=
+STRIPE_CONNECT_WEBHOOK_SECRET=   # separate secret for Connect account events
 
 # Brevo (email)
 BREVO_API_KEY=
@@ -241,8 +253,8 @@ Emails to send:
 - **Donation confirmation** → to donor (uses `config.emailTemplateId`)
 - **Donation received** → to organiser (new donation notification)
 - **Milestone reached** → to organiser (25%, 50%, 100% of goal)
-- **Payout initiated** → to organiser (when Wise transfer is sent)
-- **Payout confirmed** → to organiser (when Wise transfer completes)
+- **Payout sent** → to organiser (triggered by `payout.created` Stripe Connect webhook)
+- **Payout confirmed** → to organiser (triggered by `payout.paid` Stripe Connect webhook)
 
 Brevo template variables available in all emails:
 `donorName`, `eventName`, `amount`, `tipAmount`, `message`, `eventUrl`, `organiserName`
@@ -251,12 +263,12 @@ Brevo template variables available in all emails:
 
 ## Payout rules
 
-- Organiser must provide a valid Romanian IBAN during event creation
-- Minimum payout threshold: 50 RON
-- Organiser requests withdrawal manually from dashboard
-- Backend calls Wise API `POST /v1/transfers` with organiser IBAN
-- Payout status is tracked in database and shown in dashboard
-- Brevo email sent on initiation and on completion (via Wise webhook)
+- Organiser completes Stripe Express onboarding during event creation (Stripe-hosted, Romanian UI)
+- Organiser provides their personal Romanian IBAN directly to Stripe — the platform never sees or stores IBAN
+- Stripe manages the full payout lifecycle automatically
+- Payout status is tracked in the `payouts` table, populated by Stripe Connect webhooks
+- No manual withdrawal requests — payouts happen automatically on Stripe's schedule
+- `account.updated` webhook sets `connect_onboarding_complete = true` and `is_active = true` when Stripe confirms onboarding
 
 ---
 
@@ -265,7 +277,7 @@ Brevo template variables available in all emails:
 - **TypeScript strict mode** — no `any`, no unchecked nulls
 - **Server Components by default** — only use `'use client'` when genuinely needed (forms, interactivity)
 - **All DB queries in `src/lib/db/`** — never query Supabase directly from components
-- **All external API calls in `src/lib/`** — Stripe in `payments/`, Wise in `payouts/`, Brevo in `email/`
+- **All external API calls in `src/lib/`** — Stripe in `payments/` and `connect/`, Brevo in `email/`
 - **Romanian strings in config only** — no hardcoded Romanian text in components
 - **Error handling on all API routes** — always return typed error responses
 - **No inline styles** — Tailwind classes only
@@ -287,8 +299,9 @@ create table events (
   cover_image_url text,
   goal_amount numeric,
   organiser_id uuid references auth.users(id),
-  organiser_iban text not null,
-  is_active boolean default true,
+  stripe_connect_account_id text,
+  connect_onboarding_complete boolean default false,
+  is_active boolean default false,   -- true only after onboarding complete
   created_at timestamptz default now()
 );
 
@@ -313,6 +326,7 @@ create table donations (
   is_anonymous boolean default false,
   show_amount boolean default true,
   stripe_payment_intent_id text unique,
+  stripe_charge_id text,
   status text default 'pending',
   created_at timestamptz default now()
 );
@@ -320,13 +334,40 @@ create table donations (
 create table payouts (
   id uuid primary key default gen_random_uuid(),
   event_id uuid references events(id),
+  stripe_payout_id text unique,         -- from Stripe Connect payout.created webhook
   amount numeric not null,
-  wise_transfer_id text,
-  organiser_iban text not null,
-  status text default 'pending',
-  requested_at timestamptz default now(),
-  completed_at timestamptz
+  status text default 'pending',        -- pending | paid | failed
+  arrival_date timestamptz,
+  created_at timestamptz default now()
 );
+```
+
+### Migration SQL (run in Supabase SQL editor to migrate from old schema)
+
+```sql
+-- Remove organiser_iban, add Stripe Connect fields
+alter table events
+  drop column if exists organiser_iban,
+  add column if not exists stripe_connect_account_id text,
+  add column if not exists connect_onboarding_complete boolean default false;
+
+alter table events alter column is_active set default false;
+
+-- Drop old Wise-based payouts table and recreate
+drop table if exists payouts;
+
+create table payouts (
+  id uuid primary key default gen_random_uuid(),
+  event_id uuid references events(id),
+  stripe_payout_id text unique,
+  amount numeric not null,
+  status text default 'pending',
+  arrival_date timestamptz,
+  created_at timestamptz default now()
+);
+
+alter table donations
+  add column if not exists stripe_charge_id text;
 ```
 
 ---
@@ -344,22 +385,24 @@ create table payouts (
 - [x] `.env.local` template created (fill in real keys)
 - [x] Supabase DB query layer (`src/lib/db/` — events, donations, payouts)
 - [x] Stripe payment integration (`src/lib/payments/stripe.ts`)
-- [x] Wise payout integration (`src/lib/payouts/wise.ts`)
+- [x] Stripe Connect integration (`src/lib/connect/` — createAccount, createOnboardingLink, createPaymentIntent)
+- [x] ~~Wise payout integration~~ — removed, replaced by Stripe Connect Express
 - [x] Brevo email integration (`src/lib/email/brevo.ts`)
-- [x] API routes: donations, events, payouts, Stripe webhook
+- [x] API routes: donations, events, payouts (read-only), connect/create, connect/refresh, Stripe webhook
 - [x] Shared UI primitives (Button, Input, Textarea)
 - [x] ItemTracker component (progress bars per item)
 - [x] DonorWall component (scrolling donor feed)
 - [x] DonationFlow component (3 steps: amount → details → payment → success)
 - [x] EventPage component (config-driven, event-type-agnostic)
 - [x] Public event page SSR + OG metadata (`app/[eventType]/[slug]/page.tsx`)
-- [x] Event creation flow (`app/create/page.tsx`)
+- [x] Event creation flow with Stripe Connect onboarding redirect (`app/create/page.tsx`)
 - [x] Login / register page (`app/login/page.tsx`)
-- [x] Organiser dashboard with payout requests (`app/dashboard/page.tsx`)
-- [x] Build passes (`npm run build` — 0 type errors)
-- [ ] Supabase project created and schema applied (run schema SQL in Supabase dashboard)
+- [x] Organiser dashboard with Connect status and payout history (`app/dashboard/page.tsx`)
+- [ ] Build passes (`npm run build` — verify 0 type errors after migration)
+- [ ] Supabase schema migration applied (run migration SQL above in Supabase dashboard)
 - [ ] Stripe account connected (add keys to `.env.local`)
-- [ ] Wise Business API key obtained (add to `.env.local`)
+- [ ] Stripe Connect Express enabled on platform Stripe account
+- [ ] `STRIPE_CONNECT_WEBHOOK_SECRET` configured (separate webhook endpoint for Connect events)
 - [ ] Brevo templates created (update template IDs in event configs)
 
 ---

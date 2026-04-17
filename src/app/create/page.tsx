@@ -222,7 +222,6 @@ export default function CreateEventPage() {
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false)
   const [description, setDescription] = useState('')
   const [goalAmount, setGoalAmount] = useState('')
-  const [organiserIban, setOrganiserIban] = useState('')
   const [items, setItems] = useState<ItemInput[]>([])
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null)
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null)
@@ -276,7 +275,6 @@ export default function CreateEventPage() {
         description: description || undefined,
         goalAmount: goalAmount ? parseFloat(goalAmount) : undefined,
         expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
-        organiserIban,
         items: items.map((i) => ({
           name: i.name,
           targetAmount: parseFloat(i.targetAmount) || 0,
@@ -303,7 +301,28 @@ export default function CreateEventPage() {
       })
     }
 
-    router.push(`/${data.event!.eventType}/${data.event!.slug}`)
+    // Create Stripe Connect account and redirect to onboarding
+    const connectRes = await fetch('/api/connect/create', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        eventId: data.event!.id,
+        eventSlug: data.event!.slug,
+      }),
+    })
+
+    const connectData = (await connectRes.json()) as { onboardingUrl?: string; error?: string }
+    if (!connectRes.ok || !connectData.onboardingUrl) {
+      setError(connectData.error ?? 'Eroare la configurarea plăților.')
+      setLoading(false)
+      return
+    }
+
+    // Redirect to Stripe-hosted onboarding
+    window.location.href = connectData.onboardingUrl
   }
 
   const isDualName = selectedConfig
@@ -698,7 +717,7 @@ export default function CreateEventPage() {
                 </div>
               )}
 
-              {/* ── Step 4: Payout ── */}
+              {/* ── Step 4: Payout setup ── */}
               {step === 'payout' && (
                 <div className="space-y-6">
                   <div>
@@ -709,30 +728,29 @@ export default function CreateEventPage() {
                     >
                       ← Înapoi
                     </button>
-                    <h2 className="text-xl font-bold" style={{ color: '#2D2016' }}>Unde trimitem banii?</h2>
+                    <h2 className="text-xl font-bold" style={{ color: '#2D2016' }}>Configurează plățile</h2>
                     <p className="text-sm mt-1" style={{ color: '#9A7B60' }}>
-                      Fondurile strânse vor fi transferate direct în contul tău bancar românesc.
+                      Donațiile merg direct în contul tău bancar prin Stripe — platforma noastră de plăți.
                     </p>
                   </div>
 
-                  <div className="rounded-2xl p-4 flex gap-3 items-start"
-                    style={{ backgroundColor: '#FFF8EE', border: '1px solid #EDD9B8' }}>
-                    <span className="text-xl shrink-0">🔒</span>
-                    <div>
-                      <p className="text-sm font-semibold" style={{ color: '#2D2016' }}>IBAN-ul tău este în siguranță</p>
-                      <p className="text-xs mt-0.5 leading-relaxed" style={{ color: '#9A7B60' }}>
-                        Stocăm IBAN-ul criptat și îl folosim exclusiv pentru a-ți transfera fondurile. Nu este afișat niciodată public.
-                      </p>
-                    </div>
+                  {/* How it works */}
+                  <div className="space-y-3">
+                    {[
+                      { icon: '✅', title: 'Verificare de identitate', body: 'Stripe verifică identitatea ta prin buletinul sau pașaportul românesc.' },
+                      { icon: '🏦', title: 'IBAN personal', body: 'Adaugi IBAN-ul românesc direct în interfața Stripe, nu pe platforma noastră.' },
+                      { icon: '💸', title: 'Plăți automate', body: 'Donațiile ajung automat în contul tău. Nu trebuie să soliciți manual nicio retragere.' },
+                    ].map(({ icon, title, body }) => (
+                      <div key={title} className="flex gap-3 items-start rounded-2xl p-4"
+                        style={{ backgroundColor: '#FFF8EE', border: '1px solid #EDD9B8' }}>
+                        <span className="text-xl shrink-0">{icon}</span>
+                        <div>
+                          <p className="text-sm font-semibold" style={{ color: '#2D2016' }}>{title}</p>
+                          <p className="text-xs mt-0.5 leading-relaxed" style={{ color: '#9A7B60' }}>{body}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-
-                  <Input
-                    label="IBAN românesc"
-                    placeholder="RO49AAAA1B31007593840000"
-                    value={organiserIban}
-                    onChange={(e) => setOrganiserIban(e.target.value.replace(/\s/g, '').toUpperCase())}
-                    hint="Format: RO + 22 caractere. Îl găsești în aplicația băncii tale."
-                  />
 
                   {/* Summary */}
                   <div className="rounded-2xl p-5 space-y-2.5"
@@ -768,11 +786,10 @@ export default function CreateEventPage() {
                     <Button
                       onClick={handleSubmit}
                       loading={loading}
-                      disabled={!organiserIban.trim()}
                       className="flex-[2]"
                       style={{ backgroundColor: '#C4956A', border: 'none' }}
                     >
-                      Publică pagina 🎉
+                      {loading ? 'Se creează...' : 'Continuă la Stripe →'}
                     </Button>
                   </div>
                 </div>

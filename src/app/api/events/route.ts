@@ -11,14 +11,7 @@ interface CreateEventBody {
   description?: string
   goalAmount?: number
   expiresAt?: string
-  organiserIban: string
   items: Array<{ name: string; targetAmount: number; emoji?: string }>
-}
-
-const IBAN_REGEX = /^RO\d{2}[A-Z]{4}[A-Z0-9]{16}$/
-
-function validateIban(iban: string): boolean {
-  return IBAN_REGEX.test(iban.replace(/\s/g, '').toUpperCase())
 }
 
 function validateSlug(slug: string): boolean {
@@ -78,10 +71,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     )
   }
 
-  if (!validateIban(body.organiserIban)) {
-    return NextResponse.json<ApiError>({ error: 'IBAN românesc invalid' }, { status: 400 })
-  }
-
   const resolvedSlug = await resolveUniqueSlug(body.slug)
 
   const config = getEventTypeConfig(body.eventType)
@@ -97,8 +86,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     goalAmount: body.goalAmount,
     expiresAt: body.expiresAt,
     organiserId: user.id,
-    organiserIban: body.organiserIban.replace(/\s/g, '').toUpperCase(),
-    isActive: true,
+    stripeConnectAccountId: undefined,
+    connectOnboardingComplete: false,
+    isActive: false, // becomes true after Stripe onboarding completes via webhook
     items,
   })
 

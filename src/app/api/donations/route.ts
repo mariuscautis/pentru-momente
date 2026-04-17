@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createPaymentIntent, calculateStripeFee } from '@/lib/payments/stripe'
+import { calculateStripeFee } from '@/lib/payments/stripe'
+import { createPaymentIntent } from '@/lib/connect/createPaymentIntent'
 import { createDonation } from '@/lib/db/donations'
 import { getEventBySlug } from '@/lib/db/events'
 import { isValidEventType } from '@/config/event-types'
@@ -58,16 +59,25 @@ async function handlePost(req: NextRequest): Promise<NextResponse> {
 
   const selectedItems = body.selectedItems ?? []
 
+  if (!event.connectOnboardingComplete || !event.stripeConnectAccountId) {
+    return NextResponse.json<ApiError>(
+      { error: 'Pagina nu este încă activată pentru donații.' },
+      { status: 400 }
+    )
+  }
+
   const tipAmount = body.tipAmount ?? 0
-  const stripeFee = calculateStripeFee(body.amount, tipAmount)
+  const stripeFeeRon = calculateStripeFee(body.amount, tipAmount)
 
   // One payment intent for the full total (donation + tip + Stripe fee)
+  // Funds route directly to organiser's Stripe Express account via destination charge.
   let paymentIntent
   try {
     paymentIntent = await createPaymentIntent({
-      amountRon: body.amount,
-      tipAmountRon: tipAmount,
-      stripeFeeRon: stripeFee,
+      amount: Math.round(body.amount * 100),           // RON → bani
+      tipAmount: Math.round(tipAmount * 100),
+      stripeFee: Math.round(stripeFeeRon * 100),
+      connectAccountId: event.stripeConnectAccountId,
       eventId: event.id,
       itemId: selectedItems.length === 1 ? selectedItems[0].itemId : undefined,
       displayName: body.displayName,
@@ -79,6 +89,8 @@ async function handlePost(req: NextRequest): Promise<NextResponse> {
     const message = err instanceof Error ? err.message : 'Payment processing error'
     return NextResponse.json<ApiError>({ error: message }, { status: 500 })
   }
+
+  const stripeFee = stripeFeeRon
 
   // Create one donation record per selected item, or one general fund record
   if (selectedItems.length > 0) {

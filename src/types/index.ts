@@ -38,8 +38,9 @@ export interface Event {
   coverImageUrl?: string
   goalAmount?: number // optional, some events have no hard goal
   organiserId: string
-  organiserIban: string // collected at creation, used for Wise payout
-  isActive: boolean
+  stripeConnectAccountId?: string       // set after Stripe Express onboarding starts
+  connectOnboardingComplete: boolean    // false until Stripe confirms onboarding done
+  isActive: boolean                     // only true after onboarding complete
   expiresAt?: string   // ISO datetime — page becomes inactive after this
   createdAt: string
 }
@@ -71,12 +72,11 @@ export interface Donation {
 export interface Payout {
   id: string
   eventId: string
+  stripePayoutId?: string       // from Stripe Connect payout.created webhook
   amount: number
-  wiseTransferId?: string
-  organiserIban: string
-  status: 'pending' | 'processing' | 'completed' | 'failed'
-  requestedAt: string
-  completedAt?: string
+  status: 'pending' | 'paid' | 'failed'
+  arrivalDate?: string
+  createdAt: string
 }
 
 export interface ApiError {

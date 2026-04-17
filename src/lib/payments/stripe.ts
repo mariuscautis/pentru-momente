@@ -18,18 +18,6 @@ export const stripe = new Proxy({} as Stripe, {
   },
 })
 
-export interface CreatePaymentIntentInput {
-  amountRon: number      // donation amount in RON
-  tipAmountRon: number   // platform tip in RON
-  stripeFeeRon: number   // Stripe processing fee passed through to donor
-  eventId: string
-  itemId?: string
-  displayName?: string
-  message?: string
-  isAnonymous: boolean
-  showAmount: boolean
-}
-
 /**
  * Calculate the Stripe processing fee to pass through to the donor.
  * EU card rate: 1.5% + €0.25 (≈1.25 RON at 5 RON/EUR), rounded up to nearest 0.5 RON.
@@ -42,36 +30,10 @@ export function calculateStripeFee(donationRon: number, tipRon: number): number 
   return Math.ceil(raw * 2) / 2
 }
 
-export async function createPaymentIntent(
-  input: CreatePaymentIntentInput
-): Promise<Stripe.PaymentIntent> {
-  const totalBani = Math.round((input.amountRon + input.tipAmountRon + input.stripeFeeRon) * 100) // RON -> bani
-
-  return stripe.paymentIntents.create({
-    amount: totalBani,
-    currency: 'ron',
-    automatic_payment_methods: { enabled: true },
-    metadata: {
-      eventId: input.eventId,
-      itemId: input.itemId ?? '',
-      donationAmount: String(input.amountRon),
-      tipAmount: String(input.tipAmountRon),
-      stripeFee: String(input.stripeFeeRon),
-      displayName: input.displayName ?? '',
-      message: input.message ?? '',
-      isAnonymous: String(input.isAnonymous),
-      showAmount: String(input.showAmount),
-    },
-  })
-}
-
 export function constructWebhookEvent(
   payload: string | Buffer,
-  signature: string
+  signature: string,
+  secret: string
 ): Stripe.Event {
-  return stripe.webhooks.constructEvent(
-    payload,
-    signature,
-    process.env.STRIPE_WEBHOOK_SECRET!
-  )
+  return stripe.webhooks.constructEvent(payload, signature, secret)
 }

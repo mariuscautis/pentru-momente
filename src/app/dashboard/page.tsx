@@ -25,8 +25,6 @@ export default function DashboardPage() {
   const [events, setEvents] = useState<DashboardEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [userName, setUserName] = useState('')
-  const [payoutLoading, setPayoutLoading] = useState<string | null>(null)
-  const [payoutAmounts, setPayoutAmounts] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
   const [uploadingFor, setUploadingFor] = useState<string | null>(null)
   const [deletingFor, setDeletingFor] = useState<string | null>(null)
@@ -65,7 +63,8 @@ export default function DashboardPage() {
           coverImageUrl: row.cover_image_url as string | undefined,
           goalAmount: row.goal_amount as number | undefined,
           organiserId: row.organiser_id as string,
-          organiserIban: row.organiser_iban as string,
+          stripeConnectAccountId: row.stripe_connect_account_id as string | undefined,
+          connectOnboardingComplete: (row.connect_onboarding_complete as boolean) ?? false,
           isActive: row.is_active as boolean,
           expiresAt: row.expires_at as string | undefined,
           createdAt: row.created_at as string,
@@ -79,29 +78,6 @@ export default function DashboardPage() {
   }
 
   useEffect(() => { load() }, [router]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  async function requestPayout(event: DashboardEvent) {
-    setPayoutLoading(event.id)
-    setError(null)
-    const supabase = getSupabase()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return
-    const amount = parseFloat(payoutAmounts[event.id] ?? '')
-    if (isNaN(amount) || amount < 50) {
-      setError('Suma minimă pentru retragere este 50 RON.')
-      setPayoutLoading(null)
-      return
-    }
-    const res = await fetch('/api/payouts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-      body: JSON.stringify({ eventId: event.id, amount }),
-    })
-    const data = await res.json() as { error?: string }
-    if (!res.ok) { setError(data.error ?? 'Eroare la retragere.') }
-    else { load() }
-    setPayoutLoading(null)
-  }
 
   async function uploadCover(eventId: string, file: File) {
     setUploadingFor(eventId)
@@ -231,10 +207,6 @@ export default function DashboardPage() {
             <EventCard
               key={event.id}
               event={event}
-              payoutAmount={payoutAmounts[event.id] ?? ''}
-              onPayoutAmountChange={(v) => setPayoutAmounts((prev) => ({ ...prev, [event.id]: v }))}
-              onRequestPayout={() => requestPayout(event)}
-              payoutLoading={payoutLoading === event.id}
               uploadingCover={uploadingFor === event.id}
               onUploadCover={(file) => uploadCover(event.id, file)}
               onEventUpdated={load}
@@ -272,10 +244,6 @@ function StatCard({ label, value, highlight }: { label: string; value: string; h
 
 interface EventCardProps {
   event: DashboardEvent
-  payoutAmount: string
-  onPayoutAmountChange: (v: string) => void
-  onRequestPayout: () => void
-  payoutLoading: boolean
   uploadingCover: boolean
   onUploadCover: (file: File) => void
   onEventUpdated: () => void
@@ -287,8 +255,7 @@ interface EventCardProps {
 }
 
 function EventCard({
-  event, payoutAmount, onPayoutAmountChange, onRequestPayout,
-  payoutLoading, uploadingCover, onUploadCover, onEventUpdated,
+  event, uploadingCover, onUploadCover, onEventUpdated,
   confirmingDelete, deletingEvent, onDeleteRequest, onDeleteConfirm, onDeleteCancel,
 }: EventCardProps) {
   const fileRef = useRef<HTMLInputElement>(null)
@@ -303,7 +270,6 @@ function EventCard({
     event.expiresAt ? new Date(event.expiresAt).toISOString().split('T')[0] : ''
   )
   const meta = EVENT_TYPE_LABELS[event.eventType] ?? { label: event.eventType, emoji: '🌟' }
-  const pendingPayouts = event.payouts.filter((p) => p.status === 'pending' || p.status === 'processing')
   const goalPercent = event.goalAmount ? Math.min(100, Math.round((event.totalRaised / event.goalAmount) * 100)) : null
   const eventUrl = `/${event.eventType}/${event.slug}`
   const isExpired = event.expiresAt ? new Date(event.expiresAt) < new Date() : false
@@ -620,64 +586,42 @@ function EventCard({
           </div>
         )}
 
-        {/* Payout section */}
+        {/* Stripe Connect status + payout history */}
         <div className="rounded-xl p-4 space-y-3" style={{ border: '1px solid #EDE0D0' }}>
-          <p className="text-sm font-semibold" style={{ color: '#2D2016' }}>Retrage fonduri</p>
+          <p className="text-sm font-semibold" style={{ color: '#2D2016' }}>Plăți</p>
 
-          {event.totalRaised < 50 ? (
-            <p className="text-xs" style={{ color: '#9A7B60' }}>
-              Suma minimă pentru retragere este 50 RON. Mai ai nevoie de {50 - event.totalRaised} RON.
-            </p>
-          ) : pendingPayouts.length > 0 ? (
-            <p className="text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: '#FFFBEB', color: '#92400E' }}>
-              O retragere este în curs de procesare.
-            </p>
-          ) : (
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <input
-                  type="number"
-                  min={50}
-                  max={event.totalRaised}
-                  placeholder="Sumă RON"
-                  value={payoutAmount}
-                  onChange={(e) => onPayoutAmountChange(e.target.value)}
-                  className="w-full rounded-lg px-3 py-2.5 text-sm outline-none"
-                  style={{ border: '1px solid #E0D0C0', color: '#2D2016', backgroundColor: '#FDFAF7' }}
-                  onFocus={(e) => (e.target.style.borderColor = '#C4956A')}
-                  onBlur={(e) => (e.target.style.borderColor = '#E0D0C0')}
-                />
-              </div>
-              <button
-                onClick={onRequestPayout}
-                disabled={payoutLoading}
-                className="rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-opacity"
-                style={{ backgroundColor: '#C4956A', opacity: payoutLoading ? 0.6 : 1 }}
-              >
-                {payoutLoading ? '...' : 'Retrage'}
-              </button>
+          {!event.connectOnboardingComplete ? (
+            <div className="space-y-2">
+              <p className="text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: '#FFFBEB', color: '#92400E' }}>
+                Configurarea plăților nu este finalizată. Pagina nu este încă activă pentru donații.
+              </p>
+              <OnboardingResumeButton eventSlug={event.slug} />
             </div>
+          ) : (
+            <p className="text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: '#F0FFF4', color: '#166534' }}>
+              Stripe Connect activ — donațiile ajung automat în contul tău.
+            </p>
           )}
 
           {/* Payout history */}
           {event.payouts.length > 0 && (
             <div className="space-y-1.5 pt-1">
-              <p className="text-xs font-medium" style={{ color: '#9A7B60' }}>Istoric</p>
+              <p className="text-xs font-medium" style={{ color: '#9A7B60' }}>Istoric plăți Stripe</p>
               {event.payouts.map((p) => (
                 <div key={p.id} className="flex items-center justify-between text-xs" style={{ color: '#7A6652' }}>
-                  <span>{new Date(p.requestedAt).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                  <span>{new Date(p.createdAt).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                   <span className="font-medium">{p.amount} RON</span>
                   <span
                     className="px-2 py-0.5 rounded-full text-xs"
                     style={
-                      p.status === 'completed'
+                      p.status === 'paid'
                         ? { backgroundColor: '#F0FFF4', color: '#166534' }
                         : p.status === 'failed'
                         ? { backgroundColor: '#FEF2F2', color: '#B91C1C' }
                         : { backgroundColor: '#FFFBEB', color: '#92400E' }
                     }
                   >
-                    {p.status === 'completed' ? 'Finalizat' : p.status === 'failed' ? 'Eșuat' : 'În curs'}
+                    {p.status === 'paid' ? 'Plătit' : p.status === 'failed' ? 'Eșuat' : 'În curs'}
                   </span>
                 </div>
               ))}
@@ -687,6 +631,44 @@ function EventCard({
 
       </div>
     </article>
+  )
+}
+
+// ─── Onboarding resume button ──────────────────────────────────────────────────
+
+function OnboardingResumeButton({ eventSlug }: { eventSlug: string }) {
+  const [loading, setLoading] = useState(false)
+  const [err, setErr] = useState('')
+
+  async function resume() {
+    setLoading(true)
+    setErr('')
+    const res = await fetch('/api/connect/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ eventSlug }),
+    })
+    const data = (await res.json()) as { onboardingUrl?: string; error?: string }
+    if (!res.ok || !data.onboardingUrl) {
+      setErr(data.error ?? 'Eroare la generarea linkului.')
+      setLoading(false)
+      return
+    }
+    window.location.href = data.onboardingUrl
+  }
+
+  return (
+    <div>
+      <button
+        onClick={resume}
+        disabled={loading}
+        className="text-xs px-3 py-2 rounded-lg font-semibold text-white transition-opacity"
+        style={{ backgroundColor: '#C4956A', opacity: loading ? 0.6 : 1 }}
+      >
+        {loading ? 'Se încarcă...' : 'Finalizează configurarea Stripe →'}
+      </button>
+      {err && <p className="mt-1 text-xs" style={{ color: '#B91C1C' }}>{err}</p>}
+    </div>
   )
 }
 

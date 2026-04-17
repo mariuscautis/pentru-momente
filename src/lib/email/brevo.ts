@@ -101,12 +101,12 @@ export async function sendMilestoneEmail(
   })
 }
 
-export async function sendPayoutInitiatedEmail(
+// Triggered by Stripe Connect payout.created webhook
+export async function sendPayoutSentEmail(
   organiserEmail: string,
   organiserName: string,
   eventName: string,
-  amountRon: number,
-  wiseTransferId: string
+  amountRon: number
 ): Promise<void> {
   await sendEmail({
     to: [{ email: organiserEmail, name: organiserName }],
@@ -116,14 +116,15 @@ export async function sendPayoutInitiatedEmail(
       eventName,
       amount: amountRon,
       tipAmount: 0,
-      message: `ID transfer Wise: ${wiseTransferId}`,
+      message: 'Suma ta este pe drum. Stripe va efectua plata în contul tău.',
       eventUrl: '',
       organiserName,
     },
   })
 }
 
-export async function sendPayoutCompletedEmail(
+// Triggered by Stripe Connect payout.paid webhook
+export async function sendPayoutConfirmedEmail(
   organiserEmail: string,
   organiserName: string,
   eventName: string,

@@ -11,7 +11,8 @@ function rowToEvent(row: Record<string, unknown>): Event {
     coverImageUrl: row.cover_image_url as string | undefined,
     goalAmount: row.goal_amount as number | undefined,
     organiserId: row.organiser_id as string,
-    organiserIban: row.organiser_iban as string,
+    stripeConnectAccountId: row.stripe_connect_account_id as string | undefined,
+    connectOnboardingComplete: (row.connect_onboarding_complete as boolean) ?? false,
     isActive: row.is_active as boolean,
     expiresAt: row.expires_at as string | undefined,
     createdAt: row.created_at as string,
@@ -118,8 +119,9 @@ export async function createEvent(
       cover_image_url: eventData.coverImageUrl,
       goal_amount: eventData.goalAmount,
       organiser_id: eventData.organiserId,
-      organiser_iban: eventData.organiserIban,
-      is_active: true,
+      stripe_connect_account_id: eventData.stripeConnectAccountId ?? null,
+      connect_onboarding_complete: eventData.connectOnboardingComplete,
+      is_active: eventData.isActive,
       expires_at: eventData.expiresAt ?? null,
     })
     .select()
