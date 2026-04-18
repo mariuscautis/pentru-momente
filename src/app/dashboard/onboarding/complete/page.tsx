@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { getSupabase } from '@/lib/db/supabase'
 
 function OnboardingCompleteContent() {
   const searchParams = useSearchParams()
@@ -13,29 +14,44 @@ function OnboardingCompleteContent() {
   useEffect(() => {
     if (!slug) { router.push('/dashboard'); return }
 
-    // Poll for is_active — the account.updated webhook may take a few seconds
-    let attempts = 0
-    const interval = setInterval(async () => {
-      attempts++
-      try {
-        const res = await fetch(`/api/events/by-slug?slug=${slug}`)
-        if (res.ok) {
-          const data = await res.json() as { isActive?: boolean }
-          if (data.isActive) {
-            setStatus('active')
-            clearInterval(interval)
-            return
+    async function activate() {
+      const supabase = getSupabase()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { router.push('/login'); return }
+
+      // Call activate endpoint which checks Stripe directly
+      let attempts = 0
+      const interval = setInterval(async () => {
+        attempts++
+        try {
+          const res = await fetch('/api/connect/activate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({ eventSlug: slug }),
+          })
+          if (res.ok) {
+            const data = await res.json() as { isActive?: boolean }
+            if (data.isActive) {
+              setStatus('active')
+              clearInterval(interval)
+              return
+            }
           }
+        } catch { /* ignore */ }
+
+        if (attempts >= 8) {
+          clearInterval(interval)
+          setStatus('pending')
         }
-      } catch { /* ignore */ }
+      }, 2000)
 
-      if (attempts >= 10) {
-        clearInterval(interval)
-        setStatus('pending')
-      }
-    }, 2000)
+      return () => clearInterval(interval)
+    }
 
-    return () => clearInterval(interval)
+    activate()
   }, [slug, router])
 
   return (
@@ -49,7 +65,7 @@ function OnboardingCompleteContent() {
             Se activează pagina...
           </h1>
           <p className="text-sm" style={{ color: '#9A7B60' }}>
-            Așteptăm confirmarea de la Stripe. Durează câteva secunde.
+            Verificăm confirmarea de la Stripe. Durează câteva secunde.
           </p>
           <div className="flex justify-center">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-t-transparent"
