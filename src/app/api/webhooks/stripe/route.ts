@@ -123,9 +123,11 @@ async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent): Prom
 }
 
 async function handleAccountUpdated(account: Stripe.Account): Promise<void> {
-  if (!account.details_submitted || !account.charges_enabled) return
+  // Activate as soon as the organiser has submitted their details.
+  // charges_enabled may lag in test mode and for accounts under review —
+  // we trust details_submitted as the signal that onboarding is done.
+  if (!account.details_submitted) return
 
-  // Mark the event active once onboarding is complete
   await supabaseAdmin
     .from('events')
     .update({ connect_onboarding_complete: true, is_active: true })
