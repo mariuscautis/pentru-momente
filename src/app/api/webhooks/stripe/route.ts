@@ -12,26 +12,32 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const body = await req.text()
   const signature = req.headers.get('stripe-signature')
 
+  console.log('[webhook] received, signature present:', !!signature)
+
   if (!signature) {
     return NextResponse.json({ error: 'Missing stripe-signature header' }, { status: 400 })
   }
 
-  // Try the standard webhook secret first, then the Connect webhook secret.
-  // Stripe signs Connect account events with STRIPE_CONNECT_WEBHOOK_SECRET.
   let event: Stripe.Event | null = null
   let isConnectEvent = false
 
   const standardSecret = process.env.STRIPE_WEBHOOK_SECRET!
   const connectSecret = process.env.STRIPE_CONNECT_WEBHOOK_SECRET
 
+  console.log('[webhook] standardSecret present:', !!standardSecret, 'connectSecret present:', !!connectSecret)
+
   try {
     event = constructWebhookEvent(body, signature, standardSecret)
-  } catch {
+    console.log('[webhook] verified with standard secret')
+  } catch (e1) {
+    console.log('[webhook] standard secret failed:', (e1 as Error).message)
     if (connectSecret) {
       try {
         event = constructWebhookEvent(body, signature, connectSecret)
         isConnectEvent = true
-      } catch {
+        console.log('[webhook] verified with connect secret')
+      } catch (e2) {
+        console.log('[webhook] connect secret also failed:', (e2 as Error).message)
         return NextResponse.json({ error: 'Webhook signature verification failed' }, { status: 400 })
       }
     } else {
@@ -42,6 +48,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (!event) {
     return NextResponse.json({ error: 'Could not parse webhook event' }, { status: 400 })
   }
+
+  console.log('[webhook] event type:', event.type, '| isConnectEvent:', isConnectEvent)
 
   if (!isConnectEvent) {
     // Standard platform events
