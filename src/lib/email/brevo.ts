@@ -272,6 +272,153 @@ export async function sendPayoutConfirmedEmail(
   })
 }
 
+// Triggered when super admin blocks an event
+export async function sendEventBlockedEmail(
+  organiserEmail: string,
+  organiserName: string,
+  eventName: string,
+  reason?: string
+): Promise<void> {
+  const contactUrl = `${APP_URL}/contact`
+  const html = buildAdminActionHtml({
+    organiserName,
+    eventName,
+    type: 'blocked',
+    reason,
+    contactUrl,
+  })
+  await sendEmail({
+    to: [{ email: organiserEmail, name: organiserName }],
+    subject: `Pagina ta de donații a fost suspendată — ${eventName}`,
+    htmlContent: html,
+  })
+}
+
+// Triggered when super admin unblocks an event
+export async function sendEventUnblockedEmail(
+  organiserEmail: string,
+  organiserName: string,
+  eventName: string,
+  eventType: string,
+  eventSlug: string
+): Promise<void> {
+  const eventUrl = `${APP_URL}/${eventType}/${eventSlug}`
+  const html = buildAdminActionHtml({
+    organiserName,
+    eventName,
+    type: 'unblocked',
+    eventUrl,
+  })
+  await sendEmail({
+    to: [{ email: organiserEmail, name: organiserName }],
+    subject: `Pagina ta de donații a fost reactivată — ${eventName}`,
+    htmlContent: html,
+  })
+}
+
+function buildAdminActionHtml(params: {
+  organiserName: string
+  eventName: string
+  type: 'blocked' | 'unblocked'
+  reason?: string
+  contactUrl?: string
+  eventUrl?: string
+}): string {
+  const { organiserName, eventName, type, reason, contactUrl, eventUrl } = params
+  const isBlocked = type === 'blocked'
+
+  const accentColor = isBlocked ? '#DC2626' : '#16A34A'
+  const headerBg = isBlocked ? '#FEF2F2' : '#F0FDF4'
+  const iconEmoji = isBlocked ? '⚠️' : '✅'
+
+  const heading = isBlocked
+    ? 'Pagina ta a fost suspendată'
+    : 'Pagina ta a fost reactivată'
+
+  const bodyText = isBlocked
+    ? `Pagina de donații pentru <strong>${eventName}</strong> a fost suspendată de echipa pentrumomente.ro. Donatorii nu mai pot accesa sau contribui pe pagina ta în acest moment.`
+    : `Pagina de donații pentru <strong>${eventName}</strong> a fost reactivată de echipa pentrumomente.ro. Donatorii pot accesa și contribui din nou pe pagina ta.`
+
+  const reasonBlock = reason
+    ? `<div style="margin:20px 0;padding:14px 18px;background:#FEF2F2;border-left:3px solid #DC2626;border-radius:8px;">
+        <p style="margin:0;font-size:13px;color:#7A6652;"><strong style="color:#2D2016;">Motiv indicat:</strong> ${reason}</p>
+      </div>`
+    : ''
+
+  const ctaBlock = isBlocked
+    ? `<p style="margin:20px 0 8px;font-size:14px;color:#4A3728;line-height:1.6;">
+        Dacă crezi că este o eroare sau dorești să afli mai multe detalii, te rugăm să ne contactezi.
+      </p>
+      <div style="text-align:center;margin:24px 0 8px;">
+        <a href="${contactUrl}"
+           style="display:inline-block;background:#2D2016;color:#FFFFFF;font-size:14px;font-weight:600;text-decoration:none;padding:12px 28px;border-radius:10px;">
+          Contactează-ne
+        </a>
+      </div>`
+    : `<p style="margin:20px 0 8px;font-size:14px;color:#4A3728;line-height:1.6;">
+        Pagina ta este din nou disponibilă. Poți distribui linkul persoanelor care doresc să contribuie.
+      </p>
+      <div style="text-align:center;margin:24px 0 8px;">
+        <a href="${eventUrl}"
+           style="display:inline-block;background:#16A34A;color:#FFFFFF;font-size:14px;font-weight:600;text-decoration:none;padding:12px 28px;border-radius:10px;">
+          Vezi pagina ta
+        </a>
+      </div>`
+
+  return `<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${heading} — ${eventName}</title>
+</head>
+<body style="margin:0;padding:0;background:#FAF6F1;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#FAF6F1;padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table width="520" cellpadding="0" cellspacing="0" style="max-width:520px;width:100%;background:#FFFFFF;border-radius:16px;overflow:hidden;border:1px solid #EDE0D0;">
+
+          <!-- Header band -->
+          <tr>
+            <td style="background:${headerBg};padding:32px;text-align:center;border-bottom:2px solid ${accentColor}20;">
+              <p style="margin:0 0 10px;font-size:28px;line-height:1;">${iconEmoji}</p>
+              <p style="margin:0 0 4px;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#9A7B60;">pentrumomente.ro</p>
+              <h1 style="margin:8px 0 0;font-size:20px;font-weight:700;color:${accentColor};line-height:1.3;">${heading}</h1>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:32px;">
+              <p style="margin:0 0 16px;font-size:15px;color:#4A3728;line-height:1.6;">
+                Bună, <strong>${organiserName}</strong>,
+              </p>
+              <p style="margin:0 0 4px;font-size:15px;color:#4A3728;line-height:1.6;">
+                ${bodyText}
+              </p>
+              ${reasonBlock}
+              ${ctaBlock}
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#FAF6F1;padding:20px 32px;text-align:center;border-top:1px solid #EDE0D0;">
+              <p style="margin:0;font-size:12px;color:#B09070;line-height:1.6;">
+                Acest email a fost trimis automat de echipa pentrumomente.ro.<br/>
+                <a href="${APP_URL}" style="color:#C4956A;text-decoration:none;">pentrumomente.ro</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
+}
+
 // Triggered when an event is closed (manually or by expiry)
 export async function sendEventClosedSummaryEmail(
   organiserEmail: string,
@@ -305,7 +452,6 @@ function buildEventClosedHtml(
   reason: 'manual' | 'expired'
 ): string {
   const primary = config.palette.primary
-  const eventUrl = `${APP_URL}/${event.eventType}/${event.slug}`
 
   const reasonLine = reason === 'expired'
     ? 'Pagina ta a ajuns la data de expirare și a fost închisă automat.'
@@ -406,18 +552,6 @@ function buildEventClosedHtml(
               ${durationLine}
               ${goalBlock}
 
-            </td>
-          </tr>
-
-          <!-- CTA -->
-          <tr>
-            <td style="padding:24px 32px;">
-              <div style="text-align:center;">
-                <a href="${eventUrl}"
-                   style="display:inline-block;background:${primary};color:#FFFFFF;font-size:14px;font-weight:600;text-decoration:none;padding:13px 32px;border-radius:10px;">
-                  Vezi pagina
-                </a>
-              </div>
             </td>
           </tr>
 

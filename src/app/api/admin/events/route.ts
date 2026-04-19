@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdminRequest } from '@/lib/admin-auth'
 import { blockEvent, unblockEvent, getAllBlockedEvents } from '@/lib/db/admin'
 import { supabaseAdmin } from '@/lib/db/supabase'
+import { sendEventBlockedEmail, sendEventUnblockedEmail } from '@/lib/email/brevo'
 import { ApiError } from '@/types'
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
@@ -11,7 +12,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   // Fetch all events with goal and expiry
   const { data: events, error } = await supabaseAdmin
     .from('events')
-    .select('id, slug, event_type, name, is_active, goal_amount, expires_at, created_at')
+    .select('id, slug, event_type, name, is_active, is_deleted, goal_amount, expires_at, created_at')
     .order('created_at', { ascending: false })
 
   if (error) return NextResponse.json<ApiError>({ error: 'DB error' }, { status: 500 })
@@ -40,6 +41,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     eventType: e.event_type,
     name: e.name,
     isActive: e.is_active,
+    isDeleted: (e.is_deleted as boolean) ?? false,
     isBlocked: blockedIds.has(e.id as string),
     createdAt: e.created_at,
     goalAmount: (e.goal_amount as number | null) ?? null,
@@ -62,10 +64,45 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json<ApiError>({ error: 'eventId and action are required' }, { status: 400 })
   }
 
+  // Fetch event + organiser details for the notification email
+  const { data: eventRow } = await supabaseAdmin
+    .from('events')
+    .select('name, slug, event_type, organiser_id')
+    .eq('id', body.eventId)
+    .single()
+
   if (body.action === 'block') {
     await blockEvent(body.eventId, body.reason ?? '', adminEmail)
   } else {
     await unblockEvent(body.eventId)
+  }
+
+  // Send notification email to organiser (fire-and-forget — don't fail the request on email error)
+  if (eventRow) {
+    try {
+      const { data: userData } = await supabaseAdmin.auth.admin.getUserById(eventRow.organiser_id as string)
+      const organiserEmail = userData?.user?.email
+      const organiserName = (userData?.user?.user_metadata?.full_name as string | undefined)
+        ?? (userData?.user?.user_metadata?.name as string | undefined)
+        ?? organiserEmail
+        ?? 'Organizator'
+
+      if (organiserEmail) {
+        if (body.action === 'block') {
+          await sendEventBlockedEmail(organiserEmail, organiserName, eventRow.name as string, body.reason)
+        } else {
+          await sendEventUnblockedEmail(
+            organiserEmail,
+            organiserName,
+            eventRow.name as string,
+            eventRow.event_type as string,
+            eventRow.slug as string
+          )
+        }
+      }
+    } catch (err) {
+      console.error('[admin/events] notification email failed:', err)
+    }
   }
 
   return NextResponse.json({ ok: true })
