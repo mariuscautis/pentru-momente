@@ -117,3 +117,43 @@ export async function getTotalRaisedForEvent(eventId: string): Promise<number> {
   if (error || !data) return 0
   return data.reduce((sum, row) => sum + (row.amount as number), 0)
 }
+
+export interface EventSummaryStats {
+  totalRaised: number
+  donationCount: number
+  uniqueDonors: number
+  largestDonation: number
+  firstDonationAt: string | null
+  lastDonationAt: string | null
+}
+
+export async function getEventSummaryStats(eventId: string): Promise<EventSummaryStats> {
+  const { data } = await supabaseAdmin
+    .from('donations')
+    .select('amount, display_name, is_anonymous, created_at')
+    .eq('event_id', eventId)
+    .eq('status', 'confirmed')
+    .order('created_at', { ascending: true })
+
+  if (!data || data.length === 0) {
+    return { totalRaised: 0, donationCount: 0, uniqueDonors: 0, largestDonation: 0, firstDonationAt: null, lastDonationAt: null }
+  }
+
+  const totalRaised = data.reduce((sum, row) => sum + (row.amount as number), 0)
+  const largestDonation = Math.max(...data.map((row) => row.amount as number))
+  const namedDonors = new Set(
+    data
+      .filter((row) => !(row.is_anonymous as boolean) && row.display_name)
+      .map((row) => (row.display_name as string).trim().toLowerCase())
+  )
+  const uniqueDonors = namedDonors.size || data.length
+
+  return {
+    totalRaised,
+    donationCount: data.length,
+    uniqueDonors,
+    largestDonation,
+    firstDonationAt: data[0].created_at as string,
+    lastDonationAt: data[data.length - 1].created_at as string,
+  }
+}

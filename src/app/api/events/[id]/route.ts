@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase, supabaseAdmin } from '@/lib/db/supabase'
-import { deleteEvent } from '@/lib/db/events'
+import { deleteEvent, getEventById } from '@/lib/db/events'
+import { getEventSummaryStats } from '@/lib/db/donations'
+import { sendEventClosedSummaryEmail } from '@/lib/email/brevo'
+import { getEventTypeConfig } from '@/config/event-types'
 import { ApiError } from '@/types'
 
 export async function PATCH(
@@ -22,7 +25,7 @@ export async function PATCH(
   // Verify ownership
   const { data: existing, error: fetchError } = await supabaseAdmin
     .from('events')
-    .select('id, organiser_id')
+    .select('id, organiser_id, is_active')
     .eq('id', eventId)
     .eq('organiser_id', user.id)
     .single()
@@ -64,6 +67,24 @@ export async function PATCH(
     return NextResponse.json<ApiError>({ error: updateError.message }, { status: 500 })
   }
 
+  // Send summary email when organiser manually deactivates an active page
+  const isBeingClosed = body.isActive === false && (existing.is_active as boolean) === true
+  if (isBeingClosed) {
+    try {
+      const eventData = await getEventById(eventId)
+      if (eventData) {
+        const organiserUser = await supabaseAdmin.auth.admin.getUserById(user.id)
+        const organiserEmail = organiserUser.data.user?.email ?? ''
+        const organiserName = (organiserUser.data.user?.user_metadata?.full_name as string | undefined) ?? eventData.name
+        const stats = await getEventSummaryStats(eventId)
+        const config = getEventTypeConfig(eventData.eventType)
+        await sendEventClosedSummaryEmail(organiserEmail, organiserName, eventData, config, stats, 'manual')
+      }
+    } catch (err) {
+      console.error('[events] failed to send closed summary email:', err)
+    }
+  }
+
   return NextResponse.json({ ok: true })
 }
 
@@ -83,9 +104,25 @@ export async function DELETE(
     return NextResponse.json<ApiError>({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Fetch event data before deleting so we can send the summary email
+  const eventData = await getEventById(eventId)
+
   const ok = await deleteEvent(eventId, user.id)
   if (!ok) {
     return NextResponse.json<ApiError>({ error: 'Event not found' }, { status: 404 })
+  }
+
+  if (eventData) {
+    try {
+      const organiserUser = await supabaseAdmin.auth.admin.getUserById(user.id)
+      const organiserEmail = organiserUser.data.user?.email ?? ''
+      const organiserName = (organiserUser.data.user?.user_metadata?.full_name as string | undefined) ?? eventData.name
+      const stats = await getEventSummaryStats(eventId)
+      const config = getEventTypeConfig(eventData.eventType)
+      await sendEventClosedSummaryEmail(organiserEmail, organiserName, eventData, config, stats, 'manual')
+    } catch (err) {
+      console.error('[events] failed to send deleted summary email:', err)
+    }
   }
 
   return NextResponse.json({ ok: true })
