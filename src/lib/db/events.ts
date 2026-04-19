@@ -206,14 +206,15 @@ export async function updateEventItemRaisedAmount(
 ): Promise<void> {
   const { data: item } = await supabaseAdmin
     .from('event_items')
-    .select('raised_amount, target_amount')
+    .select('raised_amount, target_amount, is_custom_amount')
     .eq('id', itemId)
     .single()
 
   if (!item) return
 
   const newRaised = (item.raised_amount as number) + additionalAmount
-  const isFullyFunded = newRaised >= (item.target_amount as number)
+  // Custom-amount items have no target — they can never be fully funded
+  const isFullyFunded = !(item.is_custom_amount as boolean) && newRaised >= (item.target_amount as number)
 
   await supabaseAdmin
     .from('event_items')

@@ -133,7 +133,7 @@ function ItemRow({ item, config, cartItem, expanded, onExpand, onAddToCart, onRe
             <div className="min-w-0">
               <p className="font-semibold truncate" style={{ color: '#2D2016' }}>{item.name}</p>
               <p className="text-xs mt-0.5" style={{ color: '#9A7B60' }}>
-                {item.isFullyFunded
+                {item.isFullyFunded && !item.isCustomAmount
                   ? 'Finanțat integral ✓'
                   : hasTarget
                   ? `${item.raisedAmount} Lei din ${item.targetAmount} Lei`
@@ -144,7 +144,7 @@ function ItemRow({ item, config, cartItem, expanded, onExpand, onAddToCart, onRe
             </div>
           </div>
 
-          {item.isFullyFunded ? (
+          {item.isFullyFunded && !item.isCustomAmount ? (
             <span
               className="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium"
               style={{ backgroundColor: '#F0FFF4', color: '#166534' }}
@@ -181,7 +181,7 @@ function ItemRow({ item, config, cartItem, expanded, onExpand, onAddToCart, onRe
       <div
         style={{
           display: 'grid',
-          gridTemplateRows: expanded && !item.isFullyFunded ? '1fr' : '0fr',
+          gridTemplateRows: expanded && !(item.isFullyFunded && !item.isCustomAmount) ? '1fr' : '0fr',
           transition: 'grid-template-rows 280ms ease',
         }}
       >
