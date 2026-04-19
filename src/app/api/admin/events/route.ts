@@ -9,10 +9,10 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const adminEmail = await verifyAdminRequest(req)
   if (!adminEmail) return NextResponse.json<ApiError>({ error: 'Unauthorized' }, { status: 401 })
 
-  // Fetch all events with goal and expiry
+  // Fetch all events with goal, expiry, and Stripe Connect fields
   const { data: events, error } = await supabaseAdmin
     .from('events')
-    .select('id, slug, event_type, name, is_active, is_deleted, goal_amount, expires_at, created_at')
+    .select('id, slug, event_type, name, is_active, is_deleted, goal_amount, expires_at, created_at, organiser_id, stripe_connect_account_id, connect_onboarding_complete')
     .order('created_at', { ascending: false })
 
   if (error) return NextResponse.json<ApiError>({ error: 'DB error' }, { status: 500 })
@@ -35,21 +35,49 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     tipsByEvent[eid] = (tipsByEvent[eid] ?? 0) + ((d.tip_amount as number) ?? 0)
   }
 
-  const eventsWithStatus = (events ?? []).map((e: Record<string, unknown>) => ({
-    id: e.id,
-    slug: e.slug,
-    eventType: e.event_type,
-    name: e.name,
-    isActive: e.is_active,
-    isDeleted: (e.is_deleted as boolean) ?? false,
-    isBlocked: blockedIds.has(e.id as string),
-    createdAt: e.created_at,
-    goalAmount: (e.goal_amount as number | null) ?? null,
-    expiresAt: (e.expires_at as string | null) ?? null,
-    totalRaised: raisedByEvent[e.id as string] ?? 0,
-    totalTips: tipsByEvent[e.id as string] ?? 0,
-    blockInfo: blocked.find((b) => b.eventId === e.id) ?? null,
-  }))
+  // Batch-fetch unique organiser users
+  const organiserIds = [...new Set((events ?? []).map((e) => e.organiser_id as string).filter(Boolean))]
+  const userMap: Record<string, { email: string; name: string }> = {}
+  await Promise.all(
+    organiserIds.map(async (uid) => {
+      try {
+        const { data } = await supabaseAdmin.auth.admin.getUserById(uid)
+        if (data?.user) {
+          userMap[uid] = {
+            email: data.user.email ?? '',
+            name: (data.user.user_metadata?.full_name as string | undefined)
+              ?? (data.user.user_metadata?.name as string | undefined)
+              ?? data.user.email
+              ?? '',
+          }
+        }
+      } catch { /* skip */ }
+    })
+  )
+
+  const eventsWithStatus = (events ?? []).map((e: Record<string, unknown>) => {
+    const organiserId = e.organiser_id as string
+    const organiser = userMap[organiserId] ?? { email: '', name: '' }
+    return {
+      id: e.id,
+      slug: e.slug,
+      eventType: e.event_type,
+      name: e.name,
+      isActive: e.is_active,
+      isDeleted: (e.is_deleted as boolean) ?? false,
+      isBlocked: blockedIds.has(e.id as string),
+      createdAt: e.created_at,
+      goalAmount: (e.goal_amount as number | null) ?? null,
+      expiresAt: (e.expires_at as string | null) ?? null,
+      totalRaised: raisedByEvent[e.id as string] ?? 0,
+      totalTips: tipsByEvent[e.id as string] ?? 0,
+      blockInfo: blocked.find((b) => b.eventId === e.id) ?? null,
+      organiserEmail: organiser.email,
+      organiserName: organiser.name,
+      stripeConnectAccountId: (e.stripe_connect_account_id as string | null) ?? null,
+      connectOnboardingComplete: (e.connect_onboarding_complete as boolean) ?? false,
+    }
+  })
 
   return NextResponse.json({ events: eventsWithStatus })
 }

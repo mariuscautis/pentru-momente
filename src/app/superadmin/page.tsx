@@ -41,6 +41,10 @@ interface AdminEvent {
   totalRaised: number
   totalTips: number
   blockInfo: { reason: string | null; blockedBy: string; blockedAt: string } | null
+  organiserEmail: string
+  organiserName: string
+  stripeConnectAccountId: string | null
+  connectOnboardingComplete: boolean
 }
 
 type Tab = 'seo' | 'blog' | 'terms' | 'cookies' | 'gdpr' | 'menu' | 'events' | 'coming-soon'
@@ -1254,110 +1258,176 @@ function EventsTab() {
         </div>
       )}
 
-      {/* Desktop table */}
-      <div className="hidden md:block rounded-2xl overflow-hidden" style={{ backgroundColor: c.surface, border: `1px solid ${c.border}` }}>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr style={{ backgroundColor: c.bg, borderBottom: `1px solid ${c.border}` }}>
-                {['Pagină', 'Tip', 'Status', 'Target', 'Colectat', 'Comision', 'Expiră', 'Creat', 'Acțiuni'].map(h => (
-                  <th key={h} className={`px-4 py-3 text-xs font-semibold uppercase tracking-wider ${h === 'Acțiuni' || h === 'Colectat' || h === 'Comision' || h === 'Target' ? 'text-right' : 'text-left'}`} style={{ color: c.textSoft }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 ? (
-                <tr><td colSpan={9} className="px-4 py-8 text-center text-sm" style={{ color: c.textSoft }}>Nicio pagină găsită.</td></tr>
-              ) : filtered.map((event) => (
-                <tr key={event.id} style={{ borderBottom: `1px solid ${c.border}` }}>
-                  <td className="px-4 py-3">
-                    <p className="font-medium" style={{ color: c.text }}>{event.name}</p>
-                    <p className="text-xs mt-0.5" style={{ color: c.textSoft }}>{event.eventType}/{event.slug}</p>
-                    {event.blockInfo?.reason && <p className="text-xs mt-0.5" style={{ color: c.danger }}>Motiv: {event.blockInfo.reason}</p>}
-                  </td>
-                  <td className="px-4 py-3"><span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: c.badge, color: c.badgeText }}>{event.eventType}</span></td>
-                  <td className="px-4 py-3"><EventStatusBadge event={event} /></td>
-                  <td className="px-4 py-3 text-right" style={{ color: c.textMid }}>{event.goalAmount ? `${event.goalAmount.toLocaleString('ro-RO')} RON` : <span style={{ color: c.textSoft }}>—</span>}</td>
-                  <td className="px-4 py-3 text-right font-semibold" style={{ color: c.success }}>{event.totalRaised > 0 ? `${event.totalRaised.toLocaleString('ro-RO')} RON` : <span style={{ color: c.textSoft, fontWeight: 400 }}>0 RON</span>}</td>
-                  <td className="px-4 py-3 text-right" style={{ color: c.warning }}>{event.totalTips > 0 ? `${event.totalTips.toLocaleString('ro-RO')} RON` : <span style={{ color: c.textSoft }}>0 RON</span>}</td>
-                  <td className="px-4 py-3" style={{ color: c.textMid }}>{event.expiresAt ? new Date(event.expiresAt).toLocaleDateString('ro-RO') : <span style={{ color: c.textSoft }}>—</span>}</td>
-                  <td className="px-4 py-3 text-xs" style={{ color: c.textSoft }}>{new Date(event.createdAt).toLocaleDateString('ro-RO')}</td>
-                  <td className="px-4 py-3 text-right">
-                    <button onClick={() => toggleBlock(event)} disabled={saving}
-                      className="text-xs px-3 py-1.5 rounded-lg font-medium"
-                      style={event.isBlocked
-                        ? { color: c.success, backgroundColor: c.successBg, border: `1px solid ${c.success}30` }
-                        : { color: c.danger, backgroundColor: c.dangerBg, border: `1px solid ${c.danger}30` }}>
-                      {event.isBlocked ? 'Deblochează' : 'Blochează'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            {/* Totals footer */}
-            {filtered.length > 0 && (
-              <tfoot>
-                <tr style={{ backgroundColor: c.bg, borderTop: `2px solid ${c.borderStrong}` }}>
-                  <td className="px-4 py-3 text-sm font-semibold" style={{ color: c.text }} colSpan={4}>
-                    Total ({filtered.length} pagini)
-                  </td>
-                  <td className="px-4 py-3 text-right text-sm font-bold" style={{ color: c.success }}>
-                    {totalDonations.toLocaleString('ro-RO')} RON
-                  </td>
-                  <td className="px-4 py-3 text-right text-sm font-bold" style={{ color: c.warning }}>
-                    {totalCommission.toLocaleString('ro-RO')} RON
-                  </td>
-                  <td colSpan={3} />
-                </tr>
-              </tfoot>
-            )}
-          </table>
-        </div>
-      </div>
+      {/* Event list — unified expandable cards (desktop + mobile) */}
+      {filtered.length === 0 ? (
+        <EmptyState message="Nicio pagină găsită." />
+      ) : (
+        <div className="space-y-2">
+          {filtered.map((event) => {
+            const isOpen = expandedId === event.id
+            const stripeStatus = event.connectOnboardingComplete
+              ? 'complet'
+              : event.stripeConnectAccountId
+              ? 'în curs'
+              : 'neconfigurat'
+            const stripeColor = event.connectOnboardingComplete ? c.success : event.stripeConnectAccountId ? c.warning : c.textSoft
+            const stripeBg = event.connectOnboardingComplete ? c.successBg : event.stripeConnectAccountId ? c.warningBg : c.bg
 
-      {/* Mobile cards */}
-      <div className="md:hidden space-y-3">
-        {filtered.length === 0 ? <EmptyState message="Nicio pagină găsită." /> : filtered.map((event) => (
-          <div key={event.id} className="rounded-2xl overflow-hidden" style={{ backgroundColor: c.surface, border: `1px solid ${event.isBlocked ? c.danger + '40' : c.border}` }}>
-            <div className="flex items-start justify-between px-4 py-3 cursor-pointer" onClick={() => setExpandedId(expandedId === event.id ? null : event.id)}>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold" style={{ color: c.text }}>{event.name}</span>
-                  <EventStatusBadge event={event} />
+            return (
+              <div
+                key={event.id}
+                className="rounded-2xl overflow-hidden"
+                style={{ backgroundColor: c.surface, border: `1px solid ${event.isBlocked ? c.danger + '50' : c.border}`, transition: 'border-color .15s' }}
+              >
+                {/* ── Row header — always visible, click to toggle ── */}
+                <div
+                  className="flex items-center gap-3 px-5 py-4 cursor-pointer select-none"
+                  onClick={() => setExpandedId(isOpen ? null : event.id)}
+                  style={{ backgroundColor: isOpen ? c.bg : 'transparent', transition: 'background-color .15s' }}
+                >
+                  {/* Chevron */}
+                  <svg
+                    width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+                    className="shrink-0"
+                    style={{ color: c.textSoft, transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform .2s ease' }}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+
+                  {/* Name + slug */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-semibold" style={{ color: c.text }}>{event.name}</span>
+                      <EventStatusBadge event={event} />
+                      <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: c.badge, color: c.badgeText }}>{event.eventType}</span>
+                    </div>
+                    <p className="text-xs mt-0.5" style={{ color: c.textSoft }}>
+                      {event.eventType}/{event.slug} · creat {new Date(event.createdAt).toLocaleDateString('ro-RO')}
+                    </p>
+                  </div>
+
+                  {/* Key financials — shown on wider screens */}
+                  <div className="hidden sm:flex items-center gap-5 shrink-0">
+                    <div className="text-right">
+                      <p className="text-xs" style={{ color: c.textSoft }}>Colectat</p>
+                      <p className="text-sm font-semibold" style={{ color: event.totalRaised > 0 ? c.success : c.textSoft }}>
+                        {(event.totalRaised ?? 0).toLocaleString('ro-RO')} RON
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs" style={{ color: c.textSoft }}>Comision</p>
+                      <p className="text-sm font-semibold" style={{ color: event.totalTips > 0 ? c.warning : c.textSoft }}>
+                        {(event.totalTips ?? 0).toLocaleString('ro-RO')} RON
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Block/unblock button */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); toggleBlock(event) }}
+                    disabled={saving}
+                    className="shrink-0 text-xs px-3 py-1.5 rounded-lg font-medium"
+                    style={event.isBlocked
+                      ? { color: c.success, backgroundColor: c.successBg, border: `1px solid ${c.success}30` }
+                      : { color: c.danger, backgroundColor: c.dangerBg, border: `1px solid ${c.danger}30` }}
+                  >
+                    {event.isBlocked ? 'Deblochează' : 'Blochează'}
+                  </button>
                 </div>
-                <p className="text-xs mt-0.5" style={{ color: c.textSoft }}>{event.eventType}/{event.slug}</p>
-              </div>
-              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: c.textSoft, transform: expandedId === event.id ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
-            {expandedId === event.id && (
-              <div className="px-4 pb-4 space-y-3" style={{ borderTop: `1px solid ${c.border}` }}>
-                <div className="grid grid-cols-2 gap-3 mt-3">
-                  <MobileStatRow label="Target" value={event.goalAmount ? `${event.goalAmount.toLocaleString('ro-RO')} RON` : '—'} />
-                  <MobileStatRow label="Colectat" value={`${(event.totalRaised ?? 0).toLocaleString('ro-RO')} RON`} color={c.success} />
-                  <MobileStatRow label="Comision" value={`${(event.totalTips ?? 0).toLocaleString('ro-RO')} RON`} color={c.warning} />
-                  <MobileStatRow label="Expiră" value={event.expiresAt ? new Date(event.expiresAt).toLocaleDateString('ro-RO') : '—'} />
+
+                {/* ── Expandable detail panel ── */}
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateRows: isOpen ? '1fr' : '0fr',
+                    transition: 'grid-template-rows .25s ease',
+                  }}
+                >
+                  <div style={{ overflow: 'hidden' }}>
+                    <div style={{ borderTop: `1px solid ${c.border}` }}>
+
+                      {/* Two-column detail sections */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-0" style={{ borderBottom: `1px solid ${c.border}` }}>
+
+                        {/* Organiser section */}
+                        <div className="px-5 py-4" style={{ borderRight: `1px solid ${c.border}` }}>
+                          <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: c.textSoft }}>Organizator</p>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} style={{ color: c.textSoft, flexShrink: 0 }}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                              </svg>
+                              <span className="text-sm font-medium" style={{ color: c.text }}>
+                                {event.organiserName || <span style={{ color: c.textSoft }}>—</span>}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} style={{ color: c.textSoft, flexShrink: 0 }}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                              </svg>
+                              <span className="text-sm" style={{ color: c.textMid }}>
+                                {event.organiserEmail || <span style={{ color: c.textSoft }}>—</span>}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Stripe section */}
+                        <div className="px-5 py-4">
+                          <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: c.textSoft }}>Stripe Connect</p>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs px-2.5 py-1 rounded-full font-semibold" style={{ backgroundColor: stripeBg, color: stripeColor }}>
+                                {stripeStatus === 'complet' ? '✓ Onboarding complet' : stripeStatus === 'în curs' ? '⏳ Onboarding în curs' : '— Neconfigurat'}
+                              </span>
+                            </div>
+                            {event.stripeConnectAccountId && (
+                              <div className="flex items-center gap-2">
+                                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} style={{ color: c.textSoft, flexShrink: 0 }}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                                </svg>
+                                <span className="text-xs font-mono" style={{ color: c.textSoft }}>{event.stripeConnectAccountId}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                      </div>
+
+                      {/* Stats + metadata row */}
+                      <div className="px-5 py-4 flex flex-wrap gap-x-8 gap-y-3">
+                        <MobileStatRow label="Colectat" value={`${(event.totalRaised ?? 0).toLocaleString('ro-RO')} RON`} color={c.success} />
+                        <MobileStatRow label="Comision" value={`${(event.totalTips ?? 0).toLocaleString('ro-RO')} RON`} color={c.warning} />
+                        <MobileStatRow label="Target" value={event.goalAmount ? `${event.goalAmount.toLocaleString('ro-RO')} RON` : '—'} />
+                        <MobileStatRow label="Expiră" value={event.expiresAt ? new Date(event.expiresAt).toLocaleDateString('ro-RO') : '—'} />
+                        {event.blockInfo?.reason && (
+                          <MobileStatRow label="Motiv blocare" value={event.blockInfo.reason} color={c.danger} />
+                        )}
+                        {event.blockInfo?.blockedBy && (
+                          <MobileStatRow label="Blocat de" value={event.blockInfo.blockedBy} />
+                        )}
+                      </div>
+
+                    </div>
+                  </div>
                 </div>
-                {event.blockInfo?.reason && <p className="text-xs" style={{ color: c.danger }}>Motiv blocare: {event.blockInfo.reason}</p>}
-                <button onClick={() => toggleBlock(event)} disabled={saving} className="w-full py-2 rounded-xl text-sm font-semibold"
-                  style={event.isBlocked
-                    ? { color: c.success, backgroundColor: c.successBg, border: `1px solid ${c.success}30` }
-                    : { color: c.danger, backgroundColor: c.dangerBg, border: `1px solid ${c.danger}30` }}>
-                  {event.isBlocked ? 'Deblochează pagina' : 'Blochează pagina'}
-                </button>
               </div>
-            )}
-          </div>
-        ))}
-        {/* Mobile totals */}
-        {filtered.length > 0 && (
-          <div className="rounded-xl px-4 py-3 grid grid-cols-2 gap-3" style={{ backgroundColor: c.surface, border: `2px solid ${c.borderStrong}` }}>
-            <MobileStatRow label={`Total colectat (${filtered.length} pagini)`} value={`${totalDonations.toLocaleString('ro-RO')} RON`} color={c.success} />
-            <MobileStatRow label="Total comision" value={`${totalCommission.toLocaleString('ro-RO')} RON`} color={c.warning} />
-          </div>
-        )}
-      </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Totals footer */}
+      {filtered.length > 0 && (
+        <div className="rounded-xl px-5 py-4 flex flex-wrap gap-x-8 gap-y-2 items-center" style={{ backgroundColor: c.surface, border: `2px solid ${c.borderStrong}` }}>
+          <span className="text-sm font-semibold" style={{ color: c.textMid }}>Total ({filtered.length} pagini)</span>
+          <MobileStatRow label="Donații colectate" value={`${totalDonations.toLocaleString('ro-RO')} RON`} color={c.success} />
+          <MobileStatRow label="Comision platformă" value={`${totalCommission.toLocaleString('ro-RO')} RON`} color={c.warning} />
+          {filtered.length < events.length && (
+            <span className="text-xs ml-auto" style={{ color: c.textSoft }}>Total platformă: {allTimeCommission.toLocaleString('ro-RO')} RON</span>
+          )}
+        </div>
+      )}
     </div>
   )
 }
