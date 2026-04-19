@@ -21,12 +21,25 @@ export interface CreatePaymentIntentParams {
 export async function createPaymentIntent(
   params: CreatePaymentIntentParams
 ): Promise<Stripe.PaymentIntent> {
+  const stripe = getStripe()
+
+  // Verify the destination account has transfers capability before attempting the charge.
+  // Without it Stripe throws a confusing raw error instead of a clean decline.
+  const account = await stripe.accounts.retrieve(params.connectAccountId)
+  const caps = account.capabilities ?? {}
+  const hasTransfers = caps.transfers === 'active' || caps.legacy_payments === 'active'
+  if (!hasTransfers) {
+    throw new Error(
+      'Pagina nu este complet activată pentru plăți. Organizatorul trebuie să finalizeze configurarea contului Stripe.'
+    )
+  }
+
   // Donor pays: donation + tip + stripe fee
   const totalAmount = params.amount + params.tipAmount + params.stripeFee
   // Platform receives the tip as application_fee; stripe fee covers processing cost
   const applicationFee = params.tipAmount + params.stripeFee
 
-  return getStripe().paymentIntents.create({
+  return stripe.paymentIntents.create({
     amount: totalAmount,
     currency: 'ron',
     application_fee_amount: applicationFee,
