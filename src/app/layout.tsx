@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   description: "Creează o pagină de donații pentru un eveniment de viață în 3 minute. Distribuie link-ul. Primești banii direct în contul tău românesc.",
   openGraph: {
     title: "Strânge fonduri pentru momentele care contează - pentrumomente.ro",
-    description: "Creează o pagină de donații pentru un eveniment de viață în 3 minute. Familia primește tot — platforma se susține printr-o mică contribuție a donatorilor.",
+    description: "Creează o pagină de donații pentru un eveniment de viață în 3 minute. Distribuie link-ul. Primești banii direct în contul tău românesc.",
     url: "https://pentrumomente.ro",
     siteName: "pentrumomente.ro",
     images: [

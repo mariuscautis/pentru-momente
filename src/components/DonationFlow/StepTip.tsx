@@ -98,7 +98,7 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
           Susține platforma
         </h2>
         <p className="text-sm mt-1 leading-relaxed" style={{ color: '#9A7B60' }}>
-          Familia primește tot. Dacă vrei să susții și platforma, adaugă o contribuție opțională.
+          Contribuția ta ajunge direct la familie. Dacă vrei, poți adăuga și o sumă pentru platformă.
         </p>
       </div>
 
@@ -160,27 +160,43 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
         /* ── Fixed-amount controls ── */
         <>
           <div className="flex gap-2">
-            {FIXED_PRESETS.map((p) => (
-              <div key={p} className="flex-1 flex flex-col items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => selectFixedPreset(p)}
-                  className="w-full rounded-xl py-2 text-xs font-semibold transition-all"
-                  style={
-                    activeFixedPreset === p && !customValue
-                      ? { backgroundColor: '#C4956A', color: '#fff', border: '1.5px solid #C4956A' }
-                      : { backgroundColor: '#FDFAF7', color: '#7A6652', border: '1.5px solid #EDE0D0' }
-                  }
-                >
-                  {p === 0 ? '0' : `${p}`} Lei
-                </button>
-                {p === 20 && (
-                  <span className="text-xs font-medium" style={{ color: '#C4956A' }}>
-                    popular
-                  </span>
-                )}
-              </div>
-            ))}
+            {FIXED_PRESETS.map((p) => {
+              const isSelected = activeFixedPreset === p && !customValue
+              const isRecommended = p === 20
+              return (
+                <div key={p} className="flex-1 flex flex-col items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => selectFixedPreset(p)}
+                    className="w-full rounded-xl py-2 text-xs font-semibold transition-all"
+                    style={
+                      isSelected
+                        ? {
+                            backgroundColor: '#C4956A',
+                            color: '#fff',
+                            border: '1.5px solid #C4956A',
+                            boxShadow: isRecommended ? '0 4px 14px rgba(196,149,106,0.45)' : undefined,
+                          }
+                        : isRecommended
+                        ? {
+                            backgroundColor: '#FFF8F2',
+                            color: '#C4956A',
+                            border: '1.5px solid #C4956A',
+                            boxShadow: '0 2px 8px rgba(196,149,106,0.25)',
+                          }
+                        : { backgroundColor: '#FDFAF7', color: '#7A6652', border: '1.5px solid #EDE0D0' }
+                    }
+                  >
+                    {p === 0 ? '0' : `${p}`} Lei
+                  </button>
+                  {isRecommended && (
+                    <span className="text-xs font-semibold" style={{ color: '#C4956A' }}>
+                      ales des ✦
+                    </span>
+                  )}
+                </div>
+              )
+            })}
           </div>
 
           <div className="relative">
