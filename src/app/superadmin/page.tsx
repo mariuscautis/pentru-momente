@@ -1315,6 +1315,12 @@ function EventsTab() {
                       </p>
                     </div>
                     <div className="text-right">
+                      <p className="text-xs" style={{ color: c.textSoft }}>Transferat</p>
+                      <p className="text-sm font-semibold" style={{ color: c.accent }}>
+                        {Math.max(0, (event.totalRaised ?? 0) - (event.totalTips ?? 0)).toLocaleString('ro-RO')} RON
+                      </p>
+                    </div>
+                    <div className="text-right">
                       <p className="text-xs" style={{ color: c.textSoft }}>Comision</p>
                       <p className="text-sm font-semibold" style={{ color: event.totalTips > 0 ? c.warning : c.textSoft }}>
                         {(event.totalTips ?? 0).toLocaleString('ro-RO')} RON
@@ -1397,6 +1403,7 @@ function EventsTab() {
                       {/* Stats + metadata row */}
                       <div className="px-5 py-4 flex flex-wrap gap-x-8 gap-y-3">
                         <MobileStatRow label="Colectat" value={`${(event.totalRaised ?? 0).toLocaleString('ro-RO')} RON`} color={c.success} />
+                        <MobileStatRow label="Transferat" value={`${Math.max(0, (event.totalRaised ?? 0) - (event.totalTips ?? 0)).toLocaleString('ro-RO')} RON`} color={c.accent} />
                         <MobileStatRow label="Comision" value={`${(event.totalTips ?? 0).toLocaleString('ro-RO')} RON`} color={c.warning} />
                         <MobileStatRow label="Target" value={event.goalAmount ? `${event.goalAmount.toLocaleString('ro-RO')} RON` : '—'} />
                         <MobileStatRow label="Expiră" value={event.expiresAt ? new Date(event.expiresAt).toLocaleDateString('ro-RO') : '—'} />
@@ -1422,6 +1429,7 @@ function EventsTab() {
         <div className="rounded-xl px-5 py-4 flex flex-wrap gap-x-8 gap-y-2 items-center" style={{ backgroundColor: c.surface, border: `2px solid ${c.borderStrong}` }}>
           <span className="text-sm font-semibold" style={{ color: c.textMid }}>Total ({filtered.length} pagini)</span>
           <MobileStatRow label="Donații colectate" value={`${totalDonations.toLocaleString('ro-RO')} RON`} color={c.success} />
+          <MobileStatRow label="Transferat organizatori" value={`${Math.max(0, totalDonations - totalCommission).toLocaleString('ro-RO')} RON`} color={c.accent} />
           <MobileStatRow label="Comision platformă" value={`${totalCommission.toLocaleString('ro-RO')} RON`} color={c.warning} />
           {filtered.length < events.length && (
             <span className="text-xs ml-auto" style={{ color: c.textSoft }}>Total platformă: {allTimeCommission.toLocaleString('ro-RO')} RON</span>
