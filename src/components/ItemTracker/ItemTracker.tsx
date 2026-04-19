@@ -177,9 +177,44 @@ function ItemRow({ item, config, cartItem, expanded, onExpand, onAddToCart, onRe
 
       </div>
 
-      {/* Expanded amount picker */}
-      {expanded && !item.isFullyFunded && (
+      {/* Expanded amount picker — animated */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateRows: expanded && !item.isFullyFunded ? '1fr' : '0fr',
+          transition: 'grid-template-rows 280ms ease',
+        }}
+      >
+        <div style={{ overflow: 'hidden' }}>
         <div className="px-4 pb-4 pt-1 space-y-3" style={{ borderTop: '1px solid #F0E8DC' }}>
+
+          {/* Fixed amount: single confirm button, no picker */}
+          {hasTarget && !item.isCustomAmount ? (
+            <>
+              <p className="text-xs font-medium" style={{ color: '#7A6652' }}>
+                Suma pentru acest articol este {item.targetAmount} Lei.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => onAddToCart(item.targetAmount)}
+                  className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: '#C4956A' }}
+                >
+                  Adaugă {item.targetAmount} Lei în coș
+                </button>
+                <button
+                  type="button"
+                  onClick={onExpand}
+                  className="rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
+                  style={{ border: '1px solid #EDE0D0', color: '#7A6652' }}
+                >
+                  Anulează
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
           <p className="text-xs font-medium" style={{ color: '#7A6652' }}>
             Cât vrei să contribui?
           </p>
@@ -198,7 +233,7 @@ function ItemRow({ item, config, cartItem, expanded, onExpand, onAddToCart, onRe
                     : { backgroundColor: '#F5EDE3', color: '#7A6652' }
                 }
               >
-                {hasTarget && p === remaining ? `${p} Lei (tot)` : `${p} Lei`}
+                {`${p} Lei`}
               </button>
             ))}
           </div>
@@ -208,7 +243,6 @@ function ItemRow({ item, config, cartItem, expanded, onExpand, onAddToCart, onRe
             <input
               type="number"
               min={1}
-              max={hasTarget ? remaining : undefined}
               value={inputAmount}
               onChange={(e) => setInputAmount(e.target.value)}
               onKeyDown={(e) => { if (e.key === '-') e.preventDefault() }}
@@ -222,12 +256,6 @@ function ItemRow({ item, config, cartItem, expanded, onExpand, onAddToCart, onRe
               Lei
             </span>
           </div>
-
-          {isOverTarget && (
-            <p className="text-xs" style={{ color: '#B91C1C' }}>
-              Suma maximă este {remaining} Lei.
-            </p>
-          )}
 
           <div className="flex gap-2">
             <button
@@ -248,8 +276,11 @@ function ItemRow({ item, config, cartItem, expanded, onExpand, onAddToCart, onRe
               Anulează
             </button>
           </div>
+          </>
+          )}
         </div>
-      )}
+        </div>
+      </div>
     </li>
   )
 }
