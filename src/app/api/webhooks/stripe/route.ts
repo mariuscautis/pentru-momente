@@ -46,7 +46,19 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (!isConnectEvent) {
     // Standard platform events
     if (event.type === 'payment_intent.succeeded') {
-      const paymentIntent = event.data.object as Stripe.PaymentIntent
+      const obj = event.data.object as Stripe.PaymentIntent | Stripe.Charge
+      // Stripe sometimes delivers a Charge object even on payment_intent.succeeded —
+      // normalise to a PaymentIntent by fetching it if needed.
+      let paymentIntent: Stripe.PaymentIntent
+      if (obj.object === 'charge') {
+        const charge = obj as Stripe.Charge
+        const piId = typeof charge.payment_intent === 'string' ? charge.payment_intent : charge.payment_intent?.id
+        if (!piId) return NextResponse.json({ received: true })
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+        paymentIntent = await stripe.paymentIntents.retrieve(piId)
+      } else {
+        paymentIntent = obj as Stripe.PaymentIntent
+      }
       await handlePaymentSucceeded(paymentIntent)
     }
   } else {
