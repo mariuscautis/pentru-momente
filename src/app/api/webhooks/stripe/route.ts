@@ -70,8 +70,24 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       await handlePaymentSucceeded(paymentIntent)
     }
   } else {
-    // Connect account events — payout lifecycle and onboarding completion
+    // Connect account events — payout lifecycle, onboarding completion, and payment confirmation
     switch (event.type) {
+      case 'payment_intent.succeeded': {
+        const obj = event.data.object as Stripe.PaymentIntent | Stripe.Charge
+        let paymentIntent: Stripe.PaymentIntent
+        if (obj.object === 'charge') {
+          const charge = obj as Stripe.Charge
+          const piId = typeof charge.payment_intent === 'string' ? charge.payment_intent : charge.payment_intent?.id
+          if (!piId) break
+          const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+          paymentIntent = await stripe.paymentIntents.retrieve(piId)
+        } else {
+          paymentIntent = obj as Stripe.PaymentIntent
+        }
+        await handlePaymentSucceeded(paymentIntent)
+        break
+      }
+
       case 'account.updated': {
         const account = event.data.object as Stripe.Account
         await handleAccountUpdated(account)
