@@ -44,9 +44,10 @@ interface DonationFlowProps {
   config: EventTypeConfig
   initialCart?: SelectedItem[]
   onClose?: () => void
+  onDonationComplete?: () => void
 }
 
-export function DonationFlow({ event, items, config, initialCart, onClose }: DonationFlowProps) {
+export function DonationFlow({ event, items, config, initialCart, onClose, onDonationComplete }: DonationFlowProps) {
   const hasCart = initialCart && initialCart.length > 0
   const [step, setStep] = useState<DonationStep>(hasCart ? 'details' : 'amount')
   const [state, setState] = useState<DonationState>({
@@ -119,7 +120,7 @@ export function DonationFlow({ event, items, config, initialCart, onClose }: Don
           />
         )}
         {step === 'success' && (
-          <StepSuccess config={config} event={event} amount={totalDonationAmount(state)} />
+          <StepSuccess config={config} event={event} amount={totalDonationAmount(state)} onComplete={onDonationComplete} />
         )}
       </div>
     </div>

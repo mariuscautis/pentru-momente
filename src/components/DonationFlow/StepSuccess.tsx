@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Event, EventTypeConfig } from '@/types'
 
 const COUNTDOWN = 10
@@ -12,18 +11,18 @@ interface StepSuccessProps {
   config: EventTypeConfig
   event: Event
   amount: number
+  onComplete?: () => void
 }
 
-export function StepSuccess({ config, event, amount }: StepSuccessProps) {
-  const router = useRouter()
+export function StepSuccess({ config, event, amount, onComplete }: StepSuccessProps) {
   const [seconds, setSeconds] = useState(COUNTDOWN)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  const eventUrl = `/${event.eventType}/${event.slug}#donors`
-
-  function goToPage() {
+  function go() {
     if (intervalRef.current) clearInterval(intervalRef.current)
-    router.push(eventUrl)
+    if (onComplete) {
+      onComplete()
+    }
   }
 
   useEffect(() => {
@@ -31,7 +30,7 @@ export function StepSuccess({ config, event, amount }: StepSuccessProps) {
       setSeconds((s) => {
         if (s <= 1) {
           clearInterval(intervalRef.current!)
-          router.push(eventUrl)
+          if (onComplete) onComplete()
           return 0
         }
         return s - 1
@@ -40,8 +39,7 @@ export function StepSuccess({ config, event, amount }: StepSuccessProps) {
     return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const progress = seconds / COUNTDOWN
-  const dashOffset = CIRCUMFERENCE * (1 - progress)
+  const dashOffset = CIRCUMFERENCE * (seconds / COUNTDOWN)
 
   return (
     <div className="flex flex-col items-center gap-5 py-6 text-center">
@@ -73,13 +71,8 @@ export function StepSuccess({ config, event, amount }: StepSuccessProps) {
         <div className="relative flex items-center justify-center" style={{ width: 72, height: 72 }}>
           <svg width="72" height="72" style={{ transform: 'rotate(-90deg)' }}>
             {/* Track */}
-            <circle
-              cx="36" cy="36" r={RADIUS}
-              fill="none"
-              stroke="#EDE0D0"
-              strokeWidth="4"
-            />
-            {/* Progress */}
+            <circle cx="36" cy="36" r={RADIUS} fill="none" stroke="#EDE0D0" strokeWidth="4" />
+            {/* Draining arc — starts full, empties to 0 */}
             <circle
               cx="36" cy="36" r={RADIUS}
               fill="none"
@@ -91,20 +84,19 @@ export function StepSuccess({ config, event, amount }: StepSuccessProps) {
               style={{ transition: 'stroke-dashoffset 1s linear' }}
             />
           </svg>
-          <span
-            className="absolute text-lg font-bold"
-            style={{ color: '#2D2016' }}
-          >
+          <span className="absolute text-lg font-bold" style={{ color: '#2D2016' }}>
             {seconds}
           </span>
         </div>
 
         <p className="text-xs" style={{ color: '#9A7B60' }}>
-          Vei fi redirecționat în <strong style={{ color: '#2D2016' }}>{seconds}</strong> {seconds === 1 ? 'secundă' : 'secunde'}
+          Vei fi redirecționat în{' '}
+          <strong style={{ color: '#2D2016' }}>{seconds}</strong>{' '}
+          {seconds === 1 ? 'secundă' : 'secunde'}
         </p>
 
         <button
-          onClick={goToPage}
+          onClick={go}
           className="rounded-xl px-6 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
           style={{ backgroundColor: config.palette.primary }}
         >

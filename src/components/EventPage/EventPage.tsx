@@ -32,9 +32,16 @@ export function EventPage({ event, items, donations, config, totalRaised }: Even
 
   function openCheckout() {
     setCheckoutOpen(true)
-    // Scroll to top of checkout
     setTimeout(() => {
       document.getElementById('checkout-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 50)
+  }
+
+  function handleDonationComplete() {
+    setCheckoutOpen(false)
+    setCart([])
+    setTimeout(() => {
+      document.getElementById('donors')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }, 50)
   }
 
@@ -141,6 +148,7 @@ export function EventPage({ event, items, donations, config, totalRaised }: Even
               config={config}
               initialCart={cart}
               onClose={() => { setCheckoutOpen(false); setCart([]) }}
+              onDonationComplete={handleDonationComplete}
             />
           </div>
         )}
