@@ -5,7 +5,9 @@ function getStripe() {
 }
 
 export async function createConnectAccount(organiserEmail: string): Promise<Stripe.Account> {
-  const account = await getStripe().accounts.create({
+  const stripe = getStripe()
+
+  const account = await stripe.accounts.create({
     type: 'express',
     country: 'RO',
     email: organiserEmail,
@@ -23,5 +25,6 @@ export async function createConnectAccount(organiserEmail: string): Promise<Stri
       transfers: { requested: true },
     },
   })
+
   return account
 }
