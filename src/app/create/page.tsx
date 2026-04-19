@@ -9,13 +9,15 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
 import { getSupabase } from '@/lib/db/supabase'
+import { IconPicker } from '@/components/ui/IconPicker'
 
 type CreateStep = 'type' | 'details' | 'items' | 'payout'
 
 interface ItemInput {
   name: string
   targetAmount: string
-  emoji: string
+  iconId: string        // SVG icon id from IconPicker
+  isCustomAmount: boolean
 }
 
 const STEP_ORDER: CreateStep[] = ['type', 'details', 'items', 'payout']
@@ -139,10 +141,10 @@ function LivePreview({ config, name, description, goalAmount, items, coverPrevie
                 style={{ backgroundColor: '#FFFDFB', border: '1px solid #EDE0D0' }}
               >
                 <span className="text-xs font-medium" style={{ color: '#2D2016' }}>
-                  {item.emoji} {item.name}
+                  {item.name}
                 </span>
                 <span className="text-xs" style={{ color: '#9A7B60' }}>
-                  {item.targetAmount} RON
+                  {item.isCustomAmount ? 'Sumă liberă' : `${item.targetAmount} Lei`}
                 </span>
               </div>
             ))}
@@ -235,7 +237,8 @@ export default function CreateEventPage() {
     setItems(config.suggestedItems.map((s) => ({
       name: s.name,
       targetAmount: String(s.defaultAmount),
-      emoji: s.emoji ?? '',
+      iconId: s.emoji ?? '',
+      isCustomAmount: false,
     })))
     setStep('details')
   }
@@ -277,8 +280,9 @@ export default function CreateEventPage() {
         expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
         items: items.map((i) => ({
           name: i.name,
-          targetAmount: parseFloat(i.targetAmount) || 0,
-          emoji: i.emoji || undefined,
+          targetAmount: i.isCustomAmount ? 0 : (parseFloat(i.targetAmount) || 0),
+          emoji: i.iconId || undefined,
+          isCustomAmount: i.isCustomAmount,
         })),
       }),
     })
@@ -620,72 +624,86 @@ export default function CreateEventPage() {
                     {items.map((item, i) => (
                       <li
                         key={i}
-                        className="flex gap-3 items-center rounded-2xl px-4 py-3"
+                        className="rounded-2xl px-4 py-3 space-y-2.5"
                         style={{ backgroundColor: '#FDFAF7', border: '1px solid #EDE0D0' }}
                       >
-                        <input
-                          type="text"
-                          value={item.emoji}
-                          onChange={(e) => {
-                            const next = [...items]
-                            next[i] = { ...next[i], emoji: e.target.value }
-                            setItems(next)
-                          }}
-                          placeholder="🎁"
-                          className="w-9 shrink-0 bg-transparent text-center text-xl focus:outline-none"
-                          aria-label="Emoji articol"
-                        />
-                        <input
-                          type="text"
-                          value={item.name}
-                          onChange={(e) => {
-                            const next = [...items]
-                            next[i] = { ...next[i], name: e.target.value }
-                            setItems(next)
-                          }}
-                          placeholder="Nume articol"
-                          className="flex-1 bg-transparent text-sm focus:outline-none"
-                          style={{ color: '#2D2016' }}
-                          aria-label="Numele articolului"
-                        />
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <input
-                            type="number"
-                            min={1}
-                            value={item.targetAmount}
-                            onChange={(e) => {
+                        {/* Row 1: icon + name + delete */}
+                        <div className="flex gap-3 items-center">
+                          <IconPicker
+                            value={item.iconId}
+                            onChange={(id) => {
                               const next = [...items]
-                              next[i] = { ...next[i], targetAmount: e.target.value }
+                              next[i] = { ...next[i], iconId: id }
                               setItems(next)
                             }}
-                            className="w-20 rounded-xl px-2 py-1.5 text-sm text-right focus:outline-none"
-                            style={{ border: '1px solid #E0D4C8', color: '#2D2016', backgroundColor: '#FFFDFB' }}
-                            aria-label="Suma țintă"
+                            primaryColor={selectedConfig?.palette.primary ?? '#C4956A'}
                           />
-                          <span className="text-xs" style={{ color: '#B09070' }}>RON</span>
+                          <input
+                            type="text"
+                            value={item.name}
+                            onChange={(e) => {
+                              const next = [...items]
+                              next[i] = { ...next[i], name: e.target.value }
+                              setItems(next)
+                            }}
+                            placeholder="Nume articol"
+                            className="flex-1 bg-transparent text-sm focus:outline-none"
+                            style={{ color: '#2D2016' }}
+                            aria-label="Numele articolului"
+                          />
+                          <button
+                            onClick={() => setItems(items.filter((_, j) => j !== i))}
+                            className="w-7 h-7 flex items-center justify-center rounded-full text-sm transition-colors shrink-0"
+                            style={{ color: '#C0B0A0' }}
+                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#FEE8E8'; e.currentTarget.style.color = '#D06060' }}
+                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#C0B0A0' }}
+                            aria-label="Șterge articol"
+                          >
+                            ✕
+                          </button>
                         </div>
-                        <button
-                          onClick={() => setItems(items.filter((_, j) => j !== i))}
-                          className="ml-1 w-7 h-7 flex items-center justify-center rounded-full text-sm transition-colors shrink-0"
-                          style={{ color: '#C0B0A0', backgroundColor: 'transparent' }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = '#FEE8E8'
-                            e.currentTarget.style.color = '#D06060'
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = 'transparent'
-                            e.currentTarget.style.color = '#C0B0A0'
-                          }}
-                          aria-label="Șterge articol"
-                        >
-                          ✕
-                        </button>
+
+                        {/* Row 2: amount + custom toggle */}
+                        <div className="flex items-center gap-3 pl-12">
+                          {!item.isCustomAmount && (
+                            <div className="flex items-center gap-1.5 flex-1">
+                              <input
+                                type="number"
+                                min={1}
+                                value={item.targetAmount}
+                                onChange={(e) => {
+                                  const next = [...items]
+                                  next[i] = { ...next[i], targetAmount: e.target.value }
+                                  setItems(next)
+                                }}
+                                onKeyDown={(e) => { if (e.key === '-') e.preventDefault() }}
+                                className="w-24 rounded-xl px-2 py-1.5 text-sm text-right focus:outline-none"
+                                style={{ border: '1px solid #E0D4C8', color: '#2D2016', backgroundColor: '#FFFDFB' }}
+                                aria-label="Suma țintă"
+                              />
+                              <span className="text-xs" style={{ color: '#B09070' }}>Lei</span>
+                            </div>
+                          )}
+                          <label className="flex items-center gap-1.5 cursor-pointer shrink-0">
+                            <input
+                              type="checkbox"
+                              checked={item.isCustomAmount}
+                              onChange={(e) => {
+                                const next = [...items]
+                                next[i] = { ...next[i], isCustomAmount: e.target.checked }
+                                setItems(next)
+                              }}
+                              className="h-3.5 w-3.5 rounded"
+                            />
+                            <span className="text-xs" style={{ color: '#7A6652' }}>Sumă liberă</span>
+                          </label>
+                        </div>
                       </li>
                     ))}
                   </ul>
 
                   <button
-                    onClick={() => setItems([...items, { name: '', targetAmount: '100', emoji: '' }])}
+                    onClick={() => setItems([...items, { name: '', targetAmount: '100', iconId: '', isCustomAmount: false }])}
                     className="flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm w-full transition-all"
                     style={{ border: '1.5px dashed #D0C0B0', color: '#9A7B60' }}
                     onMouseEnter={(e) => {
