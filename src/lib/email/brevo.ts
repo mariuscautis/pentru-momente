@@ -37,23 +37,136 @@ export interface DonationEmailContext {
   organiserName: string
 }
 
+// Resolve {eventName} token in copy strings
+function resolveCopy(template: string, eventName: string): string {
+  return template.replace(/\{eventName\}/g, eventName)
+}
+
+function buildDonorConfirmationHtml(ctx: DonationEmailContext): string {
+  const { donation, event, config } = ctx
+  const eventUrl = `${APP_URL}/${event.eventType}/${event.slug}`
+  const primary = config.palette.primary
+  const donorName = donation.isAnonymous ? 'Donator anonim' : (donation.displayName ?? 'Donator')
+  const totalAmount = donation.amount + donation.tipAmount
+
+  const subject = resolveCopy(config.copy.donationEmailSubject, event.name)
+  const intro = resolveCopy(config.copy.donationEmailIntro, event.name)
+
+  const tipRow = donation.tipAmount > 0
+    ? `<tr>
+        <td style="padding:6px 0;color:#9A7B60;font-size:14px;">Contribuție platformă</td>
+        <td style="padding:6px 0;color:#9A7B60;font-size:14px;text-align:right;">${donation.tipAmount} Lei</td>
+      </tr>`
+    : ''
+
+  const messageBlock = donation.message
+    ? `<div style="margin:24px 0;padding:16px 20px;background:#F5EDE3;border-left:3px solid ${primary};border-radius:8px;">
+        <p style="margin:0;font-size:14px;color:#7A6652;font-style:italic;">"${donation.message}"</p>
+      </div>`
+    : ''
+
+  const anonymousNote = donation.isAnonymous
+    ? `<p style="margin:16px 0 0;font-size:13px;color:#9A7B60;text-align:center;">
+        Donația ta este anonimă față de organizator — numele tău nu va fi afișat pe pagină.
+      </p>`
+    : ''
+
+  return `<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${subject}</title>
+</head>
+<body style="margin:0;padding:0;background:#FAF6F1;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#FAF6F1;padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#FFFFFF;border-radius:16px;overflow:hidden;border:1px solid #EDE0D0;">
+
+          <!-- Header band -->
+          <tr>
+            <td style="background:${primary};padding:28px 32px;text-align:center;">
+              <p style="margin:0;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.75);">pentrumomente.ro</p>
+              <h1 style="margin:8px 0 0;font-size:22px;font-weight:700;color:#FFFFFF;line-height:1.3;">Mulțumim pentru donația ta!</h1>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:32px;">
+
+              <p style="margin:0 0 20px;font-size:15px;color:#4A3728;line-height:1.6;">
+                Bună, <strong>${donorName}</strong>,
+              </p>
+
+              <p style="margin:0 0 24px;font-size:15px;color:#4A3728;line-height:1.6;">
+                ${intro}
+              </p>
+
+              ${messageBlock}
+
+              <!-- Amount summary -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#F5EDE3;border-radius:10px;padding:16px 20px;margin:24px 0;">
+                <tr>
+                  <td>
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="padding:6px 0;color:#7A6652;font-size:14px;">Donație pentru ${event.name}</td>
+                        <td style="padding:6px 0;color:#7A6652;font-size:14px;text-align:right;">${donation.amount} Lei</td>
+                      </tr>
+                      ${tipRow}
+                      <tr>
+                        <td style="padding:10px 0 4px;font-size:15px;font-weight:700;color:#2D2016;border-top:1px solid #EDE0D0;">Total plătit</td>
+                        <td style="padding:10px 0 4px;font-size:15px;font-weight:700;color:#2D2016;text-align:right;border-top:1px solid #EDE0D0;">${totalAmount} Lei</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              ${anonymousNote}
+
+              <!-- CTA -->
+              <div style="text-align:center;margin:32px 0 8px;">
+                <a href="${eventUrl}"
+                   style="display:inline-block;background:${primary};color:#FFFFFF;font-size:14px;font-weight:600;text-decoration:none;padding:12px 28px;border-radius:10px;">
+                  Vezi pagina evenimentului
+                </a>
+              </div>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#FAF6F1;padding:20px 32px;text-align:center;border-top:1px solid #EDE0D0;">
+              <p style="margin:0;font-size:12px;color:#B09070;line-height:1.6;">
+                Acest email este confirmarea donației tale. Păstrează-l pentru evidența personală.<br/>
+                <a href="${APP_URL}" style="color:#C4956A;text-decoration:none;">pentrumomente.ro</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
+}
+
 export async function sendDonationConfirmationToDonor(ctx: DonationEmailContext): Promise<void> {
   if (!ctx.donorEmail) return
 
-  const eventUrl = `${APP_URL}/${ctx.event.eventType}/${ctx.event.slug}`
+  const subject = resolveCopy(ctx.config.copy.donationEmailSubject, ctx.event.name)
+  const html = buildDonorConfirmationHtml(ctx)
+  const donorName = ctx.donation.isAnonymous ? undefined : (ctx.donation.displayName ?? undefined)
 
   await sendEmail({
-    to: [{ email: ctx.donorEmail, name: ctx.donation.displayName }],
-    subject: `Mulțumim pentru contribuția ta — ${ctx.event.name}`,
-    params: {
-      donorName: ctx.donation.displayName ?? 'Anonim',
-      eventName: ctx.event.name,
-      amount: ctx.donation.amount,
-      tipAmount: ctx.donation.tipAmount,
-      message: ctx.donation.message ?? '',
-      eventUrl,
-      organiserName: ctx.organiserName,
-    },
+    to: [{ email: ctx.donorEmail, name: donorName }],
+    subject,
+    htmlContent: html,
   })
 }
 

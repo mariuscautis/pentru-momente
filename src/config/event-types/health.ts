@@ -13,6 +13,8 @@ export const healthConfig: EventTypeConfig = {
     donationVerb: 'Donează',
     thankYouMessage: 'Îți mulțumim din inimă. Donația ta face o diferență reală.',
     emptyState: 'Fii primul care ajută.',
+    donationEmailSubject: 'Donația ta contează — {eventName}',
+    donationEmailIntro: 'Donația ta a ajuns și face o diferență reală. Fiecare contribuție îl ajută pe {eventName} să treacă mai ușor prin această perioadă dificilă. Îți mulțumim din suflet pentru solidaritatea ta.',
   },
   suggestedItems: [
     { name: 'Contribuție generală', defaultAmount: 100, emoji: '💚' },

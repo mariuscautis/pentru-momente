@@ -20,6 +20,7 @@ interface CreateDonationBody {
   amount: number
   tipAmount: number
   displayName?: string
+  donorEmail?: string
   message?: string
   isAnonymous: boolean
   showAmount: boolean
@@ -83,6 +84,7 @@ async function handlePost(req: NextRequest): Promise<NextResponse> {
       eventId: event.id,
       itemId: selectedItems.length === 1 ? selectedItems[0].itemId : undefined,
       displayName: body.displayName,
+      donorEmail: body.donorEmail,
       message: body.message,
       isAnonymous: body.isAnonymous,
       showAmount: body.showAmount,

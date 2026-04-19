@@ -38,9 +38,11 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
   }
 
   function handleCustomFixed(value: string) {
-    setCustomValue(value)
+    // Strip any minus sign — tip cannot be negative
+    const sanitised = value.replace(/-/g, '')
+    setCustomValue(sanitised)
     setActiveFixedPreset(-1) // deselect all presets
-    const num = parseFloat(value)
+    const num = parseFloat(sanitised)
     if (!isNaN(num) && num >= 0) {
       setState((prev) => ({ ...prev, tipAmount: num }))
     }
@@ -206,6 +208,7 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
               placeholder="Altă sumă"
               value={customValue}
               onChange={(e) => handleCustomFixed(e.target.value)}
+              onKeyDown={(e) => { if (e.key === '-') e.preventDefault() }}
               onFocus={() => setActiveFixedPreset(-1)}
               className="w-full rounded-xl px-3 py-2.5 text-sm outline-none pr-12"
               style={{

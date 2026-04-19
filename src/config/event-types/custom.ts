@@ -13,6 +13,8 @@ export const customConfig: EventTypeConfig = {
     donationVerb: 'Contribuie',
     thankYouMessage: 'Mulțumim pentru contribuție! Gestul tău contează.',
     emptyState: 'Fii primul care contribuie.',
+    donationEmailSubject: 'Contribuția ta a ajuns — {eventName}',
+    donationEmailIntro: 'Contribuția ta a ajuns cu bine la {eventName}. Mulțumim că ai ales să fii alături și că ai contribuit la această cauză. Gestul tău contează mai mult decât îți dai seama.',
   },
   suggestedItems: [
     { name: 'Contribuție generală', defaultAmount: 50, emoji: '💜' },

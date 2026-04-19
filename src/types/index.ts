@@ -11,6 +11,8 @@ export interface EventTypeConfig {
     donationVerb: string
     thankYouMessage: string
     emptyState: string
+    donationEmailSubject: string   // email subject for donor confirmation
+    donationEmailIntro: string     // opening paragraph in donor confirmation email
   }
   suggestedItems: SuggestedItem[]
   donationVisibilityDefault: 'visible' | 'hidden'

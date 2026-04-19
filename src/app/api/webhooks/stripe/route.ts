@@ -4,7 +4,7 @@ import { constructWebhookEvent } from '@/lib/payments/stripe'
 import { confirmDonation, getDonationsByPaymentIntent, getTotalRaisedForEvent } from '@/lib/db/donations'
 import { updateEventItemRaisedAmount, getEventById } from '@/lib/db/events'
 import { upsertPayoutFromStripe, updatePayoutStatus } from '@/lib/db/payouts'
-import { sendMilestoneEmail, sendPayoutSentEmail, sendPayoutConfirmedEmail } from '@/lib/email/brevo'
+import { sendDonationConfirmationToDonor, sendMilestoneEmail, sendPayoutSentEmail, sendPayoutConfirmedEmail } from '@/lib/email/brevo'
 import { getEventTypeConfig } from '@/config/event-types'
 import { supabaseAdmin } from '@/lib/db/supabase'
 
@@ -104,6 +104,19 @@ async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent): Prom
   if (!event) return
 
   const config = getEventTypeConfig(event.eventType)
+
+  // Send donation confirmation to donor if they provided an email
+  const donorEmail = (paymentIntent.metadata?.donorEmail as string | undefined) || undefined
+  if (donorEmail) {
+    await sendDonationConfirmationToDonor({
+      donation,
+      event,
+      config,
+      donorEmail,
+      organiserEmail: '',
+      organiserName: event.name,
+    })
+  }
 
   // Check milestones
   if (event.goalAmount) {

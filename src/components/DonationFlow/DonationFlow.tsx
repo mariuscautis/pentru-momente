@@ -24,6 +24,7 @@ export interface DonationState {
   tipAmount: number
   stripeFee: number      // Stripe processing fee passed through to donor
   displayName: string
+  donorEmail: string
   message: string
   isAnonymous: boolean
   showAmount: boolean
@@ -54,6 +55,7 @@ export function DonationFlow({ event, items, config, initialCart, onClose }: Don
     tipAmount: 20,
     stripeFee: 0,
     displayName: '',
+    donorEmail: '',
     message: '',
     isAnonymous: config.donationVisibilityDefault === 'hidden',
     showAmount: config.donationVisibilityDefault === 'visible',

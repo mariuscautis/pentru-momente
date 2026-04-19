@@ -40,6 +40,23 @@ export function StepDonorDetails({
         />
       )}
 
+      {/* Email field — always shown */}
+      <div>
+        <Input
+          label="Email"
+          type="email"
+          placeholder="adresa@email.ro"
+          value={state.donorEmail}
+          onChange={(e) => setState((prev) => ({ ...prev, donorEmail: e.target.value }))}
+          autoComplete="email"
+        />
+        <p className="mt-1.5 text-xs" style={{ color: '#9A7B60' }}>
+          {state.isAnonymous
+            ? 'Confirmarea donației va fi trimisă pe email. Donația va rămâne anonimă față de cel care a creat pagina.'
+            : 'Confirmarea donației tale va fi trimisă pe adresa de email.'}
+        </p>
+      </div>
+
       <Textarea
         label="Mesaj (opțional)"
         placeholder="Lasă un gând, o amintire sau o urare..."

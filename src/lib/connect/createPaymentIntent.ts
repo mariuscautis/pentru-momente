@@ -12,6 +12,7 @@ export interface CreatePaymentIntentParams {
   eventId: string
   itemId?: string
   displayName?: string
+  donorEmail?: string
   message?: string
   isAnonymous: boolean
   showAmount: boolean
@@ -40,6 +41,7 @@ export async function createPaymentIntent(
       tipAmount: String(params.tipAmount),
       stripeFee: String(params.stripeFee),
       displayName: params.displayName ?? '',
+      donorEmail: params.donorEmail ?? '',
       message: params.message ?? '',
       isAnonymous: String(params.isAnonymous),
       showAmount: String(params.showAmount),

@@ -13,6 +13,8 @@ export const funeralConfig: EventTypeConfig = {
     donationVerb: 'Trimite o coroană',
     thankYouMessage: 'Mulțumim pentru gândul tău. Gestul tău contează enorm pentru familie.',
     emptyState: 'Fii primul care trimite un omagiu.',
+    donationEmailSubject: 'Donația ta a ajuns la familie — {eventName}',
+    donationEmailIntro: 'În aceste momente grele, gestul tău de solidaritate aduce un strop de alinare. Contribuția ta a ajuns la familia lui {eventName} și le arată că nu sunt singuri.',
   },
   suggestedItems: [
     { name: 'Lumânare digitală', defaultAmount: 20, emoji: '🕯️' },

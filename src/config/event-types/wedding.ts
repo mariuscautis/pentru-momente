@@ -13,6 +13,8 @@ export const weddingConfig: EventTypeConfig = {
     donationVerb: 'Dăruiește',
     thankYouMessage: 'Mulțumim din suflet! Cadoul tău face parte din povestea noastră.',
     emptyState: 'Fii primul care le urează "La mulți ani!"',
+    donationEmailSubject: 'Cadoul tău a ajuns! — {eventName}',
+    donationEmailIntro: 'Ce bucurie! Cadoul tău a ajuns cu bine. Mulțumim că faci parte din ziua cea mai frumoasă a lui {eventName}. Gestul tău va rămâne o amintire de neuitat pentru ei.',
   },
   suggestedItems: [
     { name: 'Fond lună de miere', defaultAmount: 200, emoji: '🌙' },

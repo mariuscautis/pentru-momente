@@ -13,6 +13,8 @@ export const babyConfig: EventTypeConfig = {
     donationVerb: 'Dăruiește',
     thankYouMessage: 'Mulțumim pentru cadoul minunat! {name} va fi răsfățat datorită ție.',
     emptyState: 'Fii primul care îi urează bun venit micuțului.',
+    donationEmailSubject: 'Cadoul tău pentru {eventName} a ajuns! 🍼',
+    donationEmailIntro: 'Ce veste minunată! Cadoul tău a sosit și va aduce zâmbete în familia lui {eventName}. Mulțumim că îi ești alături micuțului în primele lui momente de viață.',
   },
   suggestedItems: [
     { name: 'Căruț', defaultAmount: 500, emoji: '🍼' },
