@@ -1,3 +1,4 @@
+import { createClient } from '@supabase/supabase-js'
 import { supabase, supabaseAdmin } from './supabase'
 import { Event, EventItem } from '@/types'
 
@@ -52,9 +53,14 @@ export async function getEventBySlug(eventType: string, slug: string): Promise<E
 }
 
 // Fetches any event regardless of active status — used for the inactive/closed page notice.
-// Must use supabaseAdmin to bypass RLS, which only exposes is_active=true rows to anon.
+// Creates a fresh admin client directly (no proxy/singleton) to guarantee RLS bypass
+// even when called from a Server Component page render.
 export async function getEventBySlugAnyStatus(eventType: string, slug: string): Promise<Event | null> {
-  const { data, error } = await supabaseAdmin
+  const admin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+  const { data, error } = await admin
     .from('events')
     .select('*')
     .eq('event_type', eventType)
