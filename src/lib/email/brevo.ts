@@ -19,7 +19,10 @@ async function sendEmail(params: BrevoEmailParams): Promise<void> {
       'api-key': BREVO_API_KEY,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(params),
+    body: JSON.stringify({
+      sender: { name: 'pentrumomente.ro', email: 'noreply@pentrumomente.ro' },
+      ...params,
+    }),
   })
 
   if (!res.ok) {
