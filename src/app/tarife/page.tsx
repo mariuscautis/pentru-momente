@@ -60,7 +60,7 @@ export default function TarifePage() {
               2,5% <span className="text-3xl">+</span> 1,25 Lei
             </p>
             <p className="mt-4 text-base leading-relaxed" style={{ color: '#7A6652' }}>
-              Acesta este comisionul total aplicat fiecărei donații. Se adaugă pe lângă suma donată — destinatarul primește <strong style={{ color: '#2D2016' }}>integral</strong> suma aleasă de tine.
+              Acesta este comisionul reținut din fiecare donație. Comisionul se deduce din suma donată — tu plătești exact suma pe care o alegi, iar destinatarul primește suma minus comisionul.
             </p>
           </div>
 
@@ -68,7 +68,7 @@ export default function TarifePage() {
           <div className="space-y-4">
             <h2 className="text-2xl font-bold" style={{ color: '#2D2016' }}>Cum funcționează</h2>
             <p className="text-base leading-relaxed" style={{ color: '#5C4A3A' }}>
-              Atunci când faci o donație pe pentrumomente.ro, suma pe care o alegi ajunge <strong>complet</strong> la persoana sau familia pentru care strângi fonduri. Comisionul este adăugat separat și acoperă costurile de funcționare ale platformei și procesarea plăților.
+              Atunci când faci o donație pe pentrumomente.ro, tu plătești exact suma aleasă. Din aceasta, un comision de 2,5% + 1,25 Lei este reținut pentru a acoperi costurile de procesare a plăților și operarea platformei. Diferența ajunge direct la persoana sau familia beneficiară.
             </p>
             <p className="text-base leading-relaxed" style={{ color: '#5C4A3A' }}>
               Înainte de a confirma plata, vei vedea mereu un rezumat clar cu suma donată și comisionul aplicat, astfel încât să știi exact cât este debitat de pe cardul tău.
@@ -86,22 +86,22 @@ export default function TarifePage() {
                 <thead>
                   <tr style={{ backgroundColor: '#F5EDE3' }}>
                     <th className="px-5 py-3 text-left font-semibold" style={{ color: '#7A6652' }}>Donație</th>
-                    <th className="px-5 py-3 text-right font-semibold" style={{ color: '#7A6652' }}>Comision</th>
-                    <th className="px-5 py-3 text-right font-semibold" style={{ color: '#2D2016' }}>Total plătit</th>
+                    <th className="px-5 py-3 text-right font-semibold" style={{ color: '#7A6652' }}>Comision (2,5% + 1,25 Lei)</th>
+                    <th className="px-5 py-3 text-right font-semibold" style={{ color: '#2D2016' }}>Destinatarul primește</th>
                   </tr>
                 </thead>
                 <tbody>
                   {[50, 100, 200, 500, 1000].map((amount, i) => {
                     const commission = Math.round((amount * 0.025 + 1.25) * 100) / 100
-                    const total = amount + commission
+                    const organiserGets = Math.round((amount - commission) * 100) / 100
                     return (
                       <tr
                         key={amount}
                         style={{ backgroundColor: i % 2 === 0 ? '#FDFAF7' : '#FFFFFF', borderTop: '1px solid #F0E8DC' }}
                       >
                         <td className="px-5 py-3 font-medium" style={{ color: '#2D2016' }}>{amount} Lei</td>
-                        <td className="px-5 py-3 text-right" style={{ color: '#7A6652' }}>{commission.toFixed(2)} Lei</td>
-                        <td className="px-5 py-3 text-right font-bold" style={{ color: '#2D2016' }}>{total.toFixed(2)} Lei</td>
+                        <td className="px-5 py-3 text-right" style={{ color: '#C4956A' }}>{commission.toFixed(2)} Lei</td>
+                        <td className="px-5 py-3 text-right font-bold" style={{ color: '#2D2016' }}>{organiserGets.toFixed(2)} Lei</td>
                       </tr>
                     )
                   })}
@@ -117,7 +117,7 @@ export default function TarifePage() {
           >
             <h2 className="text-xl font-bold" style={{ color: '#2D2016' }}>Promisiunea noastră</h2>
             <ul className="space-y-2 text-sm leading-relaxed" style={{ color: '#5C4A3A' }}>
-              <li className="flex gap-2"><span style={{ color: '#C4956A' }}>✓</span> Donația ta ajunge integral la destinatar — niciun procent nu este reținut din ea.</li>
+              <li className="flex gap-2"><span style={{ color: '#C4956A' }}>✓</span> Tu plătești exact suma pe care o alegi — comisionul se reține din aceasta, fără costuri adăugate pe deasupra.</li>
               <li className="flex gap-2"><span style={{ color: '#C4956A' }}>✓</span> Comisionul este afișat clar, înainte de confirmare — nicio surpriză după plată.</li>
               <li className="flex gap-2"><span style={{ color: '#C4956A' }}>✓</span> Nu există abonamente, taxe de creare a paginii sau comisioane suplimentare.</li>
               <li className="flex gap-2"><span style={{ color: '#C4956A' }}>✓</span> Plățile sunt procesate securizat prin Stripe, unul dintre cele mai sigure procesatoare din lume.</li>
