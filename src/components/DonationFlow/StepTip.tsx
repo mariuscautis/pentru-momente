@@ -111,11 +111,9 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
           {tipRon === 0 ? 'Fără contribuție' : `${tipRon} Lei`}
         </p>
         <p className="text-sm mt-1" style={{ color: '#9A7B60' }}>
-          {tipRon === 0
-            ? 'Toată suma merge la familie'
-            : isLarge
-              ? `${pct}% din donația ta de ${donationTotal} Lei`
-              : 'contribuție opțională la platformă'}
+          {isLarge
+            ? `${pct}% din donația ta de ${donationTotal} Lei`
+            : 'contribuție opțională la platformă'}
         </p>
       </div>
 
@@ -163,19 +161,25 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
         <>
           <div className="flex gap-2">
             {FIXED_PRESETS.map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => selectFixedPreset(p)}
-                className="flex-1 rounded-xl py-2 text-xs font-semibold transition-all"
-                style={
-                  activeFixedPreset === p && !customValue
-                    ? { backgroundColor: '#C4956A', color: '#fff', border: '1.5px solid #C4956A' }
-                    : { backgroundColor: '#FDFAF7', color: '#7A6652', border: '1.5px solid #EDE0D0' }
-                }
-              >
-                {p === 0 ? '0' : `${p}`} Lei
-              </button>
+              <div key={p} className="flex-1 flex flex-col items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => selectFixedPreset(p)}
+                  className="w-full rounded-xl py-2 text-xs font-semibold transition-all"
+                  style={
+                    activeFixedPreset === p && !customValue
+                      ? { backgroundColor: '#C4956A', color: '#fff', border: '1.5px solid #C4956A' }
+                      : { backgroundColor: '#FDFAF7', color: '#7A6652', border: '1.5px solid #EDE0D0' }
+                  }
+                >
+                  {p === 0 ? '0' : `${p}`} Lei
+                </button>
+                {p === 20 && (
+                  <span className="text-xs font-medium" style={{ color: '#C4956A' }}>
+                    popular
+                  </span>
+                )}
+              </div>
             ))}
           </div>
 
