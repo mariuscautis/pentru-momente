@@ -67,16 +67,18 @@ async function handlePost(req: NextRequest): Promise<NextResponse> {
   }
 
   const tipAmount = body.tipAmount ?? 0
+  // Stripe fee is absorbed by the platform — not passed through to the donor.
+  // The application_fee covers the tip only; Stripe processing cost comes out of that.
   const stripeFeeRon = calculateStripeFee(body.amount, tipAmount)
 
-  // One payment intent for the full total (donation + tip + Stripe fee)
+  // One payment intent for the full total (donation + tip only — no fee line for donor)
   // Funds route directly to organiser's Stripe Express account via destination charge.
   let paymentIntent
   try {
     paymentIntent = await createPaymentIntent({
       amount: Math.round(body.amount * 100),           // RON → bani
       tipAmount: Math.round(tipAmount * 100),
-      stripeFee: Math.round(stripeFeeRon * 100),
+      stripeFee: 0,                                    // fee absorbed by platform
       connectAccountId: event.stripeConnectAccountId,
       eventId: event.id,
       itemId: selectedItems.length === 1 ? selectedItems[0].itemId : undefined,

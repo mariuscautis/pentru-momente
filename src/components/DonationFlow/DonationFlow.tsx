@@ -51,7 +51,7 @@ export function DonationFlow({ event, items, config, initialCart, onClose }: Don
   const [state, setState] = useState<DonationState>({
     selectedItems: initialCart ?? [],
     amount: 100,
-    tipAmount: 0,
+    tipAmount: 20,
     stripeFee: 0,
     displayName: '',
     message: '',

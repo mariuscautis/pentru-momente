@@ -4,15 +4,8 @@ import { Dispatch, SetStateAction, useState } from 'react'
 import { EventTypeConfig } from '@/types'
 import { DonationState, totalDonationAmount } from './DonationFlow'
 
-// Mirror of the server-side formula in src/lib/payments/stripe.ts
-function estimateStripeFee(donationRon: number, tipRon: number): number {
-  const base = donationRon + tipRon
-  const raw = base * 0.015 + 1.25
-  return Math.ceil(raw * 2) / 2
-}
-
-const FIXED_PRESETS = [15, 20, 25, 50]
-const PCT_QUICK = [1, 2, 3, 5]
+const FIXED_PRESETS = [0, 10, 20, 30, 50]
+const PCT_QUICK = [0, 1, 2, 5]
 
 interface StepTipProps {
   state: DonationState
@@ -27,83 +20,74 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
   const isLarge = donationTotal > 2000
 
   // ── Fixed-amount mode (≤ 2000 RON) ─────────────────────────────────────────
-  const [fixedAmount, setFixedAmount] = useState<number>(() => {
-    if (!isLarge && FIXED_PRESETS.includes(state.tipAmount)) return state.tipAmount
-    return 20 // default preset
+  const [activeFixedPreset, setActiveFixedPreset] = useState<number>(() => {
+    if (FIXED_PRESETS.includes(state.tipAmount)) return state.tipAmount
+    return 20 // default
   })
   const [customValue, setCustomValue] = useState<string>(() => {
-    if (!isLarge && state.tipAmount > 0 && !FIXED_PRESETS.includes(state.tipAmount)) {
+    if (state.tipAmount > 0 && !FIXED_PRESETS.includes(state.tipAmount)) {
       return String(state.tipAmount)
     }
     return ''
-  })
-  const [activeFixedPreset, setActiveFixedPreset] = useState<number | null>(() => {
-    if (!isLarge && FIXED_PRESETS.includes(state.tipAmount)) return state.tipAmount
-    return isLarge ? null : 20 // default to 20 Lei preset
   })
 
   function selectFixedPreset(amount: number) {
     setActiveFixedPreset(amount)
     setCustomValue('')
-    setFixedAmount(amount)
     setState((prev) => ({ ...prev, tipAmount: amount }))
   }
 
   function handleCustomFixed(value: string) {
     setCustomValue(value)
-    setActiveFixedPreset(null)
+    setActiveFixedPreset(-1) // deselect all presets
     const num = parseFloat(value)
-    if (!isNaN(num) && num > 0) {
-      setFixedAmount(num)
+    if (!isNaN(num) && num >= 0) {
       setState((prev) => ({ ...prev, tipAmount: num }))
     }
   }
 
   // ── Percentage mode (> 2000 RON) ────────────────────────────────────────────
   function ronFromPct(pct: number) {
+    if (pct === 0) return 0
     return Math.max(1, Math.round(donationTotal * pct / 100))
   }
 
   const [pct, setPct] = useState<number>(() => {
     if (isLarge && state.tipAmount > 0) {
       const derived = Math.round((state.tipAmount / donationTotal) * 100 * 10) / 10
-      // Only restore if it was actually set as a percentage (≥ 1%), not a leftover fixed amount
       if (derived >= 1) return derived
     }
-    return 2 // default to 2% for large donations
+    return 2
   })
-  const [pctError, setPctError] = useState('')
 
   function handleSlider(val: number) {
     const rounded = Math.round(val * 10) / 10
     setPct(rounded)
-    setPctError('')
     setState((prev) => ({ ...prev, tipAmount: ronFromPct(rounded) }))
   }
 
   function handleQuickPct(p: number) {
     setPct(p)
-    setPctError('')
     setState((prev) => ({ ...prev, tipAmount: ronFromPct(p) }))
   }
 
   // ── Shared ──────────────────────────────────────────────────────────────────
   function handleNext() {
-    if (isLarge && pct < 1) {
-      setPctError(`Contribuția minimă pentru donații peste 2.000 Lei este 1% (${ronFromPct(1)} Lei).`)
-      return
-    }
     if (isLarge) {
       setState((prev) => ({ ...prev, tipAmount: ronFromPct(pct) }))
     } else {
-      setState((prev) => ({ ...prev, tipAmount: fixedAmount }))
+      const tip = customValue
+        ? (parseFloat(customValue) || 0)
+        : activeFixedPreset >= 0 ? activeFixedPreset : 20
+      setState((prev) => ({ ...prev, tipAmount: tip }))
     }
     onNext()
   }
 
-  const tipRon = isLarge ? ronFromPct(pct) : fixedAmount
-  const stripeFeeEstimate = estimateStripeFee(donationTotal, tipRon)
-  const total = donationTotal + tipRon + stripeFeeEstimate
+  const tipRon = isLarge ? ronFromPct(pct) : (
+    customValue ? (parseFloat(customValue) || 0) : activeFixedPreset
+  )
+  const total = donationTotal + tipRon
 
   return (
     <div className="space-y-6">
@@ -114,7 +98,7 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
           Susține platforma
         </h2>
         <p className="text-sm mt-1 leading-relaxed" style={{ color: '#9A7B60' }}>
-          Familia primește tot. Platforma se susține printr-o mică contribuție adăugată de tine.
+          Familia primește tot. Dacă vrei să susții și platforma, adaugă o contribuție opțională.
         </p>
       </div>
 
@@ -123,9 +107,15 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
         className="rounded-2xl p-5 text-center"
         style={{ backgroundColor: '#F5EDE3', border: '1px solid #E8D5C0' }}
       >
-        <p className="text-4xl font-bold" style={{ color: '#2D2016' }}>{tipRon} Lei</p>
+        <p className="text-4xl font-bold" style={{ color: '#2D2016' }}>
+          {tipRon === 0 ? 'Fără contribuție' : `${tipRon} Lei`}
+        </p>
         <p className="text-sm mt-1" style={{ color: '#9A7B60' }}>
-          {isLarge ? `${pct}% din donația ta de ${donationTotal} Lei` : `contribuție fixă la platforma`}
+          {tipRon === 0
+            ? 'Toată suma merge la familie'
+            : isLarge
+              ? `${pct}% din donația ta de ${donationTotal} Lei`
+              : 'contribuție opțională la platformă'}
         </p>
       </div>
 
@@ -135,7 +125,7 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
           <div>
             <input
               type="range"
-              min={1}
+              min={0}
               max={10}
               step={0.5}
               value={pct}
@@ -144,7 +134,7 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
               style={{ accentColor: '#C4956A' }}
             />
             <div className="flex justify-between text-xs mt-1" style={{ color: '#B09070' }}>
-              <span>1%</span>
+              <span>0%</span>
               <span>5%</span>
               <span>10%</span>
             </div>
@@ -163,20 +153,10 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
                     : { backgroundColor: '#FDFAF7', color: '#7A6652', border: '1.5px solid #EDE0D0' }
                 }
               >
-                {p}% · {ronFromPct(p)} Lei
+                {p === 0 ? '0%' : `${p}% · ${ronFromPct(p)} Lei`}
               </button>
             ))}
           </div>
-
-          <p className="text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: '#FFF8EE', color: '#9A6B45', border: '1px solid #EDD9B8' }}>
-            Pentru donații peste 2.000 Lei, contribuția minimă este 1%.
-          </p>
-
-          {pctError && (
-            <p className="text-sm rounded-lg px-3 py-2" style={{ backgroundColor: '#FEF2F2', color: '#B91C1C' }}>
-              {pctError}
-            </p>
-          )}
         </>
       ) : (
         /* ── Fixed-amount controls ── */
@@ -189,12 +169,12 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
                 onClick={() => selectFixedPreset(p)}
                 className="flex-1 rounded-xl py-2 text-xs font-semibold transition-all"
                 style={
-                  activeFixedPreset === p
+                  activeFixedPreset === p && !customValue
                     ? { backgroundColor: '#C4956A', color: '#fff', border: '1.5px solid #C4956A' }
                     : { backgroundColor: '#FDFAF7', color: '#7A6652', border: '1.5px solid #EDE0D0' }
                 }
               >
-                {p} Lei
+                {p === 0 ? '0' : `${p}`} Lei
               </button>
             ))}
           </div>
@@ -202,14 +182,14 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
           <div className="relative">
             <input
               type="number"
-              min={1}
+              min={0}
               placeholder="Altă sumă"
               value={customValue}
               onChange={(e) => handleCustomFixed(e.target.value)}
-              onFocus={() => setActiveFixedPreset(null)}
+              onFocus={() => setActiveFixedPreset(-1)}
               className="w-full rounded-xl px-3 py-2.5 text-sm outline-none pr-12"
               style={{
-                border: `1px solid ${activeFixedPreset === null && customValue ? '#C4956A' : '#E0D0C0'}`,
+                border: `1px solid ${activeFixedPreset === -1 && customValue ? '#C4956A' : '#E0D0C0'}`,
                 color: '#2D2016',
                 backgroundColor: '#FDFAF7',
               }}
@@ -223,27 +203,22 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
       {/* Summary */}
       <div className="rounded-xl p-4 space-y-2" style={{ backgroundColor: '#F5EDE3' }}>
         <div className="flex justify-between text-sm" style={{ color: '#7A6652' }}>
-          <span>Donație</span>
+          <span>Donație către familie</span>
           <span className="font-medium">{donationTotal} Lei</span>
         </div>
-        <div className="flex justify-between text-sm" style={{ color: '#7A6652' }}>
-          <span>Contribuție platformă{isLarge ? ` (${pct}%)` : ''}</span>
-          <span className="font-medium">{tipRon} Lei</span>
-        </div>
-        <div className="flex justify-between text-sm" style={{ color: '#7A6652' }}>
-          <span>Comision procesare card</span>
-          <span className="font-medium">~{stripeFeeEstimate} Lei</span>
-        </div>
+        {tipRon > 0 && (
+          <div className="flex justify-between text-sm" style={{ color: '#7A6652' }}>
+            <span>Contribuție platformă{isLarge && pct > 0 ? ` (${pct}%)` : ''}</span>
+            <span className="font-medium">{tipRon} Lei</span>
+          </div>
+        )}
         <div
           className="flex justify-between text-sm font-bold pt-2"
           style={{ borderTop: '1px solid #EDE0D0', color: '#2D2016' }}
         >
           <span>Total de plătit</span>
-          <span>~{total} Lei</span>
+          <span>{total} Lei</span>
         </div>
-        <p className="text-xs pt-1" style={{ color: '#B09070' }}>
-          Familia primește {donationTotal} Lei, minus taxa de transfer Wise (~1–2 Lei).
-        </p>
       </div>
 
       <div className="flex gap-3 pt-1">

@@ -158,13 +158,13 @@ function CheckoutForm({ config, amount, tipAmount, stripeFee, onBack, onSuccess 
     onSuccess()
   }
 
-  const grandTotal = amount + tipAmount + stripeFee
+  const grandTotal = amount + tipAmount
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="rounded-xl p-4 space-y-2" style={{ backgroundColor: '#F5EDE3' }}>
         <div className="flex justify-between text-sm" style={{ color: '#7A6652' }}>
-          <span>Donație</span>
+          <span>Donație către familie</span>
           <span className="font-medium">{amount} RON</span>
         </div>
         {tipAmount > 0 && (
@@ -173,10 +173,6 @@ function CheckoutForm({ config, amount, tipAmount, stripeFee, onBack, onSuccess 
             <span className="font-medium">{tipAmount} RON</span>
           </div>
         )}
-        <div className="flex justify-between text-sm" style={{ color: '#7A6652' }}>
-          <span>Comision procesare card (Stripe)</span>
-          <span className="font-medium">{stripeFee} RON</span>
-        </div>
         <div
           className="flex justify-between text-sm font-bold pt-2"
           style={{ borderTop: '1px solid #EDE0D0', color: '#2D2016' }}
@@ -184,9 +180,6 @@ function CheckoutForm({ config, amount, tipAmount, stripeFee, onBack, onSuccess 
           <span>Total de plătit</span>
           <span>{grandTotal} RON</span>
         </div>
-        <p className="text-xs pt-1" style={{ color: '#B09070' }}>
-          Familia primește {amount} RON, minus taxa de transfer Wise (~1–2 RON).
-        </p>
       </div>
 
       <PaymentElement />
@@ -204,7 +197,7 @@ function CheckoutForm({ config, amount, tipAmount, stripeFee, onBack, onSuccess 
           className="flex-grow"
           style={{ backgroundColor: config.palette.primary }}
         >
-          Plătește {grandTotal} RON
+          Plătește {grandTotal} Lei
         </Button>
       </div>
     </form>
