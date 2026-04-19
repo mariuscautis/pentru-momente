@@ -55,15 +55,20 @@ function buildDonorConfirmationHtml(ctx: DonationEmailContext): string {
   const eventUrl = `${APP_URL}/${event.eventType}/${event.slug}`
   const primary = config.palette.primary
   const donorName = donation.isAnonymous ? 'Donator anonim' : (donation.displayName ?? 'Donator')
-  const totalAmount = donation.amount + donation.tipAmount
+
+  // tip_amount in DB = commission + optional donor tip. Recalculate commission to extract tip.
+  const commission = Math.round((donation.amount * 0.025 + 1.25) * 100) / 100
+  const donorTip = Math.round(Math.max(0, donation.tipAmount - commission) * 100) / 100
+  // Donor paid: donation + tip (commission is deducted from organiser, not added to donor charge)
+  const totalAmount = donation.amount + donorTip
 
   const subject = resolveCopy(config.copy.donationEmailSubject, event.name)
   const intro = resolveCopy(config.copy.donationEmailIntro, event.name)
 
-  const tipRow = donation.tipAmount > 0
+  const tipRow = donorTip > 0
     ? `<tr>
         <td style="padding:6px 0;color:#9A7B60;font-size:14px;">Contribuție platformă</td>
-        <td style="padding:6px 0;color:#9A7B60;font-size:14px;text-align:right;">${donation.tipAmount} Lei</td>
+        <td style="padding:6px 0;color:#9A7B60;font-size:14px;text-align:right;">${donorTip} Lei</td>
       </tr>`
     : ''
 
