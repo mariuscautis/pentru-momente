@@ -31,6 +31,7 @@ export default function DashboardPage() {
   const [uploadingFor, setUploadingFor] = useState<string | null>(null)
   const [deletingFor, setDeletingFor] = useState<string | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [togglingFor, setTogglingFor] = useState<string | null>(null)
 
   async function load() {
     const supabase = getSupabase()
@@ -116,6 +117,25 @@ export default function DashboardPage() {
     }
     setDeletingFor(null)
     setConfirmDeleteId(null)
+  }
+
+  async function handleToggleActive(eventId: string, currentlyActive: boolean) {
+    setTogglingFor(eventId)
+    const supabase = getSupabase()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    const res = await fetch(`/api/events/${eventId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ isActive: !currentlyActive }),
+    })
+    if (res.ok) {
+      setEvents((prev) => prev.map((e) => e.id === eventId ? { ...e, isActive: !currentlyActive } : e))
+    } else {
+      const d = await res.json() as { error: string }
+      setError(d.error ?? 'Eroare la actualizare.')
+    }
+    setTogglingFor(null)
   }
 
   async function handleLogout() {
@@ -219,6 +239,8 @@ export default function DashboardPage() {
               onDeleteRequest={() => setConfirmDeleteId(event.id)}
               onDeleteConfirm={() => handleDeleteEvent(event.id)}
               onDeleteCancel={() => setConfirmDeleteId(null)}
+              togglingActive={togglingFor === event.id}
+              onToggleActive={() => handleToggleActive(event.id, event.isActive)}
             />
           ))}
         </div>
@@ -261,11 +283,14 @@ interface EventCardProps {
   onDeleteRequest: () => void
   onDeleteConfirm: () => void
   onDeleteCancel: () => void
+  togglingActive: boolean
+  onToggleActive: () => void
 }
 
 function EventCard({
   event, accessToken, uploadingCover, onUploadCover, onEventUpdated,
   confirmingDelete, deletingEvent, onDeleteRequest, onDeleteConfirm, onDeleteCancel,
+  togglingActive, onToggleActive,
 }: EventCardProps) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [coverUrl, setCoverUrl] = useState(event.coverImageUrl ?? null)
@@ -510,6 +535,21 @@ function EventCard({
             >
               Vezi ↗
             </Link>
+            {event.connectOnboardingComplete && !isExpired && (
+              <button
+                onClick={onToggleActive}
+                disabled={togglingActive}
+                className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
+                style={
+                  event.isActive
+                    ? { border: '1px solid #FCD34D', color: '#92400E', backgroundColor: '#FFFBEB', opacity: togglingActive ? 0.6 : 1 }
+                    : { border: '1px solid #BBF7D0', color: '#166534', backgroundColor: '#F0FFF4', opacity: togglingActive ? 0.6 : 1 }
+                }
+                title={event.isActive ? 'Închide pagina' : 'Redeschide pagina'}
+              >
+                {togglingActive ? '...' : event.isActive ? '⏸ Închide' : '▶ Deschide'}
+              </button>
+            )}
             <button
               onClick={onDeleteRequest}
               className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
