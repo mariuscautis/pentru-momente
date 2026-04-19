@@ -56,7 +56,7 @@ export function StepSuccess({ config, event, amount, onComplete }: StepSuccessPr
       <div>
         <h2 className="text-lg font-semibold" style={{ color: '#2D2016' }}>Mulțumim!</h2>
         <p className="mt-1 text-sm max-w-xs" style={{ color: '#7A6652' }}>
-          {config.copy.thankYouMessage}
+          {config.copy.thankYouMessage.replace('{name}', event.name)}
         </p>
       </div>
 
