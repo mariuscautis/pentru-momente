@@ -191,7 +191,7 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
                   </button>
                   {isRecommended && (
                     <span className="text-xs font-semibold" style={{ color: '#C4956A' }}>
-                      ales des ✦
+                      Recomandat
                     </span>
                   )}
                 </div>
