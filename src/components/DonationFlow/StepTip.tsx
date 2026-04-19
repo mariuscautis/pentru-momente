@@ -100,7 +100,7 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
           Susține platforma
         </h2>
         <p className="text-sm mt-1 leading-relaxed" style={{ color: '#9A7B60' }}>
-          Contribuția ta ajunge direct la familie. Dacă vrei, poți adăuga și o sumă pentru platformă.
+          Contribuția ta ajunge direct la familie. Dacă simți, poți susține și platforma cu o sumă mică 🤍
         </p>
       </div>
 
