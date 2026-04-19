@@ -14,6 +14,7 @@ function rowToEvent(row: Record<string, unknown>): Event {
     stripeConnectAccountId: row.stripe_connect_account_id as string | undefined,
     connectOnboardingComplete: (row.connect_onboarding_complete as boolean) ?? false,
     isActive: row.is_active as boolean,
+    isDeleted: (row.is_deleted as boolean) ?? false,
     expiresAt: row.expires_at as string | undefined,
     createdAt: row.created_at as string,
   }
@@ -48,6 +49,20 @@ export async function getEventBySlug(eventType: string, slug: string): Promise<E
   if (event.expiresAt && new Date(event.expiresAt) < new Date()) return null
 
   return event
+}
+
+// Fetches any event regardless of active status — used for the inactive/closed page notice.
+// Must use supabaseAdmin to bypass RLS, which only exposes is_active=true rows to anon.
+export async function getEventBySlugAnyStatus(eventType: string, slug: string): Promise<Event | null> {
+  const { data, error } = await supabaseAdmin
+    .from('events')
+    .select('*')
+    .eq('event_type', eventType)
+    .eq('slug', slug)
+    .single()
+
+  if (error || !data) return null
+  return rowToEvent(data)
 }
 
 export async function getEventById(id: string): Promise<Event | null> {
@@ -94,13 +109,11 @@ export async function deleteEvent(eventId: string, organiserId: string): Promise
 
   if (!existing) return false
 
-  // Delete child rows first in case ON DELETE CASCADE wasn't applied to the schema
-  await supabaseAdmin.from('donations').delete().eq('event_id', eventId)
-  await supabaseAdmin.from('event_items').delete().eq('event_id', eventId)
-
+  // Soft-delete: mark inactive and flag as deleted so it stays in the archive.
+  // Donations and items are preserved for reporting purposes.
   const { error } = await supabaseAdmin
     .from('events')
-    .delete()
+    .update({ is_active: false, is_deleted: true })
     .eq('id', eventId)
 
   return !error
