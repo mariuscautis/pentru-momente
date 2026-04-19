@@ -127,7 +127,8 @@ async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent): Prom
 
   // Send donation confirmation to donor if they provided an email
   const donorEmail = (paymentIntent.metadata?.donorEmail as string | undefined) || undefined
-  console.log('[webhook] donorEmail from metadata:', donorEmail)
+  console.log('[webhook] donorEmail from metadata:', donorEmail ?? '(none)')
+  console.log('[webhook] full metadata:', JSON.stringify(paymentIntent.metadata))
   if (donorEmail) {
     try {
       await sendDonationConfirmationToDonor({
@@ -141,7 +142,11 @@ async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent): Prom
       console.log('[webhook] donor confirmation email sent to:', donorEmail)
     } catch (err) {
       console.error('[webhook] failed to send donor confirmation email:', err)
+      console.error('[webhook] BREVO_API_KEY present:', !!process.env.BREVO_API_KEY)
+      console.error('[webhook] BREVO_API_KEY prefix:', process.env.BREVO_API_KEY?.slice(0, 20))
     }
+  } else {
+    console.log('[webhook] no donorEmail in metadata — skipping confirmation email')
   }
 
   // Check milestones
