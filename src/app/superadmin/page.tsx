@@ -33,6 +33,7 @@ interface AdminEvent {
   eventType: string
   name: string
   isActive: boolean
+  isDeleted: boolean
   isBlocked: boolean
   createdAt: string
   goalAmount: number | null
@@ -1113,6 +1114,7 @@ function EventsTab() {
   const [search, setSearch] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'deleted' | 'expired'>('all')
   const [blockingId, setBlockingId] = useState<string | null>(null)
   const [reason, setReason] = useState('')
   const [saving, setSaving] = useState(false)
@@ -1145,7 +1147,14 @@ function EventsTab() {
     const created = new Date(e.createdAt)
     const matchFrom = !dateFrom || created >= new Date(dateFrom)
     const matchTo = !dateTo || created <= new Date(dateTo + 'T23:59:59')
-    return matchSearch && matchFrom && matchTo
+    const isExpired = !!e.expiresAt && new Date(e.expiresAt) < new Date()
+    const matchStatus =
+      statusFilter === 'all' ? true :
+      statusFilter === 'active' ? (e.isActive && !e.isBlocked && !isExpired) :
+      statusFilter === 'inactive' ? (!e.isActive && !e.isDeleted && !isExpired) :
+      statusFilter === 'deleted' ? e.isDeleted :
+      statusFilter === 'expired' ? isExpired : true
+    return matchSearch && matchFrom && matchTo && matchStatus
   })
 
   const totalDonations = filtered.reduce((s, e) => s + (e.totalRaised ?? 0), 0)
@@ -1159,7 +1168,7 @@ function EventsTab() {
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Total pagini" value={String(events.length)} />
-        <StatCard label="Pagini active" value={String(events.filter(e => !e.isBlocked).length)} color={c.success} />
+        <StatCard label="Pagini active" value={String(events.filter(e => e.isActive && !e.isBlocked && !e.isDeleted && !(e.expiresAt && new Date(e.expiresAt) < new Date())).length)} color={c.success} />
         <StatCard label="Donații colectate" value={`${totalDonations.toLocaleString('ro-RO')} RON`} color={c.accent} />
         <StatCard label="Comision platformă" value={`${totalCommission.toLocaleString('ro-RO')} RON`} color={c.warning}
           sub={filtered.length < events.length ? `Total: ${allTimeCommission.toLocaleString('ro-RO')} RON` : undefined} />
@@ -1195,6 +1204,37 @@ function EventsTab() {
             Resetează
           </button>
         )}
+      </div>
+
+      {/* Status filter pills */}
+      <div className="flex flex-wrap gap-2">
+        {([
+          { key: 'all',      label: 'Toate' },
+          { key: 'active',   label: 'Active' },
+          { key: 'inactive', label: 'Inactive' },
+          { key: 'expired',  label: 'Expirate' },
+          { key: 'deleted',  label: 'Șterse' },
+        ] as { key: typeof statusFilter; label: string }[]).map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setStatusFilter(key)}
+            className="text-xs px-3 py-1.5 rounded-full font-medium transition-colors"
+            style={statusFilter === key
+              ? { backgroundColor: c.accent, color: '#fff', border: `1px solid ${c.accent}` }
+              : { backgroundColor: c.surface, color: c.textMid, border: `1px solid ${c.border}` }
+            }
+          >
+            {label}
+            {key !== 'all' && (
+              <span className="ml-1.5 opacity-70">
+                {key === 'active'   ? events.filter(e => e.isActive && !e.isBlocked && !(e.expiresAt && new Date(e.expiresAt) < new Date())).length :
+                 key === 'inactive' ? events.filter(e => !e.isActive && !e.isDeleted && !(e.expiresAt && new Date(e.expiresAt) < new Date())).length :
+                 key === 'expired'  ? events.filter(e => !!e.expiresAt && new Date(e.expiresAt) < new Date()).length :
+                 key === 'deleted'  ? events.filter(e => e.isDeleted).length : 0}
+              </span>
+            )}
+          </button>
+        ))}
       </div>
 
       {/* Block modal */}
@@ -1236,7 +1276,7 @@ function EventsTab() {
                     {event.blockInfo?.reason && <p className="text-xs mt-0.5" style={{ color: c.danger }}>Motiv: {event.blockInfo.reason}</p>}
                   </td>
                   <td className="px-4 py-3"><span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: c.badge, color: c.badgeText }}>{event.eventType}</span></td>
-                  <td className="px-4 py-3"><StatusBadge published={!event.isBlocked} activeLabel="Activ" inactiveLabel="Blocat" /></td>
+                  <td className="px-4 py-3"><EventStatusBadge event={event} /></td>
                   <td className="px-4 py-3 text-right" style={{ color: c.textMid }}>{event.goalAmount ? `${event.goalAmount.toLocaleString('ro-RO')} RON` : <span style={{ color: c.textSoft }}>—</span>}</td>
                   <td className="px-4 py-3 text-right font-semibold" style={{ color: c.success }}>{event.totalRaised > 0 ? `${event.totalRaised.toLocaleString('ro-RO')} RON` : <span style={{ color: c.textSoft, fontWeight: 400 }}>0 RON</span>}</td>
                   <td className="px-4 py-3 text-right" style={{ color: c.warning }}>{event.totalTips > 0 ? `${event.totalTips.toLocaleString('ro-RO')} RON` : <span style={{ color: c.textSoft }}>0 RON</span>}</td>
@@ -1283,7 +1323,7 @@ function EventsTab() {
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold" style={{ color: c.text }}>{event.name}</span>
-                  <StatusBadge published={!event.isBlocked} activeLabel="Activ" inactiveLabel="Blocat" />
+                  <EventStatusBadge event={event} />
                 </div>
                 <p className="text-xs mt-0.5" style={{ color: c.textSoft }}>{event.eventType}/{event.slug}</p>
               </div>
@@ -1428,6 +1468,15 @@ function EmptyState({ message }: { message: string }) {
       <p className="text-sm" style={{ color: c.textSoft }}>{message}</p>
     </div>
   )
+}
+
+function EventStatusBadge({ event }: { event: AdminEvent }) {
+  const isExpired = !!event.expiresAt && new Date(event.expiresAt) < new Date()
+  if (event.isBlocked)  return <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: c.dangerBg, color: c.danger }}>Blocat</span>
+  if (event.isDeleted)  return <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: '#FFF7ED', color: '#C2410C' }}>Șters</span>
+  if (isExpired)        return <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: c.warningBg, color: c.warning }}>Expirat</span>
+  if (!event.isActive)  return <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: '#F1F5F9', color: '#64748B' }}>Inactiv</span>
+  return <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: c.successBg, color: c.success }}>Activ</span>
 }
 
 function StatusBadge({ published, activeLabel = 'Publicat', inactiveLabel = 'Draft' }: { published: boolean; activeLabel?: string; inactiveLabel?: string }) {
