@@ -13,22 +13,27 @@ interface BrevoEmailParams {
 }
 
 async function sendEmail(params: BrevoEmailParams): Promise<void> {
+  const payload = {
+    sender: { name: 'pentrumomente.ro', email: 'noreply@pentrumomente.ro' },
+    ...params,
+  }
+  console.log('[brevo] sending email to:', JSON.stringify(params.to))
+
   const res = await fetch(BREVO_API_URL, {
     method: 'POST',
     headers: {
       'api-key': BREVO_API_KEY,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      sender: { name: 'pentrumomente.ro', email: 'noreply@pentrumomente.ro' },
-      ...params,
-    }),
+    body: JSON.stringify(payload),
   })
 
   if (!res.ok) {
     const text = await res.text()
+    console.error('[brevo] API error:', res.status, text)
     throw new Error(`Brevo API error ${res.status}: ${text}`)
   }
+  console.log('[brevo] email sent successfully')
 }
 
 export interface DonationEmailContext {

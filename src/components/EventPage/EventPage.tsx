@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Event, EventItem, Donation, EventTypeConfig } from '@/types'
 import { ItemTracker } from '@/components/ItemTracker/ItemTracker'
@@ -16,6 +17,7 @@ interface EventPageProps {
 }
 
 export function EventPage({ event, items, donations, config, totalRaised }: EventPageProps) {
+  const router = useRouter()
   const [cart, setCart] = useState<SelectedItem[]>([])
   const [checkoutOpen, setCheckoutOpen] = useState(false)
 
@@ -40,9 +42,10 @@ export function EventPage({ event, items, donations, config, totalRaised }: Even
   function handleDonationComplete() {
     setCheckoutOpen(false)
     setCart([])
+    router.refresh()
     setTimeout(() => {
       document.getElementById('donors')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }, 50)
+    }, 300)
   }
 
   return (

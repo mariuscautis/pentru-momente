@@ -107,15 +107,21 @@ async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent): Prom
 
   // Send donation confirmation to donor if they provided an email
   const donorEmail = (paymentIntent.metadata?.donorEmail as string | undefined) || undefined
+  console.log('[webhook] donorEmail from metadata:', donorEmail)
   if (donorEmail) {
-    await sendDonationConfirmationToDonor({
-      donation,
-      event,
-      config,
-      donorEmail,
-      organiserEmail: '',
-      organiserName: event.name,
-    })
+    try {
+      await sendDonationConfirmationToDonor({
+        donation,
+        event,
+        config,
+        donorEmail,
+        organiserEmail: '',
+        organiserName: event.name,
+      })
+      console.log('[webhook] donor confirmation email sent to:', donorEmail)
+    } catch (err) {
+      console.error('[webhook] failed to send donor confirmation email:', err)
+    }
   }
 
   // Check milestones
