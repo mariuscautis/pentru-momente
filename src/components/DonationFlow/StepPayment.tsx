@@ -43,7 +43,6 @@ export function StepPayment({ state, setState, event, config, onBack, onSuccess 
             eventSlug: event.slug,
             selectedItems: state.selectedItems,
             amount: totalDonationAmount(state),
-            tipAmount: state.tipAmount,
             displayName: state.displayName || undefined,
             donorEmail: state.donorEmail || undefined,
             message: state.message || undefined,
@@ -52,9 +51,9 @@ export function StepPayment({ state, setState, event, config, onBack, onSuccess 
           }),
         })
 
-        let data: { clientSecret?: string; error?: string; stripeFee?: number }
+        let data: { clientSecret?: string; error?: string; commissionAmount?: number }
         try {
-          data = (await res.json()) as { clientSecret?: string; error?: string; stripeFee?: number }
+          data = (await res.json()) as { clientSecret?: string; error?: string; commissionAmount?: number }
         } catch {
           setError(`Eroare server (${res.status}). Încearcă din nou.`)
           return
@@ -65,7 +64,7 @@ export function StepPayment({ state, setState, event, config, onBack, onSuccess 
           return
         }
 
-        setState((prev) => ({ ...prev, clientSecret: data.clientSecret, stripeFee: data.stripeFee ?? 0 }))
+        setState((prev) => ({ ...prev, clientSecret: data.clientSecret, stripeFee: data.commissionAmount ?? 0 }))
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Eroare de rețea. Încearcă din nou.')
       } finally {
@@ -114,8 +113,7 @@ export function StepPayment({ state, setState, event, config, onBack, onSuccess 
       <CheckoutForm
         config={config}
         amount={totalDonationAmount(state)}
-        tipAmount={state.tipAmount}
-        stripeFee={state.stripeFee}
+        commissionAmount={state.stripeFee}
         onBack={onBack}
         onSuccess={onSuccess}
       />
@@ -126,13 +124,12 @@ export function StepPayment({ state, setState, event, config, onBack, onSuccess 
 interface CheckoutFormProps {
   config: EventTypeConfig
   amount: number
-  tipAmount: number
-  stripeFee: number
+  commissionAmount: number
   onBack: () => void
   onSuccess: () => void
 }
 
-function CheckoutForm({ config, amount, tipAmount, stripeFee, onBack, onSuccess }: CheckoutFormProps) {
+function CheckoutForm({ config, amount, commissionAmount, onBack, onSuccess }: CheckoutFormProps) {
   const stripe = useStripe()
   const elements = useElements()
   const [submitting, setSubmitting] = useState(false)
@@ -159,27 +156,25 @@ function CheckoutForm({ config, amount, tipAmount, stripeFee, onBack, onSuccess 
     onSuccess()
   }
 
-  const grandTotal = amount + tipAmount
+  const grandTotal = amount + commissionAmount
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="rounded-xl p-4 space-y-2" style={{ backgroundColor: '#F5EDE3' }}>
         <div className="flex justify-between text-sm" style={{ color: '#7A6652' }}>
-          <span>Donație către familie</span>
+          <span>Donație</span>
           <span className="font-medium">{amount} RON</span>
         </div>
-        {tipAmount > 0 && (
-          <div className="flex justify-between text-sm" style={{ color: '#7A6652' }}>
-            <span>Contribuție platformă</span>
-            <span className="font-medium">{tipAmount} RON</span>
-          </div>
-        )}
+        <div className="flex justify-between text-sm" style={{ color: '#7A6652' }}>
+          <span>Comision platformă</span>
+          <span className="font-medium">{commissionAmount.toFixed(2)} RON</span>
+        </div>
         <div
           className="flex justify-between text-sm font-bold pt-2"
           style={{ borderTop: '1px solid #EDE0D0', color: '#2D2016' }}
         >
           <span>Total de plătit</span>
-          <span>{grandTotal} RON</span>
+          <span>{grandTotal.toFixed(2)} RON</span>
         </div>
       </div>
 
@@ -198,7 +193,7 @@ function CheckoutForm({ config, amount, tipAmount, stripeFee, onBack, onSuccess 
           className="flex-grow"
           style={{ backgroundColor: config.palette.primary }}
         >
-          Plătește {grandTotal} Lei
+          Plătește {grandTotal.toFixed(2)} Lei
         </Button>
       </div>
     </form>

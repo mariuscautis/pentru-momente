@@ -5,10 +5,9 @@ function getStripe() {
 }
 
 export interface CreatePaymentIntentParams {
-  amount: number           // donation amount in RON bani (RON × 100)
-  tipAmount: number        // platform tip in RON bani
-  stripeFee: number        // Stripe processing fee in RON bani (passed through to donor)
-  connectAccountId: string // organiser's Stripe Express account ID
+  amount: number             // donation amount in RON bani (RON × 100)
+  commissionAmount: number   // mandatory platform commission in RON bani
+  connectAccountId: string   // organiser's Stripe Express account ID
   eventId: string
   itemId?: string
   displayName?: string
@@ -23,10 +22,10 @@ export async function createPaymentIntent(
 ): Promise<Stripe.PaymentIntent> {
   const stripe = getStripe()
 
-  // Donor pays: donation + tip + stripe fee
-  const totalAmount = params.amount + params.tipAmount + params.stripeFee
-  // Platform receives the tip as application_fee; stripe fee covers processing cost
-  const applicationFee = params.tipAmount + params.stripeFee
+  // Donor pays: donation + commission
+  const totalAmount = params.amount + params.commissionAmount
+  // Platform captures the commission; organiser receives exactly params.amount
+  const applicationFee = params.commissionAmount
 
   return stripe.paymentIntents.create({
     amount: totalAmount,
@@ -40,8 +39,7 @@ export async function createPaymentIntent(
       eventId: params.eventId,
       itemId: params.itemId ?? '',
       donationAmount: String(params.amount),
-      tipAmount: String(params.tipAmount),
-      stripeFee: String(params.stripeFee),
+      commissionAmount: String(params.commissionAmount),
       displayName: params.displayName ?? '',
       donorEmail: params.donorEmail ?? '',
       message: params.message ?? '',

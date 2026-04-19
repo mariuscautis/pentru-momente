@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { calculateStripeFee } from '@/lib/payments/stripe'
+import { calculateCommission } from '@/lib/payments/stripe'
 import { createPaymentIntent } from '@/lib/connect/createPaymentIntent'
 import { createDonation } from '@/lib/db/donations'
 import { getEventBySlug } from '@/lib/db/events'
@@ -18,7 +18,6 @@ interface CreateDonationBody {
   selectedItems?: SelectedItem[]
   // Total donation amount (sum of items or general fund)
   amount: number
-  tipAmount: number
   displayName?: string
   donorEmail?: string
   message?: string
@@ -67,19 +66,17 @@ async function handlePost(req: NextRequest): Promise<NextResponse> {
     )
   }
 
-  const tipAmount = body.tipAmount ?? 0
-  // Stripe fee is absorbed by the platform — not passed through to the donor.
-  // The application_fee covers the tip only; Stripe processing cost comes out of that.
-  const stripeFeeRon = calculateStripeFee(body.amount, tipAmount)
+  // Mandatory platform commission: 2.5% + 1.25 RON
+  const commissionRon = calculateCommission(body.amount)
 
-  // One payment intent for the full total (donation + tip only — no fee line for donor)
+  // One payment intent for the full total (donation + commission).
   // Funds route directly to organiser's Stripe Express account via destination charge.
+  // application_fee_amount = commission → captured by platform account.
   let paymentIntent
   try {
     paymentIntent = await createPaymentIntent({
-      amount: Math.round(body.amount * 100),           // RON → bani
-      tipAmount: Math.round(tipAmount * 100),
-      stripeFee: 0,                                    // fee absorbed by platform
+      amount: Math.round(body.amount * 100),                 // RON → bani
+      commissionAmount: Math.round(commissionRon * 100),     // RON → bani
       connectAccountId: event.stripeConnectAccountId,
       eventId: event.id,
       itemId: selectedItems.length === 1 ? selectedItems[0].itemId : undefined,
@@ -94,16 +91,15 @@ async function handlePost(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json<ApiError>({ error: message }, { status: 500 })
   }
 
-  const stripeFee = stripeFeeRon
-
-  // Create one donation record per selected item, or one general fund record
+  // Create one donation record per selected item, or one general fund record.
+  // tipAmount stores the commission so the superadmin "Comision" column reflects it.
   if (selectedItems.length > 0) {
-    for (const selected of selectedItems) {
+    for (const [i, selected] of selectedItems.entries()) {
       await createDonation({
         eventId: event.id,
         itemId: selected.itemId,
         amount: selected.amount,
-        tipAmount: 0, // tip is attributed to the first item below
+        tipAmount: i === 0 ? commissionRon : 0, // attribute commission to first item
         displayName: body.displayName,
         message: body.message,
         isAnonymous: body.isAnonymous,
@@ -111,14 +107,12 @@ async function handlePost(req: NextRequest): Promise<NextResponse> {
         stripePaymentIntentId: paymentIntent.id,
       })
     }
-    // Attribute the platform tip to the first item's donation
-    // by updating it separately — simplest approach
   } else {
     await createDonation({
       eventId: event.id,
       itemId: undefined,
       amount: body.amount,
-      tipAmount: body.tipAmount ?? 0,
+      tipAmount: commissionRon,
       displayName: body.displayName,
       message: body.message,
       isAnonymous: body.isAnonymous,
@@ -130,6 +124,6 @@ async function handlePost(req: NextRequest): Promise<NextResponse> {
   return NextResponse.json({
     clientSecret: paymentIntent.client_secret,
     paymentIntentId: paymentIntent.id,
-    stripeFee,
+    commissionAmount: commissionRon,
   })
 }

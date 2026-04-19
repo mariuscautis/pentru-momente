@@ -19,15 +19,17 @@ export const stripe = new Proxy({} as Stripe, {
 })
 
 /**
- * Calculate the Stripe processing fee to pass through to the donor.
- * EU card rate: 1.5% + €0.25 (≈1.25 RON at 5 RON/EUR), rounded up to nearest 0.5 RON.
- * Applied to the donation + tip total (the full amount Stripe processes).
+ * Calculate the mandatory platform commission charged on every donation.
+ * Combined rate: 2.5% + 1.25 RON
+ *   – covers Stripe card processing (1.5% + €0.25 ≈ 1.25 RON for EU cards)
+ *   – plus platform fee (1%)
+ * Rounded up to nearest 0.01 RON.
+ * The full commission is captured via application_fee_amount and goes to the platform account.
+ * The organiser receives exactly the donation amount.
  */
-export function calculateStripeFee(donationRon: number, tipRon: number): number {
-  const base = donationRon + tipRon
-  const raw = base * 0.015 + 1.25
-  // Round up to nearest 0.5 RON so the platform is never under
-  return Math.ceil(raw * 2) / 2
+export function calculateCommission(donationRon: number): number {
+  const raw = donationRon * 0.025 + 1.25
+  return Math.round(raw * 100) / 100
 }
 
 export function constructWebhookEvent(

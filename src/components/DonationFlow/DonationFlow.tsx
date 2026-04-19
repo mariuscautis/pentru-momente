@@ -130,7 +130,7 @@ export function DonationFlow({ event, items, config, initialCart, onClose, onDon
 const STEPS: { key: DonationStep; label: string }[] = [
   { key: 'amount', label: 'Sumă' },
   { key: 'details', label: 'Detalii' },
-  { key: 'tip', label: 'Contribuție' },
+  { key: 'tip', label: 'Comision' },
   { key: 'payment', label: 'Plată' },
 ]
 
