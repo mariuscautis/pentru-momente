@@ -15,15 +15,9 @@ interface StepTipProps {
   onNext: () => void
 }
 
-function calcCommission(donationRon: number): number {
-  const raw = donationRon * 0.025 + 1.25
-  return Math.round(raw * 100) / 100
-}
 
 export function StepTip({ state, setState, config, onBack, onNext }: StepTipProps) {
   const donationTotal = totalDonationAmount(state)
-  const commission = calcCommission(donationTotal)
-  const organiserReceives = Math.round((donationTotal - commission) * 100) / 100
   const isLarge = donationTotal > 2000
 
   // ── Fixed-amount mode (≤ 2000 RON) ─────────────────────────────────────────
@@ -99,34 +93,6 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
 
   return (
     <div className="space-y-5">
-
-      {/* Commission notice */}
-      <div
-        className="rounded-xl px-4 py-3 text-sm space-y-1"
-        style={{ backgroundColor: '#FFF8F2', border: '1px solid #F5DFC0' }}
-      >
-        <div className="flex justify-between">
-          <span style={{ color: '#7A6652' }}>Sumă donată</span>
-          <span className="font-medium" style={{ color: '#2D2016' }}>{donationTotal} Lei</span>
-        </div>
-        <div className="flex justify-between">
-          <span style={{ color: '#7A6652' }}>Comision platformă (2,5% + 1,25 Lei)</span>
-          <span className="font-medium" style={{ color: '#C4956A' }}>−{commission.toFixed(2)} Lei</span>
-        </div>
-        <div
-          className="flex justify-between text-sm font-semibold pt-1"
-          style={{ borderTop: '1px solid #F0DCC8', color: '#2D2016' }}
-        >
-          <span>Destinatarul primește</span>
-          <span>{organiserReceives.toFixed(2)} Lei</span>
-        </div>
-        <p className="text-xs pt-0.5" style={{ color: '#B09070' }}>
-          Comisionul acoperă procesarea plății și operarea platformei.{' '}
-          <a href="/tarife" target="_blank" rel="noopener noreferrer" style={{ color: config.palette.primary, textDecoration: 'underline' }}>
-            Detalii
-          </a>
-        </p>
-      </div>
 
       {/* Optional tip section */}
       <div>

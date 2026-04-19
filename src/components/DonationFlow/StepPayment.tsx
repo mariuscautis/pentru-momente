@@ -166,7 +166,6 @@ function CheckoutForm({ config, amount, tipAmount, commissionAmount, onBack, onS
 
   // Donor pays: donation + tip. Commission is deducted from organiser's share, not added on top.
   const grandTotal = amount + tipAmount
-  const organiserReceives = Math.round((amount - commissionAmount) * 100) / 100
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -188,11 +187,9 @@ function CheckoutForm({ config, amount, tipAmount, commissionAmount, onBack, onS
           <span>Total de plătit</span>
           <span>{grandTotal} RON</span>
         </div>
-        {commissionAmount > 0 && (
-          <p className="text-xs pt-1" style={{ color: '#B09070' }}>
-            Destinatarul primește {organiserReceives.toFixed(2)} RON (după comisionul de {commissionAmount.toFixed(2)} RON).
-          </p>
-        )}
+        <p className="text-xs pt-1" style={{ color: '#B09070' }}>
+          Gestul tău contează mai mult decât orice sumă. Mulțumim că ești alături de ei.
+        </p>
       </div>
 
       <PaymentElement />
