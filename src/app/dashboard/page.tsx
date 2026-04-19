@@ -5,7 +5,8 @@ import QRCode from 'qrcode'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getSupabase } from '@/lib/db/supabase'
-import { Event, Payout } from '@/types'
+import { Event, EventItem, Payout } from '@/types'
+import { IconPicker } from '@/components/ui/IconPicker'
 
 interface DashboardEvent extends Event {
   totalRaised: number
@@ -25,6 +26,7 @@ export default function DashboardPage() {
   const [events, setEvents] = useState<DashboardEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [userName, setUserName] = useState('')
+  const [accessToken, setAccessToken] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [uploadingFor, setUploadingFor] = useState<string | null>(null)
   const [deletingFor, setDeletingFor] = useState<string | null>(null)
@@ -36,6 +38,7 @@ export default function DashboardPage() {
     if (!session) { router.push('/login'); return }
 
     setUserName(session.user.email?.split('@')[0] ?? 'tu')
+    setAccessToken(session.access_token)
 
     const { data: eventsData } = await supabase
       .from('events')
@@ -207,6 +210,7 @@ export default function DashboardPage() {
             <EventCard
               key={event.id}
               event={event}
+              accessToken={accessToken}
               uploadingCover={uploadingFor === event.id}
               onUploadCover={(file) => uploadCover(event.id, file)}
               onEventUpdated={load}
@@ -244,6 +248,7 @@ function StatCard({ label, value, highlight }: { label: string; value: string; h
 
 interface EventCardProps {
   event: DashboardEvent
+  accessToken: string
   uploadingCover: boolean
   onUploadCover: (file: File) => void
   onEventUpdated: () => void
@@ -255,7 +260,7 @@ interface EventCardProps {
 }
 
 function EventCard({
-  event, uploadingCover, onUploadCover, onEventUpdated,
+  event, accessToken, uploadingCover, onUploadCover, onEventUpdated,
   confirmingDelete, deletingEvent, onDeleteRequest, onDeleteConfirm, onDeleteCancel,
 }: EventCardProps) {
   const fileRef = useRef<HTMLInputElement>(null)
@@ -546,6 +551,9 @@ function EventCard({
           </div>
         )}
 
+        {/* Items panel */}
+        <ItemsPanel eventId={event.id} token={accessToken} />
+
         {/* Share section */}
         <ShareSection eventUrl={eventUrl} eventName={event.name} />
 
@@ -668,6 +676,322 @@ function OnboardingResumeButton({ eventSlug }: { eventSlug: string }) {
         {loading ? 'Se încarcă...' : 'Finalizează configurarea Stripe →'}
       </button>
       {err && <p className="mt-1 text-xs" style={{ color: '#B91C1C' }}>{err}</p>}
+    </div>
+  )
+}
+
+// ─── Items panel ───────────────────────────────────────────────────────────────
+
+interface LocalItem extends EventItem {
+  dirty?: boolean
+}
+
+function ItemsPanel({ eventId, token }: { eventId: string; token: string }) {
+  const [open, setOpen] = useState(false)
+  const [items, setItems] = useState<LocalItem[]>([])
+  const [loading, setLoading] = useState(false)
+  const [saving, setSaving] = useState<string | null>(null) // itemId being saved
+  const [error, setError] = useState('')
+  const [addingNew, setAddingNew] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newAmount, setNewAmount] = useState('')
+  const [newEmoji, setNewEmoji] = useState('')
+  const [newCustom, setNewCustom] = useState(false)
+  const [creatingCustomItem, setCreatingCustomItem] = useState(false)
+
+  async function loadItems() {
+    setLoading(true)
+    const res = await fetch(`/api/events/${eventId}/items`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (res.ok) {
+      const data = (await res.json()) as { items: EventItem[] }
+      setItems(data.items)
+    }
+    setLoading(false)
+  }
+
+  function handleOpen() {
+    setOpen(true)
+    loadItems()
+  }
+
+  async function saveField(itemId: string, patch: Record<string, unknown>) {
+    setSaving(itemId)
+    await fetch(`/api/events/${eventId}/items?itemId=${itemId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(patch),
+    })
+    setSaving(null)
+  }
+
+  function updateLocal(itemId: string, patch: Partial<LocalItem>) {
+    setItems((prev) => prev.map((i) => i.id === itemId ? { ...i, ...patch } : i))
+  }
+
+  async function handleDelete(itemId: string) {
+    await fetch(`/api/events/${eventId}/items?itemId=${itemId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    setItems((prev) => prev.filter((i) => i.id !== itemId))
+  }
+
+  async function handleAddItem() {
+    if (!newName.trim()) return
+    setError('')
+    const res = await fetch(`/api/events/${eventId}/items`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        name: newName.trim(),
+        targetAmount: newAmount ? parseFloat(newAmount) : 0,
+        emoji: newEmoji || undefined,
+        isCustomAmount: newCustom,
+        sortOrder: items.length,
+      }),
+    })
+    if (res.ok) {
+      const data = (await res.json()) as { item: EventItem }
+      setItems((prev) => [...prev, data.item])
+      setNewName(''); setNewAmount(''); setNewEmoji(''); setNewCustom(false); setAddingNew(false)
+    } else {
+      const d = (await res.json()) as { error: string }
+      setError(d.error ?? 'Eroare la adăugare.')
+    }
+  }
+
+  async function addCustomAmountItem() {
+    setCreatingCustomItem(true)
+    const res = await fetch(`/api/events/${eventId}/items`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        name: 'Sumă personalizată',
+        targetAmount: 0,
+        emoji: 'heart',
+        isCustomAmount: true,
+        sortOrder: items.length,
+      }),
+    })
+    if (res.ok) {
+      const data = (await res.json()) as { item: EventItem }
+      setItems((prev) => [...prev, data.item])
+    }
+    setCreatingCustomItem(false)
+  }
+
+  const hasCustomItem = items.some((i) => i.isCustomAmount)
+
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #EDE0D0' }}>
+      <button
+        type="button"
+        onClick={open ? () => setOpen(false) : handleOpen}
+        className="w-full flex items-center justify-between px-4 py-3 transition-colors text-left"
+        style={{ backgroundColor: open ? '#F5EDE3' : '#FFFDFB' }}
+      >
+        <span className="text-sm font-semibold" style={{ color: '#2D2016' }}>Articole &amp; sume</span>
+        <span className="text-xs" style={{ color: '#9A7B60' }}>{open ? '▲' : '▼'}</span>
+      </button>
+
+      {open && (
+        <div className="p-4 space-y-3" style={{ borderTop: '1px solid #EDE0D0' }}>
+          {loading ? (
+            <div className="flex justify-center py-4">
+              <div className="h-5 w-5 animate-spin rounded-full border-2" style={{ borderColor: '#EDE0D0', borderTopColor: '#C4956A' }} />
+            </div>
+          ) : (
+            <>
+              {/* Item list */}
+              <ul className="space-y-2">
+                {items.map((item) => (
+                  <li
+                    key={item.id}
+                    className="rounded-xl p-3 space-y-2"
+                    style={{ backgroundColor: '#F5EDE3', border: '1px solid #EDE0D0' }}
+                  >
+                    <div className="flex items-center gap-2">
+                      {/* Icon picker */}
+                      <IconPicker
+                        value={item.emoji}
+                        onChange={(id) => {
+                          updateLocal(item.id, { emoji: id || undefined })
+                          saveField(item.id, { emoji: id || null })
+                        }}
+                      />
+
+                      {/* Name */}
+                      <input
+                        type="text"
+                        value={item.name}
+                        onChange={(e) => updateLocal(item.id, { name: e.target.value })}
+                        onBlur={(e) => saveField(item.id, { name: e.target.value })}
+                        className="flex-1 rounded-lg px-2.5 py-1.5 text-sm outline-none"
+                        style={{ border: '1px solid #E0D0C0', color: '#2D2016', backgroundColor: '#FFFDFB' }}
+                        onFocus={(e) => (e.target.style.borderColor = '#C4956A')}
+                      />
+
+                      {/* Delete */}
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(item.id)}
+                        className="shrink-0 rounded-lg px-2 py-1.5 text-xs transition-colors"
+                        style={{ border: '1px solid #FECACA', color: '#DC2626' }}
+                      >
+                        🗑
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-3 pl-12">
+                      {/* Target amount */}
+                      {!item.isCustomAmount && (
+                        <div className="flex items-center gap-1.5 flex-1">
+                          <input
+                            type="number"
+                            min={0}
+                            value={item.targetAmount === 0 ? '' : item.targetAmount}
+                            onChange={(e) => updateLocal(item.id, { targetAmount: parseFloat(e.target.value) || 0 })}
+                            onBlur={(e) => saveField(item.id, { targetAmount: parseFloat(e.target.value) || 0 })}
+                            onKeyDown={(e) => { if (e.key === '-') e.preventDefault() }}
+                            placeholder="Sumă (opțional)"
+                            className="w-full rounded-lg px-2.5 py-1.5 text-sm outline-none"
+                            style={{ border: '1px solid #E0D0C0', color: '#2D2016', backgroundColor: '#FFFDFB' }}
+                            onFocus={(e) => (e.target.style.borderColor = '#C4956A')}
+                          />
+                          <span className="text-xs shrink-0" style={{ color: '#9A7B60' }}>Lei</span>
+                        </div>
+                      )}
+
+                      {/* Custom amount toggle */}
+                      <label className="flex items-center gap-1.5 cursor-pointer shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={item.isCustomAmount}
+                          onChange={(e) => {
+                            updateLocal(item.id, { isCustomAmount: e.target.checked })
+                            saveField(item.id, { isCustomAmount: e.target.checked })
+                          }}
+                          className="h-3.5 w-3.5 rounded"
+                        />
+                        <span className="text-xs" style={{ color: '#7A6652' }}>Sumă liberă</span>
+                      </label>
+
+                      {saving === item.id && (
+                        <span className="text-xs" style={{ color: '#B09070' }}>salvare…</span>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+
+              {/* Add custom amount item shortcut */}
+              {!hasCustomItem && (
+                <button
+                  type="button"
+                  onClick={addCustomAmountItem}
+                  disabled={creatingCustomItem}
+                  className="w-full rounded-xl py-2.5 text-xs font-medium transition-colors"
+                  style={{
+                    border: '1.5px dashed #C4956A',
+                    color: '#C4956A',
+                    backgroundColor: '#FFFBF5',
+                    opacity: creatingCustomItem ? 0.6 : 1,
+                  }}
+                >
+                  + Adaugă articol cu sumă liberă
+                </button>
+              )}
+
+              {/* Add new item form */}
+              {addingNew ? (
+                <div
+                  className="rounded-xl p-3 space-y-2"
+                  style={{ backgroundColor: '#F5EDE3', border: '1px solid #E0D0C0' }}
+                >
+                  <p className="text-xs font-semibold" style={{ color: '#7A6652' }}>Articol nou</p>
+
+                  <div className="flex items-center gap-2">
+                    <IconPicker value={newEmoji} onChange={setNewEmoji} />
+                    <input
+                      type="text"
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                      placeholder="Numele articolului"
+                      className="flex-1 rounded-lg px-2.5 py-1.5 text-sm outline-none"
+                      style={{ border: '1px solid #E0D0C0', color: '#2D2016', backgroundColor: '#FFFDFB' }}
+                      onFocus={(e) => (e.target.style.borderColor = '#C4956A')}
+                    />
+                  </div>
+
+                  {!newCustom && (
+                    <div className="flex items-center gap-1.5 pl-12">
+                      <input
+                        type="number"
+                        min={0}
+                        value={newAmount}
+                        onChange={(e) => setNewAmount(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === '-') e.preventDefault() }}
+                        placeholder="Sumă țintă (opțional)"
+                        className="flex-1 rounded-lg px-2.5 py-1.5 text-sm outline-none"
+                        style={{ border: '1px solid #E0D0C0', color: '#2D2016', backgroundColor: '#FFFDFB' }}
+                        onFocus={(e) => (e.target.style.borderColor = '#C4956A')}
+                      />
+                      <span className="text-xs shrink-0" style={{ color: '#9A7B60' }}>Lei</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-3 pl-12">
+                    <label className="flex items-center gap-1.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newCustom}
+                        onChange={(e) => setNewCustom(e.target.checked)}
+                        className="h-3.5 w-3.5 rounded"
+                      />
+                      <span className="text-xs" style={{ color: '#7A6652' }}>Sumă liberă (donatorul alege)</span>
+                    </label>
+                  </div>
+
+                  {error && (
+                    <p className="text-xs pl-12" style={{ color: '#B91C1C' }}>{error}</p>
+                  )}
+
+                  <div className="flex gap-2 pl-12">
+                    <button
+                      type="button"
+                      onClick={handleAddItem}
+                      disabled={!newName.trim()}
+                      className="rounded-xl px-4 py-1.5 text-xs font-semibold text-white transition-opacity"
+                      style={{ backgroundColor: '#C4956A', opacity: newName.trim() ? 1 : 0.5 }}
+                    >
+                      Adaugă
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setAddingNew(false); setError('') }}
+                      className="rounded-xl px-4 py-1.5 text-xs font-medium transition-colors"
+                      style={{ border: '1px solid #EDE0D0', color: '#7A6652' }}
+                    >
+                      Anulează
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setAddingNew(true)}
+                  className="w-full rounded-xl py-2.5 text-xs font-medium transition-colors"
+                  style={{ border: '1px solid #EDE0D0', color: '#7A6652', backgroundColor: '#FFFDFB' }}
+                >
+                  + Adaugă articol nou
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      )}
     </div>
   )
 }

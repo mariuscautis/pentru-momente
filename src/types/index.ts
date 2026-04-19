@@ -51,9 +51,11 @@ export interface EventItem {
   id: string
   eventId: string
   name: string
-  targetAmount: number
-  raisedAmount: number // updated on each confirmed donation
+  emoji?: string               // icon shown on the item card
+  targetAmount: number         // 0 means no target (free-choice amount)
+  raisedAmount: number         // updated on each confirmed donation
   isFullyFunded: boolean
+  isCustomAmount: boolean      // true = donor enters their own amount freely
 }
 
 export interface Donation {

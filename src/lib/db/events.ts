@@ -24,9 +24,11 @@ function rowToEventItem(row: Record<string, unknown>): EventItem {
     id: row.id as string,
     eventId: row.event_id as string,
     name: row.name as string,
-    targetAmount: row.target_amount as number,
-    raisedAmount: row.raised_amount as number,
-    isFullyFunded: row.is_fully_funded as boolean,
+    emoji: (row.emoji as string | undefined) ?? undefined,
+    targetAmount: (row.target_amount as number) ?? 0,
+    raisedAmount: (row.raised_amount as number) ?? 0,
+    isFullyFunded: (row.is_fully_funded as boolean) ?? false,
+    isCustomAmount: (row.is_custom_amount as boolean) ?? false,
   }
 }
 
@@ -105,7 +107,7 @@ export async function deleteEvent(eventId: string, organiserId: string): Promise
 }
 
 export async function createEvent(
-  input: Omit<Event, 'id' | 'createdAt'> & { items: Array<{ name: string; targetAmount: number; emoji?: string }> }
+  input: Omit<Event, 'id' | 'createdAt'> & { items: Array<{ name: string; targetAmount: number; emoji?: string; isCustomAmount?: boolean }> }
 ): Promise<Event> {
   const { items, ...eventData } = input
 
@@ -133,9 +135,11 @@ export async function createEvent(
     const itemRows = items.map((item, index) => ({
       event_id: eventRow.id as string,
       name: item.name,
+      emoji: item.emoji ?? null,
       target_amount: item.targetAmount,
       raised_amount: 0,
       is_fully_funded: false,
+      is_custom_amount: item.isCustomAmount ?? false,
       sort_order: index,
     }))
 
@@ -144,6 +148,47 @@ export async function createEvent(
   }
 
   return rowToEvent(eventRow)
+}
+
+export async function createEventItem(
+  eventId: string,
+  item: { name: string; targetAmount: number; emoji?: string; isCustomAmount?: boolean; sortOrder?: number }
+): Promise<EventItem> {
+  const { data, error } = await supabaseAdmin
+    .from('event_items')
+    .insert({
+      event_id: eventId,
+      name: item.name,
+      emoji: item.emoji ?? null,
+      target_amount: item.targetAmount,
+      raised_amount: 0,
+      is_fully_funded: false,
+      is_custom_amount: item.isCustomAmount ?? false,
+      sort_order: item.sortOrder ?? 0,
+    })
+    .select()
+    .single()
+
+  if (error || !data) throw new Error(error?.message ?? 'Failed to create item')
+  return rowToEventItem(data)
+}
+
+export async function updateEventItem(
+  itemId: string,
+  update: { name?: string; targetAmount?: number; emoji?: string | null; isCustomAmount?: boolean }
+): Promise<void> {
+  const payload: Record<string, unknown> = {}
+  if (update.name !== undefined) payload.name = update.name
+  if (update.targetAmount !== undefined) payload.target_amount = update.targetAmount
+  if ('emoji' in update) payload.emoji = update.emoji ?? null
+  if (update.isCustomAmount !== undefined) payload.is_custom_amount = update.isCustomAmount
+
+  if (Object.keys(payload).length === 0) return
+  await supabaseAdmin.from('event_items').update(payload).eq('id', itemId)
+}
+
+export async function deleteEventItem(itemId: string): Promise<void> {
+  await supabaseAdmin.from('event_items').delete().eq('id', itemId)
 }
 
 export async function slugExists(slug: string): Promise<boolean> {

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { EventItem, EventTypeConfig } from '@/types'
 import { SelectedItem } from '@/components/DonationFlow/DonationFlow'
+import { IconDisplay } from '@/components/ui/IconPicker'
 
 interface ItemTrackerProps {
   items: EventItem[]
@@ -69,12 +70,19 @@ interface ItemRowProps {
 }
 
 function ItemRow({ item, config, cartItem, expanded, onExpand, onAddToCart, onRemoveFromCart }: ItemRowProps) {
-  const percent = Math.min(100, Math.round((item.raisedAmount / item.targetAmount) * 100))
-  const remaining = Math.max(0, item.targetAmount - item.raisedAmount)
-  const [inputAmount, setInputAmount] = useState(String(remaining))
+  const hasTarget = item.targetAmount > 0
+  const percent = hasTarget ? Math.min(100, Math.round((item.raisedAmount / item.targetAmount) * 100)) : 0
+  const remaining = hasTarget ? Math.max(0, item.targetAmount - item.raisedAmount) : Infinity
+
+  // Default input: for targeted items pre-fill remaining; for free-choice items start blank
+  const defaultInput = hasTarget ? String(remaining) : ''
+  const [inputAmount, setInputAmount] = useState(defaultInput)
   const inCart = !!cartItem
 
-  const presets = remaining <= 50
+  // Presets: targeted items use remaining-based presets; free-choice items use sensible defaults
+  const presets = item.isCustomAmount || !hasTarget
+    ? [50, 100, 200]
+    : remaining <= 50
     ? [remaining]
     : remaining <= 200
     ? [Math.round(remaining / 2), remaining]
@@ -86,10 +94,16 @@ function ItemRow({ item, config, cartItem, expanded, onExpand, onAddToCart, onRe
 
   function handleConfirm() {
     const num = parseFloat(inputAmount)
-    if (!isNaN(num) && num >= 1 && num <= remaining) {
+    if (!isNaN(num) && num >= 1) {
+      // For targeted items, cap at remaining; for free-choice allow any positive
+      if (hasTarget && num > remaining) return
       onAddToCart(num)
     }
   }
+
+  const inputNum = parseFloat(inputAmount)
+  const isOverTarget = hasTarget && !isNaN(inputNum) && inputNum > remaining
+  const isConfirmDisabled = !inputAmount || isNaN(inputNum) || inputNum < 1 || isOverTarget
 
   return (
     <li
@@ -102,13 +116,33 @@ function ItemRow({ item, config, cartItem, expanded, onExpand, onAddToCart, onRe
       {/* Main row */}
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold truncate" style={{ color: '#2D2016' }}>{item.name}</p>
-            <p className="text-xs mt-0.5" style={{ color: '#9A7B60' }}>
-              {item.isFullyFunded
-                ? 'Finanțat integral ✓'
-                : `${item.raisedAmount} RON din ${item.targetAmount} RON strânși`}
-            </p>
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            {/* Icon */}
+            {item.emoji && (
+              <span
+                className="shrink-0 flex items-center justify-center rounded-xl mt-0.5"
+                style={{
+                  width: 36, height: 36,
+                  backgroundColor: '#F5EDE3',
+                  color: config.palette.primary,
+                }}
+              >
+                <IconDisplay iconId={item.emoji} size={18} />
+              </span>
+            )}
+
+            <div className="min-w-0">
+              <p className="font-semibold truncate" style={{ color: '#2D2016' }}>{item.name}</p>
+              <p className="text-xs mt-0.5" style={{ color: '#9A7B60' }}>
+                {item.isFullyFunded
+                  ? 'Finanțat integral ✓'
+                  : hasTarget
+                  ? `${item.raisedAmount} Lei din ${item.targetAmount} Lei`
+                  : item.isCustomAmount
+                  ? 'Alege suma'
+                  : 'Donație liberă'}
+              </p>
+            </div>
           </div>
 
           {item.isFullyFunded ? (
@@ -121,7 +155,7 @@ function ItemRow({ item, config, cartItem, expanded, onExpand, onAddToCart, onRe
           ) : inCart ? (
             <div className="flex items-center gap-2 shrink-0">
               <span className="text-sm font-semibold" style={{ color: '#C4956A' }}>
-                {cartItem!.amount} RON ✓
+                {cartItem!.amount} Lei ✓
               </span>
               <button
                 onClick={onRemoveFromCart}
@@ -142,24 +176,28 @@ function ItemRow({ item, config, cartItem, expanded, onExpand, onAddToCart, onRe
           )}
         </div>
 
-        {/* Progress bar */}
-        <div
-          className="mt-3 h-2 rounded-full overflow-hidden"
-          style={{ backgroundColor: '#F0E8DC' }}
-          role="progressbar"
-          aria-valuenow={percent}
-          aria-valuemin={0}
-          aria-valuemax={100}
-        >
-          <div
-            className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${percent}%`, backgroundColor: config.palette.primary }}
-          />
-        </div>
-        <div className="flex justify-between mt-1">
-          <span className="text-xs" style={{ color: '#B09070' }}>{remaining} RON rămași</span>
-          <span className="text-xs" style={{ color: '#B09070' }}>{percent}%</span>
-        </div>
+        {/* Progress bar — only when there's a target amount */}
+        {hasTarget && !item.isFullyFunded && (
+          <div className="mt-3">
+            <div
+              className="h-1.5 rounded-full overflow-hidden"
+              style={{ backgroundColor: '#F0E8DC' }}
+              role="progressbar"
+              aria-valuenow={percent}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${percent}%`, backgroundColor: config.palette.primary }}
+              />
+            </div>
+            <div className="flex justify-between mt-1">
+              <span className="text-xs" style={{ color: '#B09070' }}>{remaining} Lei rămași</span>
+              <span className="text-xs" style={{ color: '#B09070' }}>{percent}%</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Expanded amount picker */}
@@ -183,7 +221,7 @@ function ItemRow({ item, config, cartItem, expanded, onExpand, onAddToCart, onRe
                     : { backgroundColor: '#F5EDE3', color: '#7A6652' }
                 }
               >
-                {p === remaining ? `${p} RON (tot)` : `${p} RON`}
+                {hasTarget && p === remaining ? `${p} Lei (tot)` : `${p} Lei`}
               </button>
             ))}
           </div>
@@ -193,9 +231,10 @@ function ItemRow({ item, config, cartItem, expanded, onExpand, onAddToCart, onRe
             <input
               type="number"
               min={1}
-              max={remaining}
+              max={hasTarget ? remaining : undefined}
               value={inputAmount}
               onChange={(e) => setInputAmount(e.target.value)}
+              onKeyDown={(e) => { if (e.key === '-') e.preventDefault() }}
               placeholder="Altă sumă"
               className="w-full rounded-xl px-3 py-2.5 text-sm outline-none pr-14"
               style={{ border: '1px solid #E0D0C0', color: '#2D2016', backgroundColor: '#FDFAF7' }}
@@ -203,13 +242,13 @@ function ItemRow({ item, config, cartItem, expanded, onExpand, onAddToCart, onRe
               onBlur={(e) => (e.target.style.borderColor = '#E0D0C0')}
             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: '#9A7B60' }}>
-              RON
+              Lei
             </span>
           </div>
 
-          {parseFloat(inputAmount) > remaining && (
+          {isOverTarget && (
             <p className="text-xs" style={{ color: '#B91C1C' }}>
-              Suma maximă este {remaining} RON.
+              Suma maximă este {remaining} Lei.
             </p>
           )}
 
@@ -217,12 +256,9 @@ function ItemRow({ item, config, cartItem, expanded, onExpand, onAddToCart, onRe
             <button
               type="button"
               onClick={handleConfirm}
-              disabled={!inputAmount || parseFloat(inputAmount) < 1 || parseFloat(inputAmount) > remaining}
+              disabled={isConfirmDisabled}
               className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white transition-opacity"
-              style={{
-                backgroundColor: '#C4956A',
-                opacity: !inputAmount || parseFloat(inputAmount) < 1 || parseFloat(inputAmount) > remaining ? 0.5 : 1,
-              }}
+              style={{ backgroundColor: '#C4956A', opacity: isConfirmDisabled ? 0.5 : 1 }}
             >
               Adaugă în coș
             </button>
