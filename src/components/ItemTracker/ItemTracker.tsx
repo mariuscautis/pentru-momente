@@ -71,7 +71,6 @@ interface ItemRowProps {
 
 function ItemRow({ item, config, cartItem, expanded, onExpand, onAddToCart, onRemoveFromCart }: ItemRowProps) {
   const hasTarget = item.targetAmount > 0
-  const percent = hasTarget ? Math.min(100, Math.round((item.raisedAmount / item.targetAmount) * 100)) : 0
   const remaining = hasTarget ? Math.max(0, item.targetAmount - item.raisedAmount) : Infinity
 
   // Default input: for targeted items pre-fill remaining; for free-choice items start blank
@@ -176,28 +175,6 @@ function ItemRow({ item, config, cartItem, expanded, onExpand, onAddToCart, onRe
           )}
         </div>
 
-        {/* Progress bar — only when there's a target amount */}
-        {hasTarget && !item.isFullyFunded && (
-          <div className="mt-3">
-            <div
-              className="h-1.5 rounded-full overflow-hidden"
-              style={{ backgroundColor: '#F0E8DC' }}
-              role="progressbar"
-              aria-valuenow={percent}
-              aria-valuemin={0}
-              aria-valuemax={100}
-            >
-              <div
-                className="h-full rounded-full transition-all duration-500"
-                style={{ width: `${percent}%`, backgroundColor: config.palette.primary }}
-              />
-            </div>
-            <div className="flex justify-between mt-1">
-              <span className="text-xs" style={{ color: '#B09070' }}>{remaining} Lei rămași</span>
-              <span className="text-xs" style={{ color: '#B09070' }}>{percent}%</span>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Expanded amount picker */}
