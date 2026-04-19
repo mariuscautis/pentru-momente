@@ -160,7 +160,9 @@ export function EventPage({ event, items, donations, config, totalRaised }: Even
 
         {/* Donor wall */}
         {config.showDonorWall && donations.length > 0 && (
-          <DonorWall donations={donations} config={config} />
+          <div id="donors">
+            <DonorWall donations={donations} config={config} />
+          </div>
         )}
       </main>
 
