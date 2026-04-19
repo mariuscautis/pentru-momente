@@ -43,6 +43,7 @@ export interface Event {
   stripeConnectAccountId?: string       // set after Stripe Express onboarding starts
   connectOnboardingComplete: boolean    // false until Stripe confirms onboarding done
   isActive: boolean                     // only true after onboarding complete
+  isDeleted?: boolean                   // soft-deleted by organiser — kept for archive
   expiresAt?: string   // ISO datetime — page becomes inactive after this
   createdAt: string
 }
