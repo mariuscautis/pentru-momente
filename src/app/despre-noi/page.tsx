@@ -80,51 +80,66 @@ export default function DespreNoiPage() {
                 </p>
               </div>
 
-              {/* Artsy illustration: hands passing a heart */}
+              {/* Artsy illustration: location pin + rolling hills */}
               <div
-                className="rounded-2xl overflow-hidden relative flex items-center justify-center"
+                className="rounded-2xl overflow-hidden relative"
                 style={{ backgroundColor: '#0B1520', minHeight: '260px', border: '1px solid rgba(255,255,255,0.06)' }}
               >
-                {/* Ambient glow */}
-                <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 60% 40%, rgba(232,160,32,0.18) 0%, transparent 70%)' }} />
-                <svg viewBox="0 0 340 240" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ maxHeight: '260px', display: 'block' }}>
-                  {/* Left hand — reaching right */}
-                  <g transform="translate(20, 80)">
-                    <rect x="0" y="50" width="70" height="22" rx="11" fill="#C4956A" opacity="0.9"/>
-                    {/* fingers */}
-                    <rect x="10" y="28" width="12" height="30" rx="6" fill="#D4A57A"/>
-                    <rect x="26" y="20" width="12" height="38" rx="6" fill="#D4A57A"/>
-                    <rect x="42" y="22" width="12" height="36" rx="6" fill="#D4A57A"/>
-                    <rect x="57" y="28" width="11" height="30" rx="6" fill="#D4A57A"/>
-                    {/* thumb */}
-                    <ellipse cx="6" cy="52" rx="8" ry="10" fill="#D4A57A"/>
-                    {/* arm */}
-                    <rect x="0" y="62" width="40" height="18" rx="0" fill="#C4956A" opacity="0.6"/>
-                  </g>
-                  {/* Right hand — reaching left (mirrored) */}
-                  <g transform="translate(250, 80) scale(-1,1)">
-                    <rect x="0" y="50" width="70" height="22" rx="11" fill="#C4956A" opacity="0.9"/>
-                    <rect x="10" y="28" width="12" height="30" rx="6" fill="#D4A57A"/>
-                    <rect x="26" y="20" width="12" height="38" rx="6" fill="#D4A57A"/>
-                    <rect x="42" y="22" width="12" height="36" rx="6" fill="#D4A57A"/>
-                    <rect x="57" y="28" width="11" height="30" rx="6" fill="#D4A57A"/>
-                    <ellipse cx="6" cy="52" rx="8" ry="10" fill="#D4A57A"/>
-                    <rect x="0" y="62" width="40" height="18" rx="0" fill="#C4956A" opacity="0.6"/>
-                  </g>
-                  {/* Heart in the middle */}
-                  <g transform="translate(170, 95)">
-                    <path d="M0,-18 C0,-28 -18,-28 -18,-10 C-18,4 0,20 0,20 C0,20 18,4 18,-10 C18,-28 0,-28 0,-18 Z" fill="#E8A020" opacity="0.95"/>
-                    <path d="M0,-14 C0,-21 -10,-21 -10,-8 C-10,2 0,14 0,14" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5"/>
-                  </g>
-                  {/* Decorative dots */}
-                  <circle cx="80" cy="50" r="3" fill="#E8A020" opacity="0.4"/>
-                  <circle cx="95" cy="38" r="2" fill="#E8A020" opacity="0.25"/>
-                  <circle cx="260" cy="50" r="3" fill="#E8A020" opacity="0.4"/>
-                  <circle cx="245" cy="38" r="2" fill="#E8A020" opacity="0.25"/>
-                  <circle cx="170" cy="170" r="2.5" fill="#E8A020" opacity="0.3"/>
+                <svg viewBox="0 0 340 260" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" style={{ display: 'block' }}>
+                  {/* Sky gradient */}
+                  <defs>
+                    <radialGradient id="glow1" cx="50%" cy="35%" r="45%">
+                      <stop offset="0%" stopColor="#E8A020" stopOpacity="0.22"/>
+                      <stop offset="100%" stopColor="#E8A020" stopOpacity="0"/>
+                    </radialGradient>
+                  </defs>
+                  <rect width="340" height="260" fill="#0B1520"/>
+                  <rect width="340" height="260" fill="url(#glow1)"/>
+
+                  {/* Stars */}
+                  <circle cx="40"  cy="30" r="1.2" fill="white" opacity="0.5"/>
+                  <circle cx="80"  cy="18" r="0.8" fill="white" opacity="0.4"/>
+                  <circle cx="130" cy="25" r="1"   fill="white" opacity="0.35"/>
+                  <circle cx="220" cy="15" r="1.2" fill="white" opacity="0.5"/>
+                  <circle cx="270" cy="28" r="0.8" fill="white" opacity="0.4"/>
+                  <circle cx="310" cy="20" r="1"   fill="white" opacity="0.35"/>
+                  <circle cx="55"  cy="55" r="0.7" fill="white" opacity="0.3"/>
+                  <circle cx="290" cy="50" r="0.7" fill="white" opacity="0.3"/>
+
+                  {/* Back hill — dark teal */}
+                  <path d="M0,180 Q85,120 170,148 Q255,176 340,130 L340,260 L0,260 Z" fill="#0F2A20" opacity="0.9"/>
+
+                  {/* Mid hill — slightly lighter */}
+                  <path d="M0,210 Q70,165 160,178 Q240,190 340,160 L340,260 L0,260 Z" fill="#122E25" opacity="0.95"/>
+
+                  {/* Front hill — navy-green */}
+                  <path d="M0,240 Q90,205 180,218 Q265,230 340,200 L340,260 L0,260 Z" fill="#1C2B3A"/>
+
+                  {/* Pin shadow on ground */}
+                  <ellipse cx="170" cy="196" rx="18" ry="5" fill="black" opacity="0.25"/>
+
+                  {/* Pin body */}
+                  <path d="M170,80 C148,80 130,98 130,120 C130,148 170,192 170,192 C170,192 210,148 210,120 C210,98 192,80 170,80 Z" fill="#E8A020"/>
+                  {/* Pin inner circle */}
+                  <circle cx="170" cy="118" r="16" fill="#0B1520"/>
+                  {/* Pin inner heart */}
+                  <path d="M170,112 C170,108 165,107 164,110 C163,114 170,120 170,120 C170,120 177,114 176,110 C175,107 170,108 170,112 Z" fill="#E8A020"/>
+
+                  {/* Pin highlight */}
+                  <ellipse cx="159" cy="100" rx="6" ry="4" fill="white" opacity="0.18" transform="rotate(-20,159,100)"/>
+
+                  {/* Small dots scattered — like a map */}
+                  <circle cx="100" cy="162" r="3" fill="#E8A020" opacity="0.35"/>
+                  <circle cx="118" cy="155" r="2" fill="#E8A020" opacity="0.2"/>
+                  <circle cx="240" cy="158" r="3" fill="#E8A020" opacity="0.35"/>
+                  <circle cx="258" cy="150" r="2" fill="#E8A020" opacity="0.2"/>
+                  {/* Dotted path lines */}
+                  <line x1="103" y1="162" x2="148" y2="185" stroke="#E8A020" strokeWidth="1" strokeDasharray="3,5" opacity="0.2"/>
+                  <line x1="237" y1="158" x2="195" y2="183" stroke="#E8A020" strokeWidth="1" strokeDasharray="3,5" opacity="0.2"/>
+
                   {/* Label */}
-                  <text x="170" y="196" textAnchor="middle" fontSize="11" fontWeight="700" fill="white" fontFamily="system-ui, sans-serif">Creat în România</text>
-                  <text x="170" y="212" textAnchor="middle" fontSize="9.5" fill="#4A5568" fontFamily="system-ui, sans-serif">pentru familiile românești</text>
+                  <text x="170" y="222" textAnchor="middle" fontSize="11" fontWeight="700" fill="white" opacity="0.9" fontFamily="system-ui, sans-serif">Creat în România</text>
+                  <text x="170" y="238" textAnchor="middle" fontSize="9.5" fill="#4A5568" fontFamily="system-ui, sans-serif">pentru familiile românești</text>
                 </svg>
               </div>
             </div>
