@@ -71,27 +71,27 @@ export default function LoginPage() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center px-4"
-      style={{ backgroundColor: '#FDFAF7' }}
+      className="min-h-screen flex items-center justify-center px-4 py-12"
+      style={{ backgroundColor: 'var(--color-bg)' }}
     >
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
-          <a href="/" className="text-xl font-bold tracking-tight" style={{ color: '#2D2016' }}>
-            pentru<span style={{ color: '#C4956A' }}>momente</span>
+          <a href="/" className="text-xl font-extrabold tracking-tight" style={{ color: 'var(--color-ink)' }}>
+            pentru<span style={{ color: 'var(--color-amber)' }}>momente</span>
           </a>
         </div>
 
         {/* Card */}
         <div
           className="rounded-2xl p-8 space-y-6"
-          style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDE0D0' }}
+          style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-md)' }}
         >
           <div>
-            <h1 className="text-xl font-bold" style={{ color: '#2D2016' }}>
+            <h1 className="text-xl font-extrabold tracking-tight" style={{ color: 'var(--color-ink)' }}>
               {mode === 'login' ? 'Bine ai revenit' : 'Creează un cont'}
             </h1>
-            <p className="text-sm mt-1" style={{ color: '#9A7B60' }}>
+            <p className="text-sm mt-1" style={{ color: 'var(--color-ink-muted)' }}>
               {mode === 'login'
                 ? 'Intră în contul tău pentru a gestiona paginile.'
                 : 'Înregistrează-te pentru a crea o pagină de donații.'}
@@ -118,9 +118,9 @@ export default function LoginPage() {
 
           {/* Divider */}
           <div className="flex items-center gap-3">
-            <div className="flex-1 h-px" style={{ backgroundColor: '#EDE0D0' }} />
-            <span className="text-xs" style={{ color: '#B09070' }}>sau cu email</span>
-            <div className="flex-1 h-px" style={{ backgroundColor: '#EDE0D0' }} />
+            <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border)' }} />
+            <span className="text-xs font-medium" style={{ color: 'var(--color-ink-faint)' }}>sau cu email</span>
+            <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border)' }} />
           </div>
 
           {/* Email form */}
@@ -153,18 +153,12 @@ export default function LoginPage() {
             )}
 
             {error && (
-              <p
-                className="text-sm rounded-lg px-3 py-2"
-                style={{ backgroundColor: '#FEF2F2', color: '#B91C1C' }}
-              >
+              <p className="text-sm rounded-xl px-4 py-3" style={{ backgroundColor: '#FEF2F2', color: '#B91C1C', border: '1px solid #FECACA' }}>
                 {error}
               </p>
             )}
             {success && (
-              <p
-                className="text-sm rounded-lg px-3 py-2 leading-relaxed"
-                style={{ backgroundColor: '#F0FFF4', color: '#166534' }}
-              >
+              <p className="text-sm rounded-xl px-4 py-3 leading-relaxed" style={{ backgroundColor: '#F0FFF4', color: '#166534', border: '1px solid #BBF7D0' }}>
                 {success}
               </p>
             )}
@@ -173,8 +167,8 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-xl py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-                style={{ backgroundColor: '#C4956A', opacity: loading ? 0.6 : 1 }}
+                className="btn-press w-full rounded-xl py-3.5 text-sm font-bold text-white transition-all"
+                style={{ backgroundColor: 'var(--color-amber)', boxShadow: '0 4px 14px rgba(232,160,32,0.35)', opacity: loading ? 0.7 : 1 }}
               >
                 {loading
                   ? 'Se procesează...'
@@ -185,7 +179,7 @@ export default function LoginPage() {
             )}
           </form>
 
-          <p className="text-center text-sm" style={{ color: '#9A7B60' }}>
+          <p className="text-center text-sm" style={{ color: 'var(--color-ink-muted)' }}>
             {mode === 'login' ? 'Nu ai cont?' : 'Ai deja cont?'}{' '}
             <button
               onClick={() => {
@@ -194,8 +188,8 @@ export default function LoginPage() {
                 setSuccess(null)
                 setConfirmPassword('')
               }}
-              className="font-semibold transition-colors"
-              style={{ color: '#C4956A' }}
+              className="font-bold transition-colors"
+              style={{ color: 'var(--color-amber)' }}
             >
               {mode === 'login' ? 'Înregistrează-te' : 'Intră'}
             </button>
@@ -220,7 +214,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-xs font-medium mb-1.5" style={{ color: '#7A6652' }}>
+      <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: 'var(--color-ink-muted)' }}>
         {label}
       </label>
       <input
@@ -230,14 +224,14 @@ function Field({
         required
         autoComplete={autoComplete}
         placeholder={placeholder}
-        className="w-full rounded-lg px-3 py-2.5 text-sm outline-none transition-colors"
+        className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all"
         style={{
-          border: '1px solid #E0D0C0',
-          color: '#2D2016',
-          backgroundColor: '#FDFAF7',
+          border: '1px solid var(--color-border)',
+          color: 'var(--color-ink)',
+          backgroundColor: 'var(--color-bg)',
         }}
-        onFocus={(e) => (e.target.style.borderColor = '#C4956A')}
-        onBlur={(e) => (e.target.style.borderColor = '#E0D0C0')}
+        onFocus={(e) => { e.target.style.borderColor = 'var(--color-amber)'; e.target.style.boxShadow = '0 0 0 3px rgba(232,160,32,0.12)' }}
+        onBlur={(e) => { e.target.style.borderColor = 'var(--color-border)'; e.target.style.boxShadow = 'none' }}
       />
     </div>
   )
@@ -256,11 +250,11 @@ function OAuthButton({
       type="button"
       onClick={onClick}
       disabled={loading}
-      className="w-full flex items-center justify-center gap-3 rounded-xl py-2.5 text-sm font-medium transition-colors"
+      className="w-full flex items-center justify-center gap-3 rounded-xl py-2.5 text-sm font-semibold transition-colors"
       style={{
-        border: '1px solid #E0D0C0',
-        color: '#2D2016',
-        backgroundColor: loading ? '#F5EDE3' : '#FFFFFF',
+        border: '1px solid var(--color-border)',
+        color: 'var(--color-ink)',
+        backgroundColor: loading ? 'var(--color-bg)' : 'var(--color-surface)',
       }}
     >
       {loading ? (

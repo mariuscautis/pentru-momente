@@ -46,11 +46,11 @@ const HOW_IT_WORKS = [
 ]
 
 const EVENT_TYPES = [
-  { slug: 'inmormantare', label: 'Înmormântare', description: 'Coroane digitale, lumânări și contribuții pentru familia îndoliată.', Icon: Flame, iconColor: '#6B7280' },
+  { slug: 'inmormantare', label: 'Înmormântare', description: 'Coroane digitale, lumânări și contribuții pentru familia îndoliată.', Icon: Flame,     iconColor: '#6B7280' },
   { slug: 'nunta',        label: 'Nuntă',        description: 'Fond lună de miere, registru de cadouri și experiențe pentru miri.',  Icon: Gem,       iconColor: '#D4A020' },
-  { slug: 'bebe',         label: 'Bebe nou',     description: 'Listă de dorințe și fond general pentru familia cu un nou-născut.',    Icon: Baby,      iconColor: '#3B82F6' },
-  { slug: 'sanatate',     label: 'Sănătate',     description: 'Strânge fonduri pentru tratamente medicale, operații sau recuperare.', Icon: HeartPulse, iconColor: '#10B981' },
-  { slug: 'altele',       label: 'Altele',       description: 'Orice altă cauză sau eveniment pentru care vrei să strângi fonduri.',  Icon: Sparkles,  iconColor: '#8B5CF6' },
+  { slug: 'bebe',         label: 'Bebe nou',     description: 'Listă de dorințe și fond general pentru familia cu un nou-născut.',   Icon: Baby,      iconColor: '#3B82F6' },
+  { slug: 'sanatate',     label: 'Sănătate',     description: 'Strânge fonduri pentru tratamente medicale, operații sau recuperare.',Icon: HeartPulse, iconColor: '#10B981' },
+  { slug: 'altele',       label: 'Altele',       description: 'Orice altă cauză sau eveniment pentru care vrei să strângi fonduri.', Icon: Sparkles,  iconColor: '#8B5CF6' },
 ]
 
 const TESTIMONIALS = [
@@ -78,10 +78,10 @@ const TESTIMONIALS = [
 ]
 
 const TRUST_POINTS = [
-  { Icon: BadgePercent, title: 'Zero comision din donații', description: 'Toți banii donați ajung la organizator. Platforma se susține exclusiv din bacșișul opțional lăsat de donatori.' },
+  { Icon: BadgePercent, title: 'Transparent de la primul leu', description: 'Comisioanele sunt afișate clar înainte de orice plată. Nicio taxă ascunsă, nicio surpriză după confirmare.' },
   { Icon: ShieldCheck,  title: 'Plăți securizate Stripe',  description: 'Toate plățile sunt procesate prin Stripe — standard global, cu criptare completă și autentificare 3D Secure.' },
   { Icon: UserCheck,    title: 'Fără cont pentru donatori',description: 'Oricine poate dona în 30 de secunde, fără înregistrare. Fricție zero pentru cei care vor să ajute.' },
-  { Icon: Landmark,     title: 'Direct în IBAN românesc',  description: 'Fondurile ajung în contul tău bancar prin Stripe Connect — KYC gestionat de Stripe, nu de noi.' },
+  { Icon: Landmark,     title: 'Direct în contul tău bancar', description: 'Fondurile ajung în IBAN-ul tău românesc prin Stripe Connect — rapid, securizat și fără birocrație suplimentară.' },
 ]
 
 export default async function HomePage() {
@@ -104,7 +104,7 @@ export default async function HomePage() {
                 style={{ backgroundColor: 'var(--color-amber-light)', color: 'var(--color-amber-dark)', border: '1px solid rgba(232,160,32,0.25)' }}
               >
                 <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--color-amber)' }} />
-                Sprijin real, fără comision
+                Sprijin real, transparent și sigur
               </div>
 
               <h1
@@ -120,7 +120,7 @@ export default async function HomePage() {
                 style={{ color: 'var(--color-ink-muted)', fontSize: 'clamp(1rem, 1.8vw, 1.125rem)' }}
               >
                 Creează o pagină de donații în 3 minute. Distribui link-ul.
-                Banii ajung direct în contul tău românesc — fără intermediari, fără comision.
+                Banii ajung direct în contul tău bancar românesc, simplu și securizat.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-1">
@@ -144,7 +144,7 @@ export default async function HomePage() {
 
               {/* Quick trust signals */}
               <div className="flex flex-wrap gap-x-5 gap-y-2 pt-1">
-                {['Gratuit pentru organizatori', 'Card, Apple Pay, Google Pay', 'GDPR compliant'].map(item => (
+                {['Pagina creată în 3 minute', 'Card, Apple Pay, Google Pay', 'GDPR compliant'].map(item => (
                   <div key={item} className="flex items-center gap-1.5">
                     <Check size={13} strokeWidth={2.5} style={{ color: 'var(--color-amber)' }} />
                     <span className="text-xs font-medium" style={{ color: 'var(--color-ink-muted)' }}>{item}</span>
@@ -179,7 +179,7 @@ export default async function HomePage() {
                 style={{ backgroundColor: 'rgba(232,160,32,0.10)', border: '1px solid rgba(232,160,32,0.20)' }}
               >
                 <p className="text-sm font-medium leading-relaxed" style={{ color: '#C8D0DB' }}>
-                  Fondurile ajung <strong style={{ color: '#FFFFFF' }}>direct la organizator</strong> prin Stripe Connect — platforma nu atinge niciun leu donat.
+                  Fondurile ajung <strong style={{ color: '#FFFFFF' }}>direct în contul tău bancar</strong> prin Stripe Connect, cu transparență deplină la fiecare pas.
                 </p>
               </div>
             </div>
@@ -441,7 +441,7 @@ export default async function HomePage() {
             Gata să strângi fonduri<br />pentru ce contează cu adevărat?
           </h2>
           <p className="text-base sm:text-lg" style={{ color: '#8895A7' }}>
-            Creează prima pagină gratuit. Zero abonament, zero comision din donații.
+            Creează o pagină în 3 minute. Simplu, transparent și la îndemâna oricui.
           </p>
           <Link
             href="/create"

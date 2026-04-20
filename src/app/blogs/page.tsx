@@ -24,50 +24,44 @@ export default async function BlogListPage() {
   return (
     <>
       <Nav />
-      <main className="min-h-screen" style={{ backgroundColor: '#FDFAF7' }}>
+      <main className="min-h-screen" style={{ backgroundColor: 'var(--color-bg)' }}>
 
         {/* Hero */}
-        <section
-          className="relative overflow-hidden"
-          style={{ background: 'linear-gradient(135deg, #2D1A0E 0%, #5A3420 50%, #8B5A3A 100%)' }}
-        >
-          <div
-            className="absolute inset-0 opacity-10"
-            style={{
-              backgroundImage: 'radial-gradient(circle at 2px 2px, #C4956A 1px, transparent 0)',
-              backgroundSize: '32px 32px',
-            }}
-          />
-          <div className="relative max-w-4xl mx-auto px-4 sm:px-6 py-20 md:py-28 text-center">
-            <p className="text-xs uppercase tracking-widest mb-4 font-medium" style={{ color: '#C4956A' }}>
+        <section style={{ backgroundColor: 'var(--color-navy)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-16 sm:py-20">
+            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--color-amber)' }}>
               pentrumomente.ro
             </p>
-            <h1 className="text-4xl sm:text-5xl font-bold leading-tight mb-4 text-white">Blog</h1>
-            <p className="text-lg max-w-xl mx-auto" style={{ color: '#D4B89A' }}>
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-3">Blog</h1>
+            <p className="text-base max-w-lg" style={{ color: '#8895A7' }}>
               Articole, ghiduri și povești despre momentele care contează.
             </p>
           </div>
         </section>
 
         {/* Posts grid */}
-        <section className="max-w-5xl mx-auto px-4 sm:px-6 py-14 md:py-18">
+        <section className="mx-auto max-w-5xl px-4 sm:px-6 py-14">
           {posts.length === 0 ? (
-            <div className="py-24 text-center">
-              <div className="text-5xl mb-4">✍️</div>
-              <p className="text-base font-medium mb-1" style={{ color: '#2D1A0E' }}>Nu există articole publicate încă.</p>
-              <p className="text-sm" style={{ color: '#9A7B60' }}>Reveniți în curând.</p>
+            <div className="py-24 text-center space-y-3">
+              <div
+                className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto"
+                style={{ backgroundColor: 'var(--color-amber-light)' }}
+              >
+                <span className="text-2xl">✍️</span>
+              </div>
+              <p className="text-base font-bold" style={{ color: 'var(--color-ink)' }}>Nu există articole publicate încă.</p>
+              <p className="text-sm" style={{ color: 'var(--color-ink-muted)' }}>Reveniți în curând.</p>
             </div>
           ) : (
             <>
-              {/* Featured post — first card is larger */}
+              {/* Featured post */}
               {posts[0] && (
                 <Link
                   href={`/blogs/${posts[0].slug}`}
-                  className="group block rounded-2xl overflow-hidden mb-8 transition-shadow hover:shadow-lg"
-                  style={{ backgroundColor: '#FFFFFF', border: '1px solid #F0EBE3' }}
+                  className="group block rounded-2xl overflow-hidden mb-8 transition-all"
+                  style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-sm)' }}
                 >
                   <div className="md:flex">
-                    {/* Image */}
                     <div className="md:w-1/2 shrink-0">
                       {posts[0].coverImageUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -80,34 +74,32 @@ export default async function BlogListPage() {
                       ) : (
                         <div
                           className="w-full h-full flex items-center justify-center"
-                          style={{ minHeight: '260px', backgroundColor: '#F5EDE3' }}
+                          style={{ minHeight: '260px', backgroundColor: 'var(--color-navy)' }}
                         >
                           <span className="text-6xl">📖</span>
                         </div>
                       )}
                     </div>
-
-                    {/* Text */}
                     <div className="md:w-1/2 p-7 md:p-10 flex flex-col justify-center">
                       <span
-                        className="inline-block text-xs font-semibold uppercase tracking-wider mb-3 px-2.5 py-1 rounded-full w-fit"
-                        style={{ backgroundColor: '#F5EDE3', color: '#C4956A' }}
+                        className="inline-block text-xs font-bold uppercase tracking-wider mb-3 px-3 py-1 rounded-lg w-fit"
+                        style={{ backgroundColor: 'var(--color-amber-light)', color: 'var(--color-amber-dark)' }}
                       >
                         Articol recomandat
                       </span>
                       <h2
-                        className="text-xl sm:text-2xl font-bold leading-snug mb-3 group-hover:underline"
-                        style={{ color: '#2D1A0E', textDecorationColor: '#C4956A' }}
+                        className="text-xl sm:text-2xl font-extrabold tracking-tight leading-snug mb-3 group-hover:underline"
+                        style={{ color: 'var(--color-ink)', textDecorationColor: 'var(--color-amber)' }}
                       >
                         {posts[0].title}
                       </h2>
                       {posts[0].summary && (
-                        <p className="text-sm leading-relaxed mb-4 line-clamp-3" style={{ color: '#7A6652' }}>
+                        <p className="text-sm leading-relaxed mb-4 line-clamp-3" style={{ color: 'var(--color-ink-muted)' }}>
                           {posts[0].summary}
                         </p>
                       )}
                       {posts[0].publishedAt && (
-                        <p className="text-xs mt-auto" style={{ color: '#9A7B60' }}>
+                        <p className="text-xs mt-auto" style={{ color: 'var(--color-ink-faint)' }}>
                           {new Date(posts[0].publishedAt).toLocaleDateString('ro-RO', {
                             day: 'numeric', month: 'long', year: 'numeric',
                           })}
@@ -118,17 +110,16 @@ export default async function BlogListPage() {
                 </Link>
               )}
 
-              {/* Remaining posts grid */}
+              {/* Remaining posts */}
               {posts.length > 1 && (
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                   {posts.slice(1).map((post) => (
                     <Link
                       key={post.id}
                       href={`/blogs/${post.slug}`}
-                      className="group block rounded-2xl overflow-hidden transition-shadow hover:shadow-md"
-                      style={{ backgroundColor: '#FFFFFF', border: '1px solid #F0EBE3' }}
+                      className="group block rounded-2xl overflow-hidden transition-all"
+                      style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-sm)' }}
                     >
-                      {/* Thumbnail */}
                       {post.coverImageUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -140,26 +131,25 @@ export default async function BlogListPage() {
                       ) : (
                         <div
                           className="w-full flex items-center justify-center"
-                          style={{ height: '140px', backgroundColor: '#F5EDE3' }}
+                          style={{ height: '140px', backgroundColor: 'var(--color-navy)' }}
                         >
                           <span className="text-4xl">📝</span>
                         </div>
                       )}
-
                       <div className="px-5 py-5">
                         <h2
-                          className="text-base font-semibold leading-snug mb-2 group-hover:underline line-clamp-2"
-                          style={{ color: '#2D1A0E', textDecorationColor: '#C4956A' }}
+                          className="text-base font-bold leading-snug mb-2 group-hover:underline line-clamp-2"
+                          style={{ color: 'var(--color-ink)', textDecorationColor: 'var(--color-amber)' }}
                         >
                           {post.title}
                         </h2>
                         {post.summary && (
-                          <p className="text-sm line-clamp-2 mb-3" style={{ color: '#7A6652' }}>
+                          <p className="text-sm line-clamp-2 mb-3" style={{ color: 'var(--color-ink-muted)' }}>
                             {post.summary}
                           </p>
                         )}
                         {post.publishedAt && (
-                          <p className="text-xs" style={{ color: '#9A7B60' }}>
+                          <p className="text-xs" style={{ color: 'var(--color-ink-faint)' }}>
                             {new Date(post.publishedAt).toLocaleDateString('ro-RO', {
                               day: 'numeric', month: 'long', year: 'numeric',
                             })}
@@ -175,15 +165,15 @@ export default async function BlogListPage() {
         </section>
 
         {/* Footer strip */}
-        <section style={{ backgroundColor: '#F5EDE3', borderTop: '1px solid #EAD8C8' }}>
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-sm" style={{ color: '#7A6652' }}>
+        <section style={{ backgroundColor: 'var(--color-navy)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-sm" style={{ color: '#4A5568' }}>
               pentrumomente.ro · Platformă românească de strângere de fonduri
             </p>
             <div className="flex items-center gap-4">
-              <Link href="/" className="text-sm hover:underline" style={{ color: '#9A7B60' }}>Acasă</Link>
-              <Link href="/despre-noi" className="text-sm hover:underline" style={{ color: '#9A7B60' }}>Despre noi</Link>
-              <Link href="/contact" className="text-sm hover:underline" style={{ color: '#9A7B60' }}>Contact</Link>
+              <Link href="/" className="text-sm transition-colors hover:underline" style={{ color: '#4A5568' }}>Acasă</Link>
+              <Link href="/despre-noi" className="text-sm transition-colors hover:underline" style={{ color: '#4A5568' }}>Despre noi</Link>
+              <Link href="/contact" className="text-sm transition-colors hover:underline" style={{ color: '#4A5568' }}>Contact</Link>
             </div>
           </div>
         </section>
