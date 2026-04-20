@@ -20,7 +20,7 @@ const FAQ = [
   },
   {
     question: 'Care sunt comisioanele platformei?',
-    answer: 'Detalii complete despre comisioane găsești pe pagina Tarife. Comisionul este afișat clar înainte de confirmare, fără costuri ascunse sau surprize după plată.',
+    answer: 'Detalii complete despre comisioane găsești pe pagina Tarife. Fără costuri ascunse sau surprize după plată.',
     link: { label: 'Vezi pagina Tarife', href: '/tarife' },
   },
   {
@@ -277,7 +277,8 @@ export default function ContactPage() {
                 >
                   <button
                     onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                    className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left transition-colors"
+                    className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left"
+                    style={{ transition: 'background-color 0.15s ease' }}
                   >
                     <span className="text-sm font-bold" style={{ color: 'var(--color-ink)' }}>{item.question}</span>
                     <ChevronDown
@@ -286,12 +287,18 @@ export default function ContactPage() {
                       style={{
                         color: 'var(--color-amber)',
                         flexShrink: 0,
-                        transition: 'transform 0.2s ease',
-                        transform: openFaq === idx ? 'rotate(180deg)' : 'none',
+                        transition: 'transform 0.28s cubic-bezier(0.16,1,0.3,1)',
+                        transform: openFaq === idx ? 'rotate(180deg)' : 'rotate(0deg)',
                       }}
                     />
                   </button>
-                  {openFaq === idx && (
+                  <div
+                    style={{
+                      maxHeight: openFaq === idx ? '400px' : '0px',
+                      overflow: 'hidden',
+                      transition: 'max-height 0.35s cubic-bezier(0.16,1,0.3,1)',
+                    }}
+                  >
                     <div className="px-5 pb-5 space-y-3" style={{ borderTop: '1px solid var(--color-border-faint)' }}>
                       <p className="text-sm leading-relaxed pt-3" style={{ color: 'var(--color-ink-muted)' }}>
                         {item.answer}
@@ -307,7 +314,7 @@ export default function ContactPage() {
                         </Link>
                       )}
                     </div>
-                  )}
+                  </div>
                 </div>
               ))}
             </div>
