@@ -16,9 +16,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json<ApiError>({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  let body: { eventId: string; eventSlug: string }
+  let body: { eventId: string; eventSlug: string; accountType?: 'individual' | 'company' }
   try {
-    body = (await req.json()) as { eventId: string; eventSlug: string }
+    body = (await req.json()) as { eventId: string; eventSlug: string; accountType?: 'individual' | 'company' }
   } catch {
     return NextResponse.json<ApiError>({ error: 'Invalid request body' }, { status: 400 })
   }
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     // Create Express account only if one doesn't exist yet
     if (!accountId) {
-      const account = await createConnectAccount(user.email ?? '')
+      const account = await createConnectAccount(user.email ?? '', body.accountType ?? 'individual')
       accountId = account.id
 
       await supabaseAdmin

@@ -228,6 +228,7 @@ export default function CreateEventPage() {
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null)
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null)
   const [expiresAt, setExpiresAt] = useState('')
+  const [accountType, setAccountType] = useState<'individual' | 'company'>('individual')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
@@ -315,6 +316,7 @@ export default function CreateEventPage() {
       body: JSON.stringify({
         eventId: data.event!.id,
         eventSlug: data.event!.slug,
+        accountType,
       }),
     })
 
@@ -752,10 +754,54 @@ export default function CreateEventPage() {
                     </p>
                   </div>
 
+                  {/* Account type selector */}
+                  <div>
+                    <p className="text-sm font-medium mb-3" style={{ color: '#5A4030' }}>
+                      Cine primește donațiile?
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {([
+                        {
+                          value: 'individual' as const,
+                          title: 'Persoană fizică',
+                          desc: 'Buletin sau pașaport personal. Cel mai frecvent pentru familii.',
+                          icon: '👤',
+                        },
+                        {
+                          value: 'company' as const,
+                          title: 'Persoană juridică / ONG',
+                          desc: 'Date firmă sau asociație. Necesită CUI și documente de înregistrare.',
+                          icon: '🏢',
+                        },
+                      ] as const).map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setAccountType(opt.value)}
+                          className="flex flex-col items-start gap-2 rounded-2xl p-4 text-left transition-all"
+                          style={{
+                            border: accountType === opt.value ? '2px solid #C4956A' : '1.5px solid #EDE0D0',
+                            backgroundColor: accountType === opt.value ? '#FFF8F0' : '#FFFDFB',
+                          }}
+                        >
+                          <span className="text-2xl">{opt.icon}</span>
+                          <span className="text-sm font-semibold" style={{ color: '#2D2016' }}>{opt.title}</span>
+                          <span className="text-xs leading-relaxed" style={{ color: '#9A7B60' }}>{opt.desc}</span>
+                          <span
+                            className="text-xs font-semibold mt-auto"
+                            style={{ color: accountType === opt.value ? '#C4956A' : 'transparent' }}
+                          >
+                            ✓ Selectat
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   {/* How it works */}
                   <div className="space-y-3">
                     {[
-                      { icon: '✅', title: 'Verificare de identitate', body: 'Stripe verifică identitatea ta prin buletinul sau pașaportul românesc.' },
+                      { icon: '✅', title: 'Verificare de identitate', body: accountType === 'individual' ? 'Stripe verifică identitatea ta prin buletinul sau pașaportul românesc.' : 'Stripe verifică firma sau ONG-ul prin CUI și documentele de înregistrare.' },
                       { icon: '🏦', title: 'IBAN personal', body: 'Adaugi IBAN-ul românesc direct în interfața Stripe, nu pe platforma noastră.' },
                       { icon: '💸', title: 'Plăți automate', body: 'Donațiile ajung automat în contul tău. Nu trebuie să soliciți manual nicio retragere.' },
                     ].map(({ icon, title, body }) => (
@@ -781,6 +827,7 @@ export default function CreateEventPage() {
                         ...(goalAmount ? [['Obiectiv', `${goalAmount} RON`]] : []),
                         ['Articole', `${items.filter((i) => i.name).length}`],
                         ['URL', `/${selectedConfig.slug}/${slug || autoSlug(combinedName)}`],
+                        ['Cont Stripe', accountType === 'individual' ? 'Persoană fizică' : 'Persoană juridică / ONG'],
                       ] as [string, string][]
                     ).map(([label, value]) => (
                       <div key={label} className="flex justify-between gap-4 text-sm">
