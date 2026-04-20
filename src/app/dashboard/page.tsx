@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { getSupabase } from '@/lib/db/supabase'
 import { Event, EventItem, Payout } from '@/types'
 import { IconPicker } from '@/components/ui/IconPicker'
+import { SupportModal } from '@/components/SupportModal/SupportModal'
 
 interface DonorEntry {
   displayName: string | null
@@ -279,6 +280,9 @@ export default function DashboardPage() {
           ))}
         </div>
       </main>
+
+      {/* Support floating button + modal */}
+      {accessToken && <SupportModal accessToken={accessToken} />}
     </div>
   )
 }

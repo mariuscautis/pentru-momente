@@ -424,3 +424,185 @@ function rowToTestimonial(row: Record<string, unknown>): Testimonial {
     updatedAt: row.updated_at as string,
   }
 }
+
+// ─── Support Tickets ──────────────────────────────────────────────────────────
+
+export type TicketStatus = 'open' | 'in_progress' | 'completed' | 'cancelled'
+
+export interface Ticket {
+  id: string
+  organiserId: string
+  organiserEmail: string
+  organiserName: string
+  subject: string
+  status: TicketStatus
+  hasUnreadAdmin: boolean    // unread by admin (new message from organiser)
+  hasUnreadUser: boolean     // unread by organiser (new message from admin)
+  createdAt: string
+  updatedAt: string
+}
+
+export interface TicketMessage {
+  id: string
+  ticketId: string
+  senderRole: 'user' | 'admin'
+  senderName: string
+  body: string
+  createdAt: string
+}
+
+export async function getAllTickets(): Promise<Ticket[]> {
+  const { data, error } = await supabaseAdmin
+    .from('support_tickets')
+    .select('*')
+    .order('updated_at', { ascending: false })
+  if (error || !data) return []
+  return data.map(rowToTicket)
+}
+
+export async function getTicketsByOrganiser(organiserId: string): Promise<Ticket[]> {
+  const { data, error } = await supabaseAdmin
+    .from('support_tickets')
+    .select('*')
+    .eq('organiser_id', organiserId)
+    .order('updated_at', { ascending: false })
+  if (error || !data) return []
+  return data.map(rowToTicket)
+}
+
+export async function getTicketById(id: string): Promise<Ticket | null> {
+  const { data, error } = await supabaseAdmin
+    .from('support_tickets')
+    .select('*')
+    .eq('id', id)
+    .single()
+  if (error || !data) return null
+  return rowToTicket(data)
+}
+
+export async function createTicket(input: {
+  organiserId: string
+  organiserEmail: string
+  organiserName: string
+  subject: string
+  firstMessage: string
+}): Promise<Ticket> {
+  const { data: ticket, error: tErr } = await supabaseAdmin
+    .from('support_tickets')
+    .insert({
+      organiser_id: input.organiserId,
+      organiser_email: input.organiserEmail,
+      organiser_name: input.organiserName,
+      subject: input.subject,
+      status: 'open',
+      has_unread_admin: true,
+      has_unread_user: false,
+    })
+    .select()
+    .single()
+  if (tErr || !ticket) throw new Error(tErr?.message ?? 'Failed to create ticket')
+
+  await supabaseAdmin.from('ticket_messages').insert({
+    ticket_id: ticket.id,
+    sender_role: 'user',
+    sender_name: input.organiserName,
+    body: input.firstMessage,
+  })
+
+  return rowToTicket(ticket)
+}
+
+export async function addTicketMessage(input: {
+  ticketId: string
+  senderRole: 'user' | 'admin'
+  senderName: string
+  body: string
+}): Promise<TicketMessage> {
+  // Insert message
+  const { data: msg, error: mErr } = await supabaseAdmin
+    .from('ticket_messages')
+    .insert({
+      ticket_id: input.ticketId,
+      sender_role: input.senderRole,
+      sender_name: input.senderName,
+      body: input.body,
+    })
+    .select()
+    .single()
+  if (mErr || !msg) throw new Error(mErr?.message ?? 'Failed to add message')
+
+  // Update ticket: mark unread for the OTHER party, bump updated_at
+  const unreadUpdate =
+    input.senderRole === 'user'
+      ? { has_unread_admin: true, updated_at: new Date().toISOString() }
+      : { has_unread_user: true, updated_at: new Date().toISOString() }
+
+  await supabaseAdmin.from('support_tickets').update(unreadUpdate).eq('id', input.ticketId)
+
+  return rowToMessage(msg)
+}
+
+export async function getTicketMessages(ticketId: string): Promise<TicketMessage[]> {
+  const { data, error } = await supabaseAdmin
+    .from('ticket_messages')
+    .select('*')
+    .eq('ticket_id', ticketId)
+    .order('created_at', { ascending: true })
+  if (error || !data) return []
+  return data.map(rowToMessage)
+}
+
+export async function updateTicketStatus(id: string, status: TicketStatus): Promise<void> {
+  await supabaseAdmin
+    .from('support_tickets')
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq('id', id)
+}
+
+export async function markTicketReadByAdmin(id: string): Promise<void> {
+  await supabaseAdmin
+    .from('support_tickets')
+    .update({ has_unread_admin: false })
+    .eq('id', id)
+}
+
+export async function markTicketReadByUser(id: string): Promise<void> {
+  await supabaseAdmin
+    .from('support_tickets')
+    .update({ has_unread_user: false })
+    .eq('id', id)
+}
+
+export async function countUnreadForAdmin(): Promise<number> {
+  const { count } = await supabaseAdmin
+    .from('support_tickets')
+    .select('id', { count: 'exact', head: true })
+    .eq('has_unread_admin', true)
+  return count ?? 0
+}
+
+function rowToTicket(row: Record<string, unknown>): Ticket {
+  return {
+    id: row.id as string,
+    organiserId: row.organiser_id as string,
+    organiserEmail: row.organiser_email as string,
+    organiserName: row.organiser_name as string,
+    subject: row.subject as string,
+    status: row.status as TicketStatus,
+    hasUnreadAdmin: row.has_unread_admin as boolean,
+    hasUnreadUser: row.has_unread_user as boolean,
+    createdAt: row.created_at as string,
+    updatedAt: row.updated_at as string,
+  }
+}
+
+function rowToMessage(row: Record<string, unknown>): TicketMessage {
+  return {
+    id: row.id as string,
+    ticketId: row.ticket_id as string,
+    senderRole: row.sender_role as 'user' | 'admin',
+    senderName: row.sender_name as string,
+    body: row.body as string,
+    createdAt: row.created_at as string,
+  }
+}

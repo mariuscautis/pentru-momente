@@ -47,7 +47,7 @@ interface AdminEvent {
   connectOnboardingComplete: boolean
 }
 
-type Tab = 'seo' | 'blog' | 'terms' | 'cookies' | 'gdpr' | 'menu' | 'events' | 'coming-soon' | 'testimoniale'
+type Tab = 'seo' | 'blog' | 'terms' | 'cookies' | 'gdpr' | 'menu' | 'events' | 'coming-soon' | 'testimoniale' | 'tichete'
 
 interface AdminDonation {
   id: string
@@ -135,6 +135,7 @@ export default function SuperAdminPage() {
   const [checking, setChecking] = useState(true)
   const [tab, setTab] = useState<Tab>('events')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [ticketUnread, setTicketUnread] = useState(0)
 
   useEffect(() => {
     async function check() {
@@ -147,6 +148,22 @@ export default function SuperAdminPage() {
     }
     check()
   }, [router])
+
+  // Poll unread ticket count every 30s
+  useEffect(() => {
+    async function fetchUnread() {
+      try {
+        const res = await apiFetch('/api/admin/tickets')
+        if (res.ok) {
+          const j = await res.json() as { unreadCount: number }
+          setTicketUnread(j.unreadCount ?? 0)
+        }
+      } catch { /* ignore */ }
+    }
+    fetchUnread()
+    const id = setInterval(fetchUnread, 30_000)
+    return () => clearInterval(id)
+  }, [])
 
   async function handleLogout() {
     const supabase = getSupabase()
@@ -165,8 +182,9 @@ export default function SuperAdminPage() {
     )
   }
 
-  const navItems: { id: Tab; label: string; icon: string }[] = [
+  const navItems: { id: Tab; label: string; icon: string; badge?: number }[] = [
     { id: 'events',        label: 'Statistici Donații', icon: '📊' },
+    { id: 'tichete',       label: 'Tichete',            icon: '🎫', badge: ticketUnread },
     { id: 'testimoniale',  label: 'Testimoniale',       icon: '💬' },
     { id: 'seo',           label: 'SEO',                icon: '⚙️' },
     { id: 'blog',          label: 'Blog',               icon: '📝' },
@@ -232,7 +250,15 @@ export default function SuperAdminPage() {
                 onMouseOut={(e) => { if (tab !== item.id) e.currentTarget.style.backgroundColor = 'transparent' }}
               >
                 <span className="text-base leading-none">{item.icon}</span>
-                {item.label}
+                <span className="flex-1">{item.label}</span>
+                {!!item.badge && item.badge > 0 && (
+                  <span
+                    className="flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-bold"
+                    style={{ backgroundColor: c.danger, color: '#fff' }}
+                  >
+                    {item.badge}
+                  </span>
+                )}
               </button>
             ))}
           </nav>
@@ -249,6 +275,7 @@ export default function SuperAdminPage() {
             {tab === 'coming-soon'   && <ComingSoonTab />}
             {tab === 'events'        && <EventsTab />}
             {tab === 'testimoniale'  && <TestimonialeTab />}
+            {tab === 'tichete'       && <TicheteTab onUnreadChange={setTicketUnread} />}
           </div>
         </main>
       </div>
@@ -490,6 +517,525 @@ function TestimonialeTab() {
   is_active boolean default true,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
+);`}</pre>
+      </div>
+    </div>
+  )
+}
+
+// ─── Tichete Tab ─────────────────────────────────────────────────────────────
+
+interface AdminTicket {
+  id: string
+  organiserId: string
+  organiserEmail: string
+  organiserName: string
+  subject: string
+  status: 'open' | 'in_progress' | 'completed' | 'cancelled'
+  hasUnreadAdmin: boolean
+  hasUnreadUser: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+interface AdminTicketMessage {
+  id: string
+  ticketId: string
+  senderRole: 'user' | 'admin'
+  senderName: string
+  body: string
+  createdAt: string
+}
+
+const TICKET_STATUS_LABELS: Record<string, string> = {
+  open: 'Deschis',
+  in_progress: 'În lucru',
+  completed: 'Rezolvat',
+  cancelled: 'Anulat',
+}
+
+const TICKET_STATUS_COLORS: Record<string, { bg: string; color: string }> = {
+  open:        { bg: '#EEF1FD', color: '#4F6EF5' },
+  in_progress: { bg: '#EFF6FF', color: '#1D4ED8' },
+  completed:   { bg: c.successBg, color: c.success },
+  cancelled:   { bg: '#F1F5F9', color: '#64748B' },
+}
+
+function fmtTicketDate(iso: string) {
+  return new Date(iso).toLocaleDateString('ro-RO', {
+    day: '2-digit', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  })
+}
+
+function TicheteTab({ onUnreadChange }: { onUnreadChange: (n: number) => void }) {
+  const [tickets, setTickets] = useState<AdminTicket[]>([])
+  const [loading, setLoading] = useState(false)
+  const [activeTicket, setActiveTicket] = useState<AdminTicket | null>(null)
+  const [messages, setMessages] = useState<AdminTicketMessage[]>([])
+  const [loadingMsgs, setLoadingMsgs] = useState(false)
+  const [reply, setReply] = useState('')
+  const [sending, setSending] = useState(false)
+  const [statusSaving, setStatusSaving] = useState(false)
+  const [filterStatus, setFilterStatus] = useState<string>('all')
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const activeTicketRef = useRef<AdminTicket | null>(null)
+  activeTicketRef.current = activeTicket
+
+  const loadTickets = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await apiFetch('/api/admin/tickets')
+      if (res.ok) {
+        const j = await res.json() as { tickets: AdminTicket[]; unreadCount: number }
+        setTickets(j.tickets)
+        onUnreadChange(j.unreadCount ?? 0)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [onUnreadChange])
+
+  useEffect(() => { loadTickets() }, [loadTickets])
+
+  const loadMessages = useCallback(async (ticketId: string) => {
+    setLoadingMsgs(true)
+    try {
+      const res = await apiFetch(`/api/admin/tickets/${ticketId}/messages`)
+      if (res.ok) {
+        const j = await res.json() as { messages: AdminTicketMessage[]; ticket: AdminTicket }
+        setMessages(j.messages)
+        setTickets(prev => {
+          const next = prev.map(t => t.id === ticketId ? { ...t, hasUnreadAdmin: false } : t)
+          onUnreadChange(next.filter(t => t.hasUnreadAdmin).length)
+          return next
+        })
+      }
+    } finally {
+      setLoadingMsgs(false)
+    }
+  }, [onUnreadChange])
+
+  // ── Realtime: new messages ────────────────────────────────────────────────
+  useEffect(() => {
+    const supabase = getSupabase()
+    const channel = supabase
+      .channel('admin-ticket-messages')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'ticket_messages' },
+        (payload) => {
+          const row = payload.new as {
+            id: string; ticket_id: string; sender_role: string
+            sender_name: string; body: string; created_at: string
+          }
+          // Append to open thread if it matches
+          if (activeTicketRef.current?.id === row.ticket_id && row.sender_role === 'user') {
+            const msg: AdminTicketMessage = {
+              id: row.id,
+              ticketId: row.ticket_id,
+              senderRole: row.sender_role as 'user' | 'admin',
+              senderName: row.sender_name,
+              body: row.body,
+              createdAt: row.created_at,
+            }
+            setMessages(prev => {
+              if (prev.some(m => m.id === msg.id)) return prev
+              return [...prev, msg]
+            })
+            // Mark as read immediately since admin has the thread open
+            apiFetch(`/api/admin/tickets/${row.ticket_id}/messages`).catch(() => null)
+          }
+          // Refresh ticket list for updated timestamps + unread dots
+          loadTickets()
+        }
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [loadTickets])
+
+  // ── Realtime: ticket status / unread changes ──────────────────────────────
+  useEffect(() => {
+    const supabase = getSupabase()
+    const channel = supabase
+      .channel('admin-ticket-updates')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'support_tickets' },
+        (payload) => {
+          const row = payload.new as {
+            id: string; status: string; has_unread_admin: boolean
+            has_unread_user: boolean; updated_at: string
+          }
+          setTickets(prev => {
+            const next = prev.map(t =>
+              t.id === row.id
+                ? { ...t, status: row.status as AdminTicket['status'], hasUnreadAdmin: row.has_unread_admin, hasUnreadUser: row.has_unread_user, updatedAt: row.updated_at }
+                : t
+            )
+            onUnreadChange(next.filter(t => t.hasUnreadAdmin).length)
+            return next
+          })
+          if (activeTicketRef.current?.id === row.id) {
+            setActiveTicket(prev => prev ? { ...prev, status: row.status as AdminTicket['status'] } : null)
+          }
+        }
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [onUnreadChange])
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  function openThread(ticket: AdminTicket) {
+    setActiveTicket(ticket)
+    setMessages([])
+    setReply('')
+    loadMessages(ticket.id)
+  }
+
+  async function sendReply() {
+    if (!reply.trim() || !activeTicket) return
+    setSending(true)
+    const optimistic: AdminTicketMessage = {
+      id: `opt-${Date.now()}`,
+      ticketId: activeTicket.id,
+      senderRole: 'admin',
+      senderName: 'Support',
+      body: reply.trim(),
+      createdAt: new Date().toISOString(),
+    }
+    setMessages(prev => [...prev, optimistic])
+    const text = reply.trim()
+    setReply('')
+    try {
+      const res = await apiFetch(`/api/admin/tickets/${activeTicket.id}/messages`, {
+        method: 'POST',
+        body: JSON.stringify({ message: text }),
+      })
+      if (res.ok) {
+        const j = await res.json() as { message: AdminTicketMessage }
+        setMessages(prev => prev.map(m => m.id === optimistic.id ? j.message : m))
+        setTickets(prev => prev.map(t =>
+          t.id === activeTicket.id ? { ...t, hasUnreadUser: true, updatedAt: new Date().toISOString() } : t
+        ))
+      } else {
+        setMessages(prev => prev.filter(m => m.id !== optimistic.id))
+        setReply(text)
+      }
+    } catch {
+      setMessages(prev => prev.filter(m => m.id !== optimistic.id))
+      setReply(text)
+    } finally {
+      setSending(false)
+    }
+  }
+
+  async function setStatus(status: AdminTicket['status']) {
+    if (!activeTicket) return
+    setStatusSaving(true)
+    try {
+      const res = await apiFetch(`/api/admin/tickets/${activeTicket.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      })
+      if (res.ok) {
+        const updated = { ...activeTicket, status }
+        setActiveTicket(updated)
+        setTickets(prev => prev.map(t => t.id === activeTicket.id ? updated : t))
+      }
+    } finally {
+      setStatusSaving(false)
+    }
+  }
+
+  const filtered = filterStatus === 'all'
+    ? tickets
+    : tickets.filter(t => t.status === filterStatus)
+
+  const unreadCount = tickets.filter(t => t.hasUnreadAdmin).length
+
+  // ── Split view: list + thread ──────────────────────────────────────────────
+  return (
+    <div className="space-y-6">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <PageHeader
+          title="Tichete suport"
+          description="Conversații cu organizatorii de pagini."
+        />
+        {unreadCount > 0 && (
+          <span
+            className="text-xs font-semibold px-3 py-1 rounded-full"
+            style={{ backgroundColor: c.dangerBg, color: c.danger }}
+          >
+            {unreadCount} mesaj{unreadCount !== 1 ? 'e' : ''} nou{unreadCount !== 1 ? 'ă' : ''}
+          </span>
+        )}
+      </div>
+
+      <div
+        className="rounded-2xl overflow-hidden flex"
+        style={{ border: `1px solid ${c.border}`, minHeight: 520, backgroundColor: c.surface }}
+      >
+        {/* ── Ticket list panel ── */}
+        <div
+          className={`flex flex-col shrink-0 ${activeTicket ? 'hidden md:flex' : 'flex'}`}
+          style={{ width: activeTicket ? 300 : '100%', borderRight: activeTicket ? `1px solid ${c.border}` : 'none' }}
+        >
+          {/* Filter bar */}
+          <div
+            className="flex items-center gap-1 px-4 py-3 shrink-0 flex-wrap"
+            style={{ borderBottom: `1px solid ${c.border}`, backgroundColor: c.bg }}
+          >
+            {['all', 'open', 'in_progress', 'completed', 'cancelled'].map(s => (
+              <button
+                key={s}
+                onClick={() => setFilterStatus(s)}
+                className="text-xs px-2.5 py-1 rounded-full font-medium transition-colors"
+                style={filterStatus === s
+                  ? { backgroundColor: c.accent, color: '#fff' }
+                  : { backgroundColor: c.border, color: c.textMid }
+                }
+              >
+                {s === 'all' ? 'Toate' : TICKET_STATUS_LABELS[s]}
+              </button>
+            ))}
+          </div>
+
+          {/* List */}
+          <div className="flex-1 overflow-y-auto">
+            {loading && filtered.length === 0 ? (
+              <div className="flex items-center justify-center h-32">
+                <p className="text-sm" style={{ color: c.textSoft }}>Se încarcă...</p>
+              </div>
+            ) : filtered.length === 0 ? (
+              <EmptyState message="Niciun tichet în această categorie." />
+            ) : (
+              <ul>
+                {filtered.map(t => {
+                  const isActive = activeTicket?.id === t.id
+                  return (
+                    <li key={t.id} style={{ borderBottom: `1px solid ${c.border}` }}>
+                      <button
+                        onClick={() => openThread(t)}
+                        className="w-full text-left px-4 py-3.5 transition-colors"
+                        style={{
+                          backgroundColor: isActive ? c.sidebarActiveBg.replace('0.12', '0.06') : 'transparent',
+                        }}
+                        onMouseOver={e => { if (!isActive) e.currentTarget.style.backgroundColor = c.surfaceHover }}
+                        onMouseOut={e => { if (!isActive) e.currentTarget.style.backgroundColor = 'transparent' }}
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            {t.hasUnreadAdmin && (
+                              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: c.danger }} />
+                            )}
+                            <p className="text-sm font-semibold truncate" style={{ color: c.text }}>
+                              {t.subject}
+                            </p>
+                          </div>
+                          <span
+                            className="text-xs px-2 py-0.5 rounded-full font-medium shrink-0"
+                            style={TICKET_STATUS_COLORS[t.status]}
+                          >
+                            {TICKET_STATUS_LABELS[t.status]}
+                          </span>
+                        </div>
+                        <p className="text-xs truncate" style={{ color: c.textSoft }}>
+                          {t.organiserEmail}
+                        </p>
+                        <p className="text-xs mt-0.5" style={{ color: c.textSoft }}>
+                          {fmtTicketDate(t.updatedAt)}
+                        </p>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        {/* ── Thread panel ── */}
+        {activeTicket ? (
+          <div className="flex flex-col flex-1 min-w-0">
+            {/* Thread header */}
+            <div
+              className="flex items-center gap-3 px-5 py-3.5 shrink-0 flex-wrap"
+              style={{ borderBottom: `1px solid ${c.border}`, backgroundColor: c.bg }}
+            >
+              {/* Back on mobile */}
+              <button
+                onClick={() => { setActiveTicket(null); loadTickets() }}
+                className="md:hidden p-1 rounded-lg"
+                style={{ color: c.textSoft }}
+              >
+                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold truncate" style={{ color: c.text }}>{activeTicket.subject}</p>
+                <p className="text-xs mt-0.5" style={{ color: c.textSoft }}>
+                  {activeTicket.organiserEmail} · {activeTicket.organiserName}
+                </p>
+              </div>
+
+              {/* Status selector */}
+              <div className="flex items-center gap-1.5 flex-wrap shrink-0">
+                {(['open', 'in_progress', 'completed', 'cancelled'] as const).map(s => (
+                  <button
+                    key={s}
+                    onClick={() => setStatus(s)}
+                    disabled={statusSaving || activeTicket.status === s}
+                    className="text-xs px-2.5 py-1 rounded-full font-medium transition-all"
+                    style={{
+                      ...TICKET_STATUS_COLORS[s],
+                      opacity: activeTicket.status === s ? 1 : 0.5,
+                      outline: activeTicket.status === s ? `2px solid ${TICKET_STATUS_COLORS[s].color}` : 'none',
+                      outlineOffset: 2,
+                      cursor: activeTicket.status === s ? 'default' : 'pointer',
+                    }}
+                  >
+                    {TICKET_STATUS_LABELS[s]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4">
+              {loadingMsgs ? (
+                <div className="flex items-center justify-center h-24">
+                  <p className="text-sm" style={{ color: c.textSoft }}>Se încarcă...</p>
+                </div>
+              ) : messages.length === 0 ? (
+                <p className="text-sm text-center" style={{ color: c.textSoft }}>Niciun mesaj.</p>
+              ) : (
+                messages.map(m => {
+                  const isAdmin = m.senderRole === 'admin'
+                  return (
+                    <div key={m.id} className={`flex ${isAdmin ? 'justify-end' : 'justify-start'}`}>
+                      <div
+                        className={`max-w-[75%] rounded-2xl px-4 py-3 ${isAdmin ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}
+                        style={{
+                          backgroundColor: isAdmin ? c.accent : c.bg,
+                          color: isAdmin ? '#fff' : c.text,
+                          border: isAdmin ? 'none' : `1px solid ${c.border}`,
+                        }}
+                      >
+                        {!isAdmin && (
+                          <p className="text-xs font-semibold mb-1" style={{ color: c.accent }}>{m.senderName}</p>
+                        )}
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{m.body}</p>
+                        <p
+                          className="text-xs mt-2 text-right"
+                          style={{ color: isAdmin ? 'rgba(255,255,255,0.6)' : c.textSoft }}
+                        >
+                          {fmtTicketDate(m.createdAt)}
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+              <div ref={bottomRef} />
+            </div>
+
+            {/* Reply box */}
+            {activeTicket.status === 'completed' || activeTicket.status === 'cancelled' ? (
+              <div
+                className="px-5 py-3 shrink-0 flex items-center gap-2"
+                style={{ borderTop: `1px solid ${c.border}`, backgroundColor: c.bg }}
+              >
+                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: c.textSoft }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-xs" style={{ color: c.textSoft }}>
+                  Tichetul este {activeTicket.status === 'completed' ? 'rezolvat' : 'anulat'}.
+                  Schimbă statusul pentru a relua conversația.
+                </p>
+              </div>
+            ) : (
+              <div
+                className="px-4 py-3 shrink-0"
+                style={{ borderTop: `1px solid ${c.border}`, backgroundColor: c.bg }}
+              >
+                <div
+                  className="flex items-end gap-3 rounded-xl px-3 py-2"
+                  style={{ border: `1px solid ${c.border}`, backgroundColor: c.surface }}
+                >
+                  <textarea
+                    value={reply}
+                    onChange={e => setReply(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply() }
+                    }}
+                    placeholder="Scrie un răspuns..."
+                    rows={2}
+                    className="flex-1 text-sm outline-none resize-none bg-transparent"
+                    style={{ color: c.text, maxHeight: 120, overflowY: 'auto' }}
+                  />
+                  <button
+                    onClick={sendReply}
+                    disabled={sending || !reply.trim()}
+                    className="shrink-0 px-4 py-1.5 rounded-lg text-sm font-semibold transition-all"
+                    style={{
+                      backgroundColor: reply.trim() ? c.accent : c.border,
+                      color: reply.trim() ? '#fff' : c.textSoft,
+                      opacity: sending ? 0.6 : 1,
+                    }}
+                    onMouseOver={e => { if (reply.trim() && !sending) e.currentTarget.style.backgroundColor = c.accentHover }}
+                    onMouseOut={e => { if (reply.trim()) e.currentTarget.style.backgroundColor = c.accent }}
+                  >
+                    {sending ? 'Se trimite...' : 'Trimite'}
+                  </button>
+                </div>
+                <p className="text-xs mt-1.5 text-right" style={{ color: c.textSoft }}>
+                  Enter · Shift+Enter pentru rând nou
+                </p>
+              </div>
+            )}
+          </div>
+        ) : (
+          // Empty state when no ticket selected (desktop only)
+          <div className="hidden md:flex flex-1 items-center justify-center flex-col gap-3">
+            <svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.2} style={{ color: c.textSoft }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            <p className="text-sm" style={{ color: c.textSoft }}>Selectează un tichet din listă</p>
+          </div>
+        )}
+      </div>
+
+      {/* SQL migration hint */}
+      <div className="rounded-xl px-4 py-3 text-xs" style={{ backgroundColor: c.warningBg, color: c.warning, border: `1px solid ${c.warning}30` }}>
+        <strong>SQL migration (run once in Supabase):</strong>
+        <pre className="mt-1 whitespace-pre-wrap font-mono text-xs" style={{ color: c.warning }}>{`create table if not exists support_tickets (
+  id uuid primary key default gen_random_uuid(),
+  organiser_id uuid not null,
+  organiser_email text not null,
+  organiser_name text not null,
+  subject text not null,
+  status text default 'open',
+  has_unread_admin boolean default true,
+  has_unread_user boolean default false,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create table if not exists ticket_messages (
+  id uuid primary key default gen_random_uuid(),
+  ticket_id uuid references support_tickets(id) on delete cascade,
+  sender_role text not null,
+  sender_name text not null,
+  body text not null,
+  created_at timestamptz default now()
 );`}</pre>
       </div>
     </div>
