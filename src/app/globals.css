@@ -1,26 +1,70 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Core palette — deep navy + warm amber */
+  --color-ink:        #0F1923;   /* near-black navy — headlines, body */
+  --color-ink-muted:  #4A5568;   /* secondary text */
+  --color-ink-faint:  #8895A7;   /* tertiary / placeholders */
+
+  --color-amber:      #E8A020;   /* primary CTA accent — warm, energetic */
+  --color-amber-dark: #C4820A;   /* hover state */
+  --color-amber-light:#FFF3D4;   /* tinted backgrounds */
+
+  --color-navy:       #0F1923;   /* dark sections */
+  --color-navy-mid:   #1C2B3A;   /* dark card surfaces */
+
+  --color-surface:    #FFFFFF;
+  --color-bg:         #F6F8FA;   /* page background — cool-neutral, not warm beige */
+  --color-bg-alt:     #EDF0F4;   /* alternating section bg */
+  --color-border:     #DDE3EC;
+  --color-border-faint: #EFF2F6;
+
+  /* Shadows — tinted with ink hue */
+  --shadow-sm:  0 1px 3px rgba(15,25,35,0.07), 0 1px 2px rgba(15,25,35,0.04);
+  --shadow-md:  0 4px 16px rgba(15,25,35,0.08), 0 2px 6px rgba(15,25,35,0.05);
+  --shadow-lg:  0 16px 48px rgba(15,25,35,0.12), 0 4px 16px rgba(15,25,35,0.06);
+
+  /* Radius */
+  --radius-sm:  8px;
+  --radius-md:  12px;
+  --radius-lg:  20px;
+  --radius-xl:  28px;
+
+  /* Typography */
+  --font-sans: var(--font-jakarta), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-ink);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Prevent orphaned words in headings */
+h1, h2, h3 {
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+/* Button press feedback */
+.btn-press:active {
+  transform: scale(0.98) translateY(1px);
 }

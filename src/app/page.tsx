@@ -3,7 +3,7 @@ import { Nav } from '@/components/Nav'
 import {
   Flame, Gem, Baby, HeartPulse, Sparkles,
   BadgePercent, ShieldCheck, UserCheck, Landmark,
-  Check, Star, Lock,
+  Check, Star, Lock, ArrowRight,
 } from 'lucide-react'
 import { supabaseAdmin } from '@/lib/db/supabase'
 
@@ -24,33 +24,33 @@ async function getComingSoonEnabled(): Promise<boolean> {
 
 const HOW_IT_WORKS = [
   {
-    step: '1',
+    step: '01',
     title: 'Creezi pagina',
     description: 'Alegi tipul evenimentului, adaugi o descriere și o listă de articole sau un fond general. Durează 3 minute.',
   },
   {
-    step: '2',
+    step: '02',
     title: 'Distribui link-ul',
     description: 'Trimiți link-ul pe WhatsApp, Facebook sau îl afișezi pe un card QR la eveniment.',
   },
   {
-    step: '3',
+    step: '03',
     title: 'Donatorii contribuie',
     description: 'Oricine poate dona cu cardul, fără cont. Aleg suma, lasă un mesaj și plătesc în 30 de secunde.',
   },
   {
-    step: '4',
+    step: '04',
     title: 'Primești banii',
-    description: 'Retragi fondurile direct în contul tău bancar românesc, oricând dorești.',
+    description: 'Fondurile ajung direct în contul tău bancar românesc, fără intermediari.',
   },
 ]
 
 const EVENT_TYPES = [
-  { slug: 'inmormantare', label: 'Înmormântare', description: 'Coroane digitale, lumânări și contribuții pentru familia îndoliată.', bg: '#F5F0EB', Icon: Flame },
-  { slug: 'nunta',        label: 'Nuntă',        description: 'Fond lună de miere, registru de cadouri și experiențe pentru miri.',  bg: '#FBF5EE', Icon: Gem },
-  { slug: 'bebe',         label: 'Bebe nou',     description: 'Listă de dorințe și fond general pentru familia cu un nou-născut.',    bg: '#EEF5FB', Icon: Baby },
-  { slug: 'sanatate',     label: 'Sănătate',     description: 'Strânge fonduri pentru tratamente medicale, operații sau recuperare.', bg: '#EEF8F2', Icon: HeartPulse },
-  { slug: 'altele',       label: 'Altele',       description: 'Orice altă cauză sau eveniment pentru care vrei să strângi fonduri.',  bg: '#F5F0FB', Icon: Sparkles },
+  { slug: 'inmormantare', label: 'Înmormântare', description: 'Coroane digitale, lumânări și contribuții pentru familia îndoliată.', Icon: Flame, iconColor: '#6B7280' },
+  { slug: 'nunta',        label: 'Nuntă',        description: 'Fond lună de miere, registru de cadouri și experiențe pentru miri.',  Icon: Gem,       iconColor: '#D4A020' },
+  { slug: 'bebe',         label: 'Bebe nou',     description: 'Listă de dorințe și fond general pentru familia cu un nou-născut.',    Icon: Baby,      iconColor: '#3B82F6' },
+  { slug: 'sanatate',     label: 'Sănătate',     description: 'Strânge fonduri pentru tratamente medicale, operații sau recuperare.', Icon: HeartPulse, iconColor: '#10B981' },
+  { slug: 'altele',       label: 'Altele',       description: 'Orice altă cauză sau eveniment pentru care vrei să strângi fonduri.',  Icon: Sparkles,  iconColor: '#8B5CF6' },
 ]
 
 const TESTIMONIALS = [
@@ -58,8 +58,6 @@ const TESTIMONIALS = [
     name: 'Andreea M.',
     location: 'Cluj-Napoca',
     eventType: 'Înmormântare',
-    eventColor: '#F5F0EB',
-    eventTextColor: '#7A5A3A',
     quote: 'Am creat pagina în câteva minute, chiar în ziua în care am aflat vestea. Familia a primit sprijinul comunității fără să fie nevoie să cerem nimic personal. A fost o ușurare imensă.',
     stars: 5,
   },
@@ -67,8 +65,6 @@ const TESTIMONIALS = [
     name: 'Bogdan & Ioana T.',
     location: 'București',
     eventType: 'Nuntă',
-    eventColor: '#FBF5EE',
-    eventTextColor: '#8A6A3A',
     quote: 'În loc de plicuri, am distribuit link-ul pe grupul de WhatsApp. Toată lumea a donat comod, inclusiv rudele din diaspora. Banii au ajuns direct în contul nostru, fără bătăi de cap.',
     stars: 5,
   },
@@ -76,142 +72,178 @@ const TESTIMONIALS = [
     name: 'Mihai C.',
     location: 'Timișoara',
     eventType: 'Sănătate',
-    eventColor: '#EEF8F2',
-    eventTextColor: '#3A7A5A',
     quote: 'Tatăl meu avea nevoie de o operație urgentă. Am strâns fondurile necesare în 3 zile. Transparența platformei a convins oamenii să doneze — știau exact unde merg banii.',
     stars: 5,
   },
 ]
 
 const TRUST_POINTS = [
-  { Icon: BadgePercent, title: 'Sprijin real, oferit în mod responsabil', description: 'Platforma nu percepe comision din donații. Taxele bancare de transfer sunt afișate transparent.' },
-  { Icon: ShieldCheck,  title: 'Plăți securizate',          description: 'Toate plățile sunt procesate prin Stripe — același sistem folosit de milioane de companii din lume.' },
-  { Icon: UserCheck,    title: 'Fără cont pentru donatori', description: 'Oricine poate dona în 30 de secunde, fără înregistrare. Zero fricțiune pentru cei dragi.' },
-  { Icon: Landmark,     title: 'Retragere directă în cont', description: 'Fondurile ajung direct în IBAN-ul tău românesc prin transfer bancar securizat.' },
+  { Icon: BadgePercent, title: 'Zero comision din donații', description: 'Toți banii donați ajung la organizator. Platforma se susține exclusiv din bacșișul opțional lăsat de donatori.' },
+  { Icon: ShieldCheck,  title: 'Plăți securizate Stripe',  description: 'Toate plățile sunt procesate prin Stripe — standard global, cu criptare completă și autentificare 3D Secure.' },
+  { Icon: UserCheck,    title: 'Fără cont pentru donatori',description: 'Oricine poate dona în 30 de secunde, fără înregistrare. Fricție zero pentru cei care vor să ajute.' },
+  { Icon: Landmark,     title: 'Direct în IBAN românesc',  description: 'Fondurile ajung în contul tău bancar prin Stripe Connect — KYC gestionat de Stripe, nu de noi.' },
 ]
 
 export default async function HomePage() {
   const comingSoon = await getComingSoonEnabled()
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#FDFAF7' }}>
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg)' }}>
 
       <Nav />
 
-      {/* Hero */}
-      <section className="px-4 py-14 sm:py-24 text-center">
-        <div className="mx-auto max-w-2xl space-y-5">
-          <div
-            className="inline-flex items-center rounded-full px-4 py-1.5 text-xs sm:text-sm"
-            style={{ backgroundColor: '#F5EDE3', color: '#9A6B45', border: '1px solid #E8D5C0' }}
-          >
-            Sprijin real, oferit în mod responsabil
-          </div>
-          <h1
-            className="font-bold leading-tight tracking-tight"
-            style={{ color: '#2D2016', fontSize: 'clamp(1.85rem, 5.5vw, 3.25rem)' }}
-          >
-            Strânge fonduri pentru<br />
-            <span style={{ color: '#C4956A' }}>momentele care contează</span>
-          </h1>
-          <p
-            className="leading-relaxed max-w-xl mx-auto"
-            style={{ color: '#7A6652', fontSize: 'clamp(0.9rem, 2vw, 1.1rem)' }}
-          >
-            Creează o pagină de donații pentru un eveniment de viață în 3 minute.
-            Distribuie link-ul. Primești banii direct în contul tău.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-            <Link
-              href="/create"
-              className="rounded-xl px-7 py-3.5 text-base font-semibold text-white transition-opacity hover:opacity-90"
-              style={{ backgroundColor: '#C4956A' }}
+      {/* ── Hero ── */}
+      <section style={{ backgroundColor: 'var(--color-surface)', borderBottom: '1px solid var(--color-border)' }}>
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-24">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+
+            {/* Left: copy */}
+            <div className="space-y-7">
+              <div
+                className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-widest"
+                style={{ backgroundColor: 'var(--color-amber-light)', color: 'var(--color-amber-dark)', border: '1px solid rgba(232,160,32,0.25)' }}
+              >
+                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--color-amber)' }} />
+                Sprijin real, fără comision
+              </div>
+
+              <h1
+                className="font-extrabold leading-[1.08] tracking-tight"
+                style={{ color: 'var(--color-ink)', fontSize: 'clamp(2rem, 5vw, 3.5rem)' }}
+              >
+                Strânge fonduri pentru<br />
+                <span style={{ color: 'var(--color-amber)' }}>momentele care contează</span>
+              </h1>
+
+              <p
+                className="leading-relaxed max-w-lg"
+                style={{ color: 'var(--color-ink-muted)', fontSize: 'clamp(1rem, 1.8vw, 1.125rem)' }}
+              >
+                Creează o pagină de donații în 3 minute. Distribui link-ul.
+                Banii ajung direct în contul tău românesc — fără intermediari, fără comision.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-3 pt-1">
+                <Link
+                  href="/create"
+                  className="btn-press inline-flex items-center justify-center gap-2 rounded-xl px-7 py-3.5 text-base font-bold text-white transition-all"
+                  style={{ backgroundColor: 'var(--color-amber)', boxShadow: '0 4px 14px rgba(232,160,32,0.40)' }}
+                  onMouseOver={undefined}
+                >
+                  Creează o pagină gratuită
+                  <ArrowRight size={16} strokeWidth={2.5} />
+                </Link>
+                <a
+                  href="#cum-functioneaza"
+                  className="inline-flex items-center justify-center rounded-xl border px-7 py-3.5 text-base font-semibold transition-colors"
+                  style={{ borderColor: 'var(--color-border)', color: 'var(--color-ink-muted)', backgroundColor: 'transparent' }}
+                >
+                  Cum funcționează
+                </a>
+              </div>
+
+              {/* Quick trust signals */}
+              <div className="flex flex-wrap gap-x-5 gap-y-2 pt-1">
+                {['Gratuit pentru organizatori', 'Card, Apple Pay, Google Pay', 'GDPR compliant'].map(item => (
+                  <div key={item} className="flex items-center gap-1.5">
+                    <Check size={13} strokeWidth={2.5} style={{ color: 'var(--color-amber)' }} />
+                    <span className="text-xs font-medium" style={{ color: 'var(--color-ink-muted)' }}>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right: stats card */}
+            <div
+              className="rounded-2xl p-8 space-y-6 hidden lg:block"
+              style={{ backgroundColor: 'var(--color-navy)', boxShadow: 'var(--shadow-lg)' }}
             >
-              Creează o pagină gratuită
-            </Link>
-            <a
-              href="#cum-functioneaza"
-              className="rounded-xl border px-7 py-3.5 text-base font-semibold transition-colors hover:bg-white"
-              style={{ borderColor: '#E0D0C0', color: '#7A6652' }}
-            >
-              Cum funcționează
-            </a>
+              <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--color-amber)' }}>
+                Platforma în cifre
+              </p>
+              <div className="grid grid-cols-2 gap-6">
+                {[
+                  { value: '3 min', label: 'pentru a crea o pagină' },
+                  { value: '0%', label: 'comision din donații' },
+                  { value: '30 sec', label: 'pentru a dona, fără cont' },
+                  { value: '100%', label: 'direct în contul tău' },
+                ].map(({ value, label }) => (
+                  <div key={label} className="space-y-1">
+                    <p className="text-3xl font-extrabold tracking-tight" style={{ color: 'var(--color-amber)' }}>{value}</p>
+                    <p className="text-sm leading-snug" style={{ color: '#8895A7' }}>{label}</p>
+                  </div>
+                ))}
+              </div>
+              <div
+                className="rounded-xl p-4 mt-2"
+                style={{ backgroundColor: 'rgba(232,160,32,0.10)', border: '1px solid rgba(232,160,32,0.20)' }}
+              >
+                <p className="text-sm font-medium leading-relaxed" style={{ color: '#C8D0DB' }}>
+                  Fondurile ajung <strong style={{ color: '#FFFFFF' }}>direct la organizator</strong> prin Stripe Connect — platforma nu atinge niciun leu donat.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Payment trust bar */}
-      <section style={{ borderTop: '1px solid #EDE0D0', borderBottom: '1px solid #EDE0D0', backgroundColor: '#FFFDFB' }}>
-        <div className="mx-auto max-w-5xl px-4 py-4 flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
-
-          {/* Stripe badge */}
+      {/* ── Trust bar ── */}
+      <section style={{ backgroundColor: 'var(--color-bg-alt)', borderBottom: '1px solid var(--color-border)' }}>
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-center gap-x-8 gap-y-2">
           <div className="flex items-center gap-2">
-            <span className="text-xs" style={{ color: '#B09070' }}>Plăți prin</span>
-            <div
-              className="flex items-center rounded-lg px-3 py-1"
-              style={{ backgroundColor: '#F5EDE3', border: '1px solid #EDE0D0' }}
-            >
-              <span className="font-bold tracking-tight text-sm" style={{ color: '#635BFF', letterSpacing: '-0.02em' }}>stripe</span>
-            </div>
+            <span className="text-xs font-medium" style={{ color: 'var(--color-ink-faint)' }}>Plăți prin</span>
+            <span className="font-bold text-sm tracking-tight" style={{ color: '#635BFF', letterSpacing: '-0.02em' }}>stripe</span>
           </div>
-
-          <span className="text-xs" style={{ color: '#D4C0A8' }}>·</span>
-
-          {/* Wise badge */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs" style={{ color: '#B09070' }}>Transferuri prin</span>
-            <div
-              className="flex items-center rounded-lg px-3 py-1"
-              style={{ backgroundColor: '#F5EDE3', border: '1px solid #EDE0D0' }}
-            >
-              <span className="font-bold tracking-tight text-sm" style={{ color: '#163300', letterSpacing: '-0.02em' }}>Wise</span>
-            </div>
-          </div>
-
-          <span className="text-xs hidden sm:block" style={{ color: '#D4C0A8' }}>·</span>
-
-          {/* SSL badge */}
+          <span style={{ color: 'var(--color-border)' }}>·</span>
           <div className="flex items-center gap-1.5">
-            <Lock size={13} strokeWidth={2} color="#22A066" />
-            <span className="text-xs font-medium" style={{ color: '#5A7A5A' }}>Conexiune criptată SSL</span>
+            <Lock size={12} strokeWidth={2} style={{ color: '#10B981' }} />
+            <span className="text-xs font-medium" style={{ color: 'var(--color-ink-muted)' }}>Conexiune SSL criptată</span>
           </div>
-
-          <span className="text-xs hidden sm:block" style={{ color: '#D4C0A8' }}>·</span>
-
-          {/* GDPR badge */}
+          <span style={{ color: 'var(--color-border)' }}>·</span>
           <div className="flex items-center gap-1.5">
-            <ShieldCheck size={13} strokeWidth={2} color="#C4956A" />
-            <span className="text-xs font-medium" style={{ color: '#7A6652' }}>Conformitate GDPR</span>
+            <ShieldCheck size={12} strokeWidth={2} style={{ color: 'var(--color-amber)' }} />
+            <span className="text-xs font-medium" style={{ color: 'var(--color-ink-muted)' }}>Conformitate GDPR</span>
           </div>
-
+          <span className="hidden sm:block" style={{ color: 'var(--color-border)' }}>·</span>
+          <div className="flex items-center gap-1.5 hidden sm:flex">
+            <ShieldCheck size={12} strokeWidth={2} style={{ color: '#10B981' }} />
+            <span className="text-xs font-medium" style={{ color: 'var(--color-ink-muted)' }}>Transferuri bancare securizate</span>
+          </div>
         </div>
       </section>
 
-      {/* Event types */}
-      <section className="px-4 py-12 sm:py-16" style={{ backgroundColor: '#F5EDE3' }}>
+      {/* ── Event types ── */}
+      <section className="px-4 sm:px-6 py-16 sm:py-20" style={{ backgroundColor: 'var(--color-bg)' }}>
         <div className="mx-auto max-w-5xl">
-          <h2 className="text-xl sm:text-2xl font-bold text-center mb-2" style={{ color: '#2D2016' }}>
-            Pentru orice moment important
-          </h2>
-          <p className="text-sm sm:text-base text-center mb-8 sm:mb-10" style={{ color: '#9A7B60' }}>
-            Fiecare tip de eveniment vine cu articole sugerate și design potrivit contextului.
-          </p>
+          <div className="mb-10 sm:mb-12">
+            <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'var(--color-amber)' }}>Tipuri de evenimente</p>
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight" style={{ color: 'var(--color-ink)' }}>
+              Pentru orice moment important
+            </h2>
+            <p className="mt-2 text-base" style={{ color: 'var(--color-ink-muted)', maxWidth: '52ch' }}>
+              Fiecare tip vine cu articole sugerate, design adaptat și mesaje potrivite contextului.
+            </p>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {EVENT_TYPES.map(({ slug, label, description, bg, Icon }) => (
+            {EVENT_TYPES.map(({ slug, label, description, Icon, iconColor }) => (
               <div
                 key={slug}
-                className="flex items-start gap-4 rounded-2xl p-4 sm:p-5"
-                style={{ backgroundColor: '#FFFDFB', border: '1px solid #EDE0D0' }}
+                className="group flex items-start gap-4 rounded-xl p-5 transition-all"
+                style={{
+                  backgroundColor: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  boxShadow: 'var(--shadow-sm)',
+                }}
               >
                 <div
                   className="shrink-0 flex h-10 w-10 items-center justify-center rounded-xl"
-                  style={{ backgroundColor: bg }}
+                  style={{ backgroundColor: 'var(--color-bg-alt)' }}
                 >
-                  <Icon size={18} strokeWidth={1.75} color="#7A6652" />
+                  <Icon size={18} strokeWidth={1.75} color={iconColor} />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-sm sm:text-base" style={{ color: '#2D2016' }}>{label}</h3>
-                  <p className="mt-0.5 text-xs sm:text-sm leading-relaxed" style={{ color: '#9A7B60' }}>{description}</p>
+                  <h3 className="font-bold text-sm sm:text-base" style={{ color: 'var(--color-ink)' }}>{label}</h3>
+                  <p className="mt-0.5 text-xs sm:text-sm leading-relaxed" style={{ color: 'var(--color-ink-muted)' }}>{description}</p>
                 </div>
               </div>
             ))}
@@ -219,56 +251,72 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* How it works */}
-      <section id="cum-functioneaza" className="px-4 py-14 sm:py-20">
-        <div className="mx-auto max-w-3xl">
-          <h2 className="text-xl sm:text-2xl font-bold text-center mb-2" style={{ color: '#2D2016' }}>
-            Cum funcționează
-          </h2>
-          <p className="text-sm sm:text-base text-center mb-10" style={{ color: '#9A7B60' }}>
-            De la creare la banii în cont — tot procesul durează câteva minute.
-          </p>
-          <div className="space-y-5">
-            {HOW_IT_WORKS.map((item) => (
-              <div key={item.step} className="flex gap-4 items-start">
-                <div
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
-                  style={{ backgroundColor: '#C4956A' }}
-                >
-                  {item.step}
-                </div>
-                <div className="pt-0.5">
-                  <h3 className="font-semibold text-sm sm:text-base" style={{ color: '#2D2016' }}>{item.title}</h3>
-                  <p className="mt-0.5 text-xs sm:text-sm leading-relaxed" style={{ color: '#9A7B60' }}>{item.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Trust */}
-      <section className="px-4 py-12 sm:py-16" style={{ backgroundColor: '#F5EDE3' }}>
+      {/* ── How it works ── */}
+      <section
+        id="cum-functioneaza"
+        className="px-4 sm:px-6 py-16 sm:py-20"
+        style={{ backgroundColor: 'var(--color-navy)' }}
+      >
         <div className="mx-auto max-w-5xl">
-          <h2 className="text-xl sm:text-2xl font-bold text-center mb-8 sm:mb-10" style={{ color: '#2D2016' }}>
-            De ce pentrumomente?
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            {TRUST_POINTS.map(({ Icon, title, description }) => (
+          <div className="mb-12">
+            <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'var(--color-amber)' }}>Proces simplu</p>
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+              Cum funcționează
+            </h2>
+            <p className="mt-2 text-base" style={{ color: '#8895A7', maxWidth: '52ch' }}>
+              De la creare la banii în cont — tot procesul durează câteva minute.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {HOW_IT_WORKS.map((item, idx) => (
+              <div
+                key={item.step}
+                className="rounded-xl p-6 space-y-3"
+                style={{
+                  backgroundColor: 'var(--color-navy-mid)',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  animationDelay: `${idx * 80}ms`,
+                }}
+              >
+                <p className="text-4xl font-extrabold tracking-tighter" style={{ color: 'rgba(232,160,32,0.25)', fontVariantNumeric: 'tabular-nums' }}>
+                  {item.step}
+                </p>
+                <h3 className="font-bold text-base text-white">{item.title}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: '#8895A7' }}>{item.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Trust / Why us ── */}
+      <section className="px-4 sm:px-6 py-16 sm:py-20" style={{ backgroundColor: 'var(--color-surface)' }}>
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-10 sm:mb-12">
+            <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'var(--color-amber)' }}>De ce pentrumomente</p>
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight" style={{ color: 'var(--color-ink)' }}>
+              Construit pentru familii românești
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {TRUST_POINTS.map(({ Icon, title, description }, idx) => (
               <div
                 key={title}
-                className="flex gap-4 items-start rounded-2xl p-4 sm:p-5"
-                style={{ backgroundColor: '#FFFDFB', border: '1px solid #EDE0D0' }}
+                className="flex gap-4 items-start rounded-xl p-5"
+                style={{
+                  backgroundColor: idx % 2 === 0 ? 'var(--color-bg)' : 'var(--color-bg-alt)',
+                  border: '1px solid var(--color-border)',
+                }}
               >
                 <div
                   className="shrink-0 flex h-10 w-10 items-center justify-center rounded-xl"
-                  style={{ backgroundColor: '#F5EDE3' }}
+                  style={{ backgroundColor: 'var(--color-amber-light)' }}
                 >
-                  <Icon size={18} strokeWidth={1.75} color="#C4956A" />
+                  <Icon size={18} strokeWidth={1.75} style={{ color: 'var(--color-amber-dark)' }} />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-sm sm:text-base" style={{ color: '#2D2016' }}>{title}</h3>
-                  <p className="mt-0.5 text-xs sm:text-sm leading-relaxed" style={{ color: '#9A7B60' }}>{description}</p>
+                  <h3 className="font-bold text-sm sm:text-base" style={{ color: 'var(--color-ink)' }}>{title}</h3>
+                  <p className="mt-0.5 text-xs sm:text-sm leading-relaxed" style={{ color: 'var(--color-ink-muted)' }}>{description}</p>
                 </div>
               </div>
             ))}
@@ -276,95 +324,103 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Two audiences */}
-      <section className="px-4 py-14 sm:py-20">
-        <div className="mx-auto max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* ── Two audiences ── */}
+      <section className="px-4 sm:px-6 py-16 sm:py-20" style={{ backgroundColor: 'var(--color-bg)' }}>
+        <div className="mx-auto max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-5">
+
+          {/* Organizer */}
           <div
-            className="rounded-2xl p-6 sm:p-8 space-y-4"
-            style={{ backgroundColor: '#FFFDFB', border: '1px solid #EDE0D0' }}
+            className="rounded-2xl p-7 sm:p-8 flex flex-col gap-5"
+            style={{ backgroundColor: 'var(--color-ink)', boxShadow: 'var(--shadow-md)' }}
           >
-            <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#C4956A' }}>Organizator</p>
-            <h3 className="text-lg sm:text-xl font-bold" style={{ color: '#2D2016' }}>
-              Creezi pagina, distribui link-ul
-            </h3>
-            <ul className="space-y-2.5">
-              {['Pagina creată în 3 minute', 'Link unic de partajat pe WhatsApp', 'Urmărești donațiile în timp real', 'Retragi banii oricând, direct în IBAN'].map((item) => (
-                <li key={item} className="flex items-center gap-2.5 text-sm" style={{ color: '#7A6652' }}>
-                  <Check size={14} strokeWidth={2.5} color="#C4956A" className="shrink-0" />
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--color-amber)' }}>Organizator</p>
+              <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white leading-tight">
+                Creezi pagina,<br />distribui link-ul
+              </h3>
+            </div>
+            <ul className="space-y-3 flex-1">
+              {['Pagina creată în 3 minute', 'Link unic de partajat pe WhatsApp', 'Urmărești donațiile în timp real', 'Retragi banii direct în IBAN-ul tău'].map((item) => (
+                <li key={item} className="flex items-center gap-2.5 text-sm" style={{ color: '#C8D0DB' }}>
+                  <Check size={14} strokeWidth={2.5} style={{ color: 'var(--color-amber)', flexShrink: 0 }} />
                   {item}
                 </li>
               ))}
             </ul>
             <Link
               href="/create"
-              className="block text-center rounded-xl px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-              style={{ backgroundColor: '#C4956A' }}
+              className="btn-press flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-bold text-white transition-all mt-1"
+              style={{ backgroundColor: 'var(--color-amber)', boxShadow: '0 4px 14px rgba(232,160,32,0.35)' }}
             >
               Creează o pagină
+              <ArrowRight size={15} strokeWidth={2.5} />
             </Link>
           </div>
 
+          {/* Donor */}
           <div
-            className="rounded-2xl p-6 sm:p-8 space-y-4"
-            style={{ backgroundColor: '#F5EDE3', border: '1px solid #E0D0C0' }}
+            className="rounded-2xl p-7 sm:p-8 flex flex-col gap-5"
+            style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-sm)' }}
           >
-            <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#C4956A' }}>Donator</p>
-            <h3 className="text-lg sm:text-xl font-bold" style={{ color: '#2D2016' }}>
-              Primești link-ul, donezi în 30 de secunde
-            </h3>
-            <ul className="space-y-2.5">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--color-amber)' }}>Donator</p>
+              <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight leading-tight" style={{ color: 'var(--color-ink)' }}>
+                Primești link-ul,<br />donezi în 30 de secunde
+              </h3>
+            </div>
+            <ul className="space-y-3 flex-1">
               {['Fără cont, fără înregistrare', 'Card, Apple Pay sau Google Pay', 'Alegi dacă numele și suma sunt vizibile', 'Poți dona anonim'].map((item) => (
-                <li key={item} className="flex items-center gap-2.5 text-sm" style={{ color: '#7A6652' }}>
-                  <Check size={14} strokeWidth={2.5} color="#C4956A" className="shrink-0" />
+                <li key={item} className="flex items-center gap-2.5 text-sm" style={{ color: 'var(--color-ink-muted)' }}>
+                  <Check size={14} strokeWidth={2.5} style={{ color: 'var(--color-amber)', flexShrink: 0 }} />
                   {item}
                 </li>
               ))}
             </ul>
-            <p className="text-xs" style={{ color: '#B09070' }}>
+            <p
+              className="text-xs rounded-xl px-4 py-3 mt-1"
+              style={{ color: 'var(--color-ink-muted)', backgroundColor: 'var(--color-bg)', border: '1px solid var(--color-border-faint)' }}
+            >
               Ai primit un link de la cineva? Deschide-l direct — nu e nevoie de nimic altceva.
             </p>
           </div>
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="px-4 py-14 sm:py-20" style={{ backgroundColor: '#F5EDE3' }}>
+      {/* ── Testimonials ── */}
+      <section className="px-4 sm:px-6 py-16 sm:py-20" style={{ backgroundColor: 'var(--color-surface)', borderTop: '1px solid var(--color-border)' }}>
         <div className="mx-auto max-w-5xl">
-          <p className="text-xs uppercase tracking-widest text-center mb-2 font-semibold" style={{ color: '#C4956A' }}>Povești reale</p>
-          <h2 className="text-xl sm:text-2xl font-bold text-center mb-2" style={{ color: '#2D2016' }}>
-            Ce spun organizatorii
-          </h2>
-          <p className="text-sm sm:text-base text-center mb-10" style={{ color: '#9A7B60' }}>
-            Familii care au folosit platforma în momentele care au contat.
-          </p>
+          <div className="mb-10 sm:mb-12">
+            <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'var(--color-amber)' }}>Povești reale</p>
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight" style={{ color: 'var(--color-ink)' }}>
+              Ce spun organizatorii
+            </h2>
+            <p className="mt-2 text-base" style={{ color: 'var(--color-ink-muted)', maxWidth: '52ch' }}>
+              Familii care au folosit platforma în momentele care au contat.
+            </p>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {TESTIMONIALS.map((t) => (
               <div
                 key={t.name}
-                className="rounded-2xl p-5 sm:p-6 flex flex-col gap-4"
-                style={{ backgroundColor: '#FFFDFB', border: '1px solid #EDE0D0' }}
+                className="rounded-2xl p-6 flex flex-col gap-4"
+                style={{ backgroundColor: 'var(--color-bg)', border: '1px solid var(--color-border)' }}
               >
-                {/* Stars */}
                 <div className="flex gap-0.5">
                   {Array.from({ length: t.stars }).map((_, i) => (
-                    <Star key={i} size={13} fill="#C4956A" color="#C4956A" />
+                    <Star key={i} size={13} fill="var(--color-amber)" color="var(--color-amber)" />
                   ))}
                 </div>
-
-                {/* Quote */}
-                <p className="text-sm leading-relaxed flex-1" style={{ color: '#5A4030' }}>
+                <p className="text-sm leading-relaxed flex-1" style={{ color: 'var(--color-ink)' }}>
                   &ldquo;{t.quote}&rdquo;
                 </p>
-
-                {/* Author */}
-                <div className="flex items-center justify-between gap-2 pt-1" style={{ borderTop: '1px solid #EDE0D0' }}>
+                <div className="flex items-center justify-between gap-2 pt-3" style={{ borderTop: '1px solid var(--color-border)' }}>
                   <div>
-                    <p className="text-sm font-semibold" style={{ color: '#2D2016' }}>{t.name}</p>
-                    <p className="text-xs" style={{ color: '#9A7B60' }}>{t.location}</p>
+                    <p className="text-sm font-bold" style={{ color: 'var(--color-ink)' }}>{t.name}</p>
+                    <p className="text-xs" style={{ color: 'var(--color-ink-faint)' }}>{t.location}</p>
                   </div>
                   <span
-                    className="text-xs font-medium rounded-full px-2.5 py-1 shrink-0"
-                    style={{ backgroundColor: t.eventColor, color: t.eventTextColor }}
+                    className="text-xs font-semibold rounded-lg px-2.5 py-1 shrink-0"
+                    style={{ backgroundColor: 'var(--color-amber-light)', color: 'var(--color-amber-dark)' }}
                   >
                     {t.eventType}
                   </span>
@@ -375,53 +431,64 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Final CTA */}
-      <section className="px-4 py-14 sm:py-20 text-center" style={{ backgroundColor: '#2D2016' }}>
-        <div className="mx-auto max-w-xl space-y-4">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white">Gata să începi?</h2>
-          <p className="text-sm sm:text-base" style={{ color: '#C4956A' }}>
-            Creează prima pagină gratuit. Fără abonament, fără comision din donații.
+      {/* ── Final CTA ── */}
+      <section
+        className="px-4 sm:px-6 py-16 sm:py-24"
+        style={{ backgroundColor: 'var(--color-navy)' }}
+      >
+        <div className="mx-auto max-w-3xl text-center space-y-6">
+          <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
+            Gata să strângi fonduri<br />pentru ce contează cu adevărat?
+          </h2>
+          <p className="text-base sm:text-lg" style={{ color: '#8895A7' }}>
+            Creează prima pagină gratuit. Zero abonament, zero comision din donații.
           </p>
           <Link
             href="/create"
-            className="inline-block rounded-xl px-8 py-3.5 text-base font-semibold transition-opacity hover:opacity-90"
-            style={{ backgroundColor: '#C4956A', color: '#FFFDFB' }}
+            className="btn-press inline-flex items-center gap-2.5 rounded-xl px-9 py-4 text-base font-bold text-white transition-all"
+            style={{ backgroundColor: 'var(--color-amber)', boxShadow: '0 6px 20px rgba(232,160,32,0.45)' }}
           >
             Creează o pagină gratuită
+            <ArrowRight size={17} strokeWidth={2.5} />
           </Link>
         </div>
       </section>
 
-      {/* Footer */}
+      {/* ── Footer ── */}
       <footer
-        className="px-4 py-6 text-center text-xs sm:text-sm"
-        style={{ borderTop: '1px solid #EDE0D0', color: '#B09070', backgroundColor: '#FDFAF7' }}
+        className="px-4 sm:px-6 py-6 text-center text-xs"
+        style={{ backgroundColor: 'var(--color-navy-mid)', borderTop: '1px solid rgba(255,255,255,0.06)', color: '#4A5568' }}
       >
-        <p>© 2026 pentrumomente.ro · Plăți procesate de Stripe · Transferuri bancare prin Wise</p>
+        <p>© 2026 pentrumomente.ro · Plăți procesate de Stripe · Transferuri bancare prin Stripe Connect</p>
       </footer>
 
-      {/* Coming soon overlay */}
+      {/* ── Coming soon overlay ── */}
       {comingSoon && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center px-4"
-          style={{ backgroundColor: 'rgba(253,250,247,0.80)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
+          style={{ backgroundColor: 'rgba(15,25,35,0.75)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
         >
           <div
             className="rounded-3xl text-center px-8 py-10 max-w-sm w-full"
-            style={{ backgroundColor: 'rgba(255,255,255,0.72)', border: '1px solid rgba(196,149,106,0.25)', boxShadow: '0 8px 40px rgba(45,26,14,0.10)' }}
+            style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-lg)' }}
           >
-            <div className="text-4xl mb-4">🚧</div>
-            <h2 className="text-xl font-bold mb-2" style={{ color: '#2D1A0E' }}>
+            <div
+              className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
+              style={{ backgroundColor: 'var(--color-amber-light)' }}
+            >
+              <Sparkles size={24} strokeWidth={1.75} style={{ color: 'var(--color-amber-dark)' }} />
+            </div>
+            <h2 className="text-xl font-extrabold mb-2" style={{ color: 'var(--color-ink)' }}>
               Lansăm în curând
             </h2>
-            <p className="text-sm leading-relaxed mb-6" style={{ color: '#7A6652' }}>
-              Platforma pentrumomente.ro este în curs de pregătire. Revino în curând pentru a strânge fonduri pentru momentele care contează.
+            <p className="text-sm leading-relaxed mb-6" style={{ color: 'var(--color-ink-muted)' }}>
+              Platforma pentrumomente.ro este în curs de pregătire. Revino în curând.
             </p>
             <div
-              className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium"
-              style={{ backgroundColor: '#F5EDE3', color: '#9A6B45', border: '1px solid #E8D5C0' }}
+              className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold"
+              style={{ backgroundColor: 'var(--color-amber-light)', color: 'var(--color-amber-dark)', border: '1px solid rgba(232,160,32,0.25)' }}
             >
-              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: '#C4956A' }} />
+              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: 'var(--color-amber)' }} />
               Lucrăm la lansare
             </div>
           </div>

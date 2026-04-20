@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const jakartaSans = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
@@ -14,10 +16,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Strânge fonduri pentru momentele care contează -pentrumomente.ro",
+  title: "Strânge fonduri pentru momentele care contează — pentrumomente.ro",
   description: "Creează o pagină de donații pentru un eveniment de viață în 3 minute. Distribuie link-ul. Primești banii direct în contul tău românesc.",
   openGraph: {
-    title: "Strânge fonduri pentru momentele care contează - pentrumomente.ro",
+    title: "Strânge fonduri pentru momentele care contează — pentrumomente.ro",
     description: "Creează o pagină de donații pentru un eveniment de viață în 3 minute. Distribuie link-ul. Primești banii direct în contul tău românesc.",
     url: "https://pentrumomente.ro",
     siteName: "pentrumomente.ro",
@@ -34,7 +36,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Strânge fonduri pentru momentele care contează -pentrumomente.ro",
+    title: "Strânge fonduri pentru momentele care contează — pentrumomente.ro",
     description: "Creează o pagină de donații pentru un eveniment de viață în 3 minute.",
     images: ["/og-image.svg"],
   },
@@ -48,7 +50,7 @@ export default function RootLayout({
   return (
     <html
       lang="ro"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${jakartaSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {children}
