@@ -52,7 +52,11 @@ export async function PATCH(
   if (body.description !== undefined) update.description = body.description.trim() || null
   if (body.goalAmount !== undefined) update.goal_amount = body.goalAmount ?? null
   if (body.expiresAt !== undefined) update.expires_at = body.expiresAt ?? null
-  if (body.isActive !== undefined) update.is_active = body.isActive
+  if (body.isActive !== undefined) {
+    update.is_active = body.isActive
+    // Reactivating a page clears any stale is_deleted flag
+    if (body.isActive === true) update.is_deleted = false
+  }
 
   if (Object.keys(update).length === 0) {
     return NextResponse.json<ApiError>({ error: 'No fields to update' }, { status: 400 })

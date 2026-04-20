@@ -1170,7 +1170,7 @@ function EventsTab() {
       statusFilter === 'all' ? true :
       statusFilter === 'active' ? (e.isActive && !e.isBlocked && !isExpired) :
       statusFilter === 'inactive' ? (!e.isActive && !e.isDeleted && !isExpired) :
-      statusFilter === 'deleted' ? e.isDeleted :
+      statusFilter === 'deleted' ? (e.isDeleted && !e.isActive) :
       statusFilter === 'expired' ? isExpired : true
     return matchSearch && matchFrom && matchTo && matchStatus
   })
@@ -1263,7 +1263,7 @@ function EventsTab() {
                 {key === 'active'   ? events.filter(e => e.isActive && !e.isBlocked && !(e.expiresAt && new Date(e.expiresAt) < new Date())).length :
                  key === 'inactive' ? events.filter(e => !e.isActive && !e.isDeleted && !(e.expiresAt && new Date(e.expiresAt) < new Date())).length :
                  key === 'expired'  ? events.filter(e => !!e.expiresAt && new Date(e.expiresAt) < new Date()).length :
-                 key === 'deleted'  ? events.filter(e => e.isDeleted).length : 0}
+                 key === 'deleted'  ? events.filter(e => e.isDeleted && !e.isActive).length : 0}
               </span>
             )}
           </button>
