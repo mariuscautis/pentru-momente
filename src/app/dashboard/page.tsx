@@ -1228,7 +1228,7 @@ function DonorsModal({ events, onClose }: { events: DashboardEvent[]; onClose: (
         )}
 
         {/* Donor list */}
-        <div className="overflow-y-auto flex-1 px-6 py-4 space-y-2">
+        <div className="overflow-y-auto flex-1 min-h-0 px-6 py-4 space-y-2">
           {(selectedEventId === null ? eventsWithDonors.flatMap((e) => e.donors) : donors).map((d, i) => (
             <div
               key={i}
