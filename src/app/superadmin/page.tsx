@@ -47,7 +47,7 @@ interface AdminEvent {
   connectOnboardingComplete: boolean
 }
 
-type Tab = 'seo' | 'blog' | 'terms' | 'cookies' | 'gdpr' | 'menu' | 'events' | 'coming-soon'
+type Tab = 'seo' | 'blog' | 'terms' | 'cookies' | 'gdpr' | 'menu' | 'events' | 'coming-soon' | 'testimoniale'
 
 interface AdminDonation {
   id: string
@@ -166,14 +166,15 @@ export default function SuperAdminPage() {
   }
 
   const navItems: { id: Tab; label: string; icon: string }[] = [
-    { id: 'events',       label: 'Statistici Donații', icon: '📊' },
-    { id: 'seo',          label: 'SEO',               icon: '⚙️' },
-    { id: 'blog',         label: 'Blog',              icon: '📝' },
-    { id: 'terms',        label: 'Termeni & Condiții', icon: '📋' },
-    { id: 'cookies',      label: 'Politica Cookies',  icon: '🍪' },
-    { id: 'gdpr',         label: 'Politica GDPR',     icon: '🔒' },
-    { id: 'menu',         label: 'Meniu',             icon: '☰' },
-    { id: 'coming-soon',  label: 'Coming Soon',       icon: '🚧' },
+    { id: 'events',        label: 'Statistici Donații', icon: '📊' },
+    { id: 'testimoniale',  label: 'Testimoniale',       icon: '💬' },
+    { id: 'seo',           label: 'SEO',                icon: '⚙️' },
+    { id: 'blog',          label: 'Blog',               icon: '📝' },
+    { id: 'terms',         label: 'Termeni & Condiții', icon: '📋' },
+    { id: 'cookies',       label: 'Politica Cookies',   icon: '🍪' },
+    { id: 'gdpr',          label: 'Politica GDPR',      icon: '🔒' },
+    { id: 'menu',          label: 'Meniu',              icon: '☰' },
+    { id: 'coming-soon',   label: 'Coming Soon',        icon: '🚧' },
   ]
 
   return (
@@ -239,16 +240,257 @@ export default function SuperAdminPage() {
 
         <main className="flex-1 overflow-auto">
           <div className="px-4 md:px-8 py-8">
-            {tab === 'seo'          && <SeoTab />}
-            {tab === 'blog'         && <BlogTab />}
-            {tab === 'terms'        && <TermsTab />}
-            {tab === 'cookies'      && <CookiesTab />}
-            {tab === 'gdpr'         && <GdprTab />}
-            {tab === 'menu'         && <MenuTab />}
-            {tab === 'coming-soon'  && <ComingSoonTab />}
-            {tab === 'events'       && <EventsTab />}
+            {tab === 'seo'           && <SeoTab />}
+            {tab === 'blog'          && <BlogTab />}
+            {tab === 'terms'         && <TermsTab />}
+            {tab === 'cookies'       && <CookiesTab />}
+            {tab === 'gdpr'          && <GdprTab />}
+            {tab === 'menu'          && <MenuTab />}
+            {tab === 'coming-soon'   && <ComingSoonTab />}
+            {tab === 'events'        && <EventsTab />}
+            {tab === 'testimoniale'  && <TestimonialeTab />}
           </div>
         </main>
+      </div>
+    </div>
+  )
+}
+
+// ─── Testimoniale Tab ─────────────────────────────────────────────────────────
+
+interface Testimonial {
+  id: string
+  quote: string
+  name: string
+  city: string
+  eventType: string
+  imageUrl: string | null
+  sortOrder: number
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+const BLANK_TESTIMONIAL = { quote: '', name: '', city: '', eventType: '', imageUrl: '', sortOrder: 0, isActive: true }
+
+function TestimonialeTab() {
+  const [items, setItems] = useState<Testimonial[]>([])
+  const [editing, setEditing] = useState<Testimonial | null>(null)
+  const [form, setForm] = useState(BLANK_TESTIMONIAL)
+  const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState<string | null>(null)
+  const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null)
+
+  const load = useCallback(async () => {
+    const res = await apiFetch('/api/admin/testimonials')
+    if (res.ok) {
+      const json = await res.json() as { testimonials: Testimonial[] }
+      setItems(json.testimonials)
+    }
+  }, [])
+
+  useEffect(() => { load() }, [load])
+
+  function startNew() {
+    setEditing(null)
+    setForm(BLANK_TESTIMONIAL)
+    setMsg(null)
+  }
+
+  function startEdit(t: Testimonial) {
+    setEditing(t)
+    setForm({ quote: t.quote, name: t.name, city: t.city, eventType: t.eventType, imageUrl: t.imageUrl ?? '', sortOrder: t.sortOrder, isActive: t.isActive })
+    setMsg(null)
+  }
+
+  async function save() {
+    if (!form.quote.trim() || !form.name.trim() || !form.city.trim() || !form.eventType.trim()) {
+      setMsg({ text: 'Completează toate câmpurile obligatorii.', ok: false }); return
+    }
+    setSaving(true); setMsg(null)
+    const payload = { ...form, imageUrl: form.imageUrl || null }
+    const res = editing
+      ? await apiFetch(`/api/admin/testimonials/${editing.id}`, { method: 'PATCH', body: JSON.stringify(payload) })
+      : await apiFetch('/api/admin/testimonials', { method: 'POST', body: JSON.stringify(payload) })
+    if (res.ok) {
+      setMsg({ text: editing ? 'Testimonial actualizat.' : 'Testimonial adăugat.', ok: true })
+      startNew(); load()
+    } else {
+      setMsg({ text: 'Eroare la salvare.', ok: false })
+    }
+    setSaving(false)
+  }
+
+  async function remove(id: string) {
+    setDeleting(id)
+    await apiFetch(`/api/admin/testimonials/${id}`, { method: 'DELETE' })
+    setDeleting(null)
+    load()
+  }
+
+  async function toggleActive(t: Testimonial) {
+    await apiFetch(`/api/admin/testimonials/${t.id}`, { method: 'PATCH', body: JSON.stringify({ isActive: !t.isActive }) })
+    load()
+  }
+
+  const f = (key: keyof typeof form, val: string | number | boolean) => setForm(p => ({ ...p, [key]: val }))
+
+  return (
+    <div className="max-w-5xl space-y-8">
+      <PageHeader title="Testimoniale" description="Gestionează testimonialele afișate pe homepage. Ordinea este dată de câmpul Ordine." />
+
+      {/* ── Form ── */}
+      <Card>
+        <h2 className="text-base font-bold mb-5" style={{ color: c.text }}>
+          {editing ? 'Editează testimonial' : 'Adaugă testimonial nou'}
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Quote */}
+          <div className="md:col-span-2">
+            <label className="block text-xs font-medium mb-1.5" style={{ color: c.textMid }}>Citat *</label>
+            <textarea
+              value={form.quote}
+              onChange={(e) => f('quote', e.target.value)}
+              rows={3}
+              placeholder="Ce a spus clientul..."
+              className="w-full rounded-lg px-3 py-2.5 text-sm outline-none resize-none"
+              style={{ backgroundColor: '#FAFBFF', border: `1px solid ${c.border}`, color: c.text }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = c.accent; e.currentTarget.style.boxShadow = `0 0 0 3px ${c.accent}18` }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = c.border; e.currentTarget.style.boxShadow = 'none' }}
+            />
+          </div>
+
+          {/* Name */}
+          <Field label="Nume *" value={form.name} onChange={(v) => f('name', v)} placeholder="ex. Andreea M." />
+
+          {/* City */}
+          <Field label="Oraș *" value={form.city} onChange={(v) => f('city', v)} placeholder="ex. Cluj-Napoca" />
+
+          {/* Event type */}
+          <Field label="Categorie *" value={form.eventType} onChange={(v) => f('eventType', v)} placeholder="ex. Înmormântare" />
+
+          {/* Sort order */}
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: c.textMid }}>Ordine</label>
+            <input
+              type="number"
+              value={form.sortOrder}
+              onChange={(e) => f('sortOrder', parseInt(e.target.value, 10) || 0)}
+              className="w-full rounded-lg px-3 py-2.5 text-sm outline-none"
+              style={{ backgroundColor: '#FAFBFF', border: `1px solid ${c.border}`, color: c.text }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = c.accent; e.currentTarget.style.boxShadow = `0 0 0 3px ${c.accent}18` }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = c.border; e.currentTarget.style.boxShadow = 'none' }}
+            />
+          </div>
+
+          {/* Active toggle */}
+          <div className="flex items-end pb-1">
+            <Toggle value={form.isActive} onChange={(v) => f('isActive', v)} label="Afișat pe homepage" />
+          </div>
+
+          {/* Image upload */}
+          <div className="md:col-span-2">
+            <label className="block text-xs font-medium mb-1.5" style={{ color: c.textMid }}>Fotografie (opțional)</label>
+            <ImageUpload
+              value={form.imageUrl}
+              onChange={(v) => f('imageUrl', v)}
+              folder="testimonials"
+              hint="Recomandăm o imagine pătratică, min 200×200px"
+            />
+          </div>
+        </div>
+
+        {msg && <div className="mt-4"><Msg ok={msg.ok} text={msg.text} /></div>}
+
+        <div className="flex gap-2 mt-5">
+          <Btn onClick={save} loading={saving}>{editing ? 'Salvează modificările' : 'Adaugă testimonial'}</Btn>
+          {editing && <Btn onClick={startNew} variant="ghost">Anulează</Btn>}
+        </div>
+      </Card>
+
+      {/* ── List ── */}
+      {items.length === 0 ? (
+        <EmptyState message="Niciun testimonial adăugat încă." />
+      ) : (
+        <div className="space-y-3">
+          <SectionLabel>{items.length} testimoniale</SectionLabel>
+          {items.map((t) => (
+            <div
+              key={t.id}
+              className="rounded-2xl p-4"
+              style={{ backgroundColor: c.surface, border: `1px solid ${t.isActive ? c.border : c.borderStrong}`, opacity: t.isActive ? 1 : 0.65 }}
+            >
+              <div className="flex items-start gap-4">
+                {/* Avatar */}
+                <div className="shrink-0 w-12 h-12 rounded-full overflow-hidden flex items-center justify-center text-lg font-bold" style={{ backgroundColor: c.badge, color: c.accent }}>
+                  {t.imageUrl
+                    // eslint-disable-next-line @next/next/no-img-element
+                    ? <img src={t.imageUrl} alt={t.name} className="w-full h-full object-cover" />
+                    : t.name.charAt(0).toUpperCase()
+                  }
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <p className="text-sm font-bold" style={{ color: c.text }}>{t.name}</p>
+                    <p className="text-xs" style={{ color: c.textSoft }}>{t.city}</p>
+                    <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: c.badge, color: c.badgeText }}>{t.eventType}</span>
+                    <span className="text-xs" style={{ color: c.textSoft }}>#{t.sortOrder}</span>
+                    <StatusBadge published={t.isActive} activeLabel="Activ" inactiveLabel="Ascuns" />
+                  </div>
+                  <p className="text-sm leading-relaxed line-clamp-2" style={{ color: c.textMid }}>
+                    &ldquo;{t.quote}&rdquo;
+                  </p>
+                </div>
+
+                {/* Actions */}
+                <div className="shrink-0 flex items-center gap-1.5">
+                  <button
+                    onClick={() => toggleActive(t)}
+                    className="text-xs px-2.5 py-1 rounded-lg font-medium transition-colors"
+                    style={{ backgroundColor: c.surfaceHover, color: c.textMid, border: `1px solid ${c.border}` }}
+                    title={t.isActive ? 'Ascunde' : 'Afișează'}
+                  >
+                    {t.isActive ? 'Ascunde' : 'Afișează'}
+                  </button>
+                  <button
+                    onClick={() => startEdit(t)}
+                    className="text-xs px-2.5 py-1 rounded-lg font-medium transition-colors"
+                    style={{ backgroundColor: c.badge, color: c.accent, border: `1px solid ${c.accent}30` }}
+                  >
+                    Editează
+                  </button>
+                  <button
+                    onClick={() => remove(t.id)}
+                    disabled={deleting === t.id}
+                    className="text-xs px-2.5 py-1 rounded-lg font-medium transition-colors"
+                    style={{ backgroundColor: c.dangerBg, color: c.danger, border: `1px solid ${c.danger}30`, opacity: deleting === t.id ? 0.5 : 1 }}
+                  >
+                    {deleting === t.id ? '...' : 'Șterge'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* SQL hint */}
+      <div className="rounded-xl px-4 py-3 text-xs" style={{ backgroundColor: c.warningBg, color: c.warning, border: `1px solid ${c.warning}30` }}>
+        <strong>SQL migration (run once in Supabase):</strong>
+        <pre className="mt-1 whitespace-pre-wrap font-mono text-xs" style={{ color: c.warning }}>{`create table if not exists testimonials (
+  id uuid primary key default gen_random_uuid(),
+  quote text not null,
+  name text not null,
+  city text not null,
+  event_type text not null,
+  image_url text,
+  sort_order integer default 0,
+  is_active boolean default true,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);`}</pre>
       </div>
     </div>
   )

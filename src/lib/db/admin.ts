@@ -332,3 +332,95 @@ function rowToPage(row: Record<string, unknown>): SitePage {
     updatedAt: row.updated_at as string,
   }
 }
+
+// ─── Testimonials ─────────────────────────────────────────────────────────────
+
+export interface Testimonial {
+  id: string
+  quote: string
+  name: string
+  city: string
+  eventType: string
+  imageUrl: string | null
+  sortOrder: number
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export async function getAllTestimonials(): Promise<Testimonial[]> {
+  const { data, error } = await supabaseAdmin
+    .from('testimonials')
+    .select('*')
+    .order('sort_order', { ascending: true })
+  if (error || !data) return []
+  return data.map(rowToTestimonial)
+}
+
+export async function createTestimonial(input: {
+  quote: string
+  name: string
+  city: string
+  eventType: string
+  imageUrl?: string
+  sortOrder?: number
+  isActive?: boolean
+}): Promise<Testimonial> {
+  const { data, error } = await supabaseAdmin
+    .from('testimonials')
+    .insert({
+      quote: input.quote,
+      name: input.name,
+      city: input.city,
+      event_type: input.eventType,
+      image_url: input.imageUrl ?? null,
+      sort_order: input.sortOrder ?? 0,
+      is_active: input.isActive ?? true,
+    })
+    .select()
+    .single()
+  if (error || !data) throw new Error(error?.message ?? 'Failed to create testimonial')
+  return rowToTestimonial(data)
+}
+
+export async function updateTestimonial(
+  id: string,
+  input: Partial<{
+    quote: string
+    name: string
+    city: string
+    eventType: string
+    imageUrl: string | null
+    sortOrder: number
+    isActive: boolean
+  }>
+): Promise<void> {
+  const update: Record<string, unknown> = { updated_at: new Date().toISOString() }
+  if (input.quote !== undefined) update.quote = input.quote
+  if (input.name !== undefined) update.name = input.name
+  if (input.city !== undefined) update.city = input.city
+  if (input.eventType !== undefined) update.event_type = input.eventType
+  if ('imageUrl' in input) update.image_url = input.imageUrl
+  if (input.sortOrder !== undefined) update.sort_order = input.sortOrder
+  if (input.isActive !== undefined) update.is_active = input.isActive
+  await supabaseAdmin.from('testimonials').update(update).eq('id', id)
+}
+
+export async function deleteTestimonial(id: string): Promise<void> {
+  await supabaseAdmin.from('testimonials').delete().eq('id', id)
+}
+
+function rowToTestimonial(row: Record<string, unknown>): Testimonial {
+  return {
+    id: row.id as string,
+    quote: row.quote as string,
+    name: row.name as string,
+    city: row.city as string,
+    eventType: row.event_type as string,
+    imageUrl: row.image_url as string | null,
+    sortOrder: row.sort_order as number,
+    isActive: row.is_active as boolean,
+    createdAt: row.created_at as string,
+    updatedAt: row.updated_at as string,
+  }
+}

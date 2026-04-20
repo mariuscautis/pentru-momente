@@ -3,9 +3,11 @@ import { Nav } from '@/components/Nav'
 import {
   Flame, Gem, Baby, HeartPulse, Sparkles,
   BadgePercent, ShieldCheck, UserCheck, Landmark,
-  Check, Star, Lock, ArrowRight,
+  Check, Lock, ArrowRight,
 } from 'lucide-react'
 import { supabaseAdmin } from '@/lib/db/supabase'
+import { getAllTestimonials } from '@/lib/db/admin'
+import { TestimonialsSlider } from '@/components/TestimonialsSlider/TestimonialsSlider'
 
 export const dynamic = 'force-dynamic'
 
@@ -53,29 +55,6 @@ const EVENT_TYPES = [
   { slug: 'altele',       label: 'Altele',       description: 'Orice altă cauză sau eveniment pentru care vrei să strângi fonduri.', Icon: Sparkles,  iconColor: '#8B5CF6' },
 ]
 
-const TESTIMONIALS = [
-  {
-    name: 'Andreea M.',
-    location: 'Cluj-Napoca',
-    eventType: 'Înmormântare',
-    quote: 'Am creat pagina în câteva minute, chiar în ziua în care am aflat vestea. Familia a primit sprijinul comunității fără să fie nevoie să cerem nimic personal. A fost o ușurare imensă.',
-    stars: 5,
-  },
-  {
-    name: 'Bogdan & Ioana T.',
-    location: 'București',
-    eventType: 'Nuntă',
-    quote: 'În loc de plicuri, am distribuit link-ul pe grupul de WhatsApp. Toată lumea a donat comod, inclusiv rudele din diaspora. Banii au ajuns direct în contul nostru, fără bătăi de cap.',
-    stars: 5,
-  },
-  {
-    name: 'Mihai C.',
-    location: 'Timișoara',
-    eventType: 'Sănătate',
-    quote: 'Tatăl meu avea nevoie de o operație urgentă. Am strâns fondurile necesare în 3 zile. Transparența platformei a convins oamenii să doneze — știau exact unde merg banii.',
-    stars: 5,
-  },
-]
 
 const TRUST_POINTS = [
   { Icon: BadgePercent, title: 'Transparent de la primul leu', description: 'Comisioanele sunt afișate clar înainte de orice plată. Nicio taxă ascunsă, nicio surpriză după confirmare.' },
@@ -85,7 +64,13 @@ const TRUST_POINTS = [
 ]
 
 export default async function HomePage() {
-  const comingSoon = await getComingSoonEnabled()
+  const [comingSoon, allTestimonials] = await Promise.all([
+    getComingSoonEnabled(),
+    getAllTestimonials().catch(() => []),
+  ])
+  const testimonials = allTestimonials
+    .filter(t => t.isActive)
+    .map(t => ({ id: t.id, quote: t.quote, name: t.name, city: t.city, eventType: t.eventType, imageUrl: t.imageUrl }))
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg)' }}>
@@ -387,49 +372,22 @@ export default async function HomePage() {
       </section>
 
       {/* ── Testimonials ── */}
-      <section className="px-4 sm:px-6 py-16 sm:py-20" style={{ backgroundColor: 'var(--color-surface)', borderTop: '1px solid var(--color-border)' }}>
-        <div className="mx-auto max-w-5xl">
-          <div className="mb-10 sm:mb-12">
-            <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'var(--color-amber)' }}>Povești reale</p>
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight" style={{ color: 'var(--color-ink)' }}>
-              Ce spun organizatorii
-            </h2>
-            <p className="mt-2 text-base" style={{ color: 'var(--color-ink-muted)', maxWidth: '52ch' }}>
-              Familii care au folosit platforma în momentele care au contat.
-            </p>
+      {testimonials.length > 0 && (
+        <section className="px-4 sm:px-6 py-16 sm:py-20" style={{ backgroundColor: 'var(--color-surface)', borderTop: '1px solid var(--color-border)' }}>
+          <div className="mx-auto max-w-5xl">
+            <div className="mb-10 sm:mb-12">
+              <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'var(--color-amber)' }}>Povești reale</p>
+              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight" style={{ color: 'var(--color-ink)' }}>
+                Ce spun organizatorii
+              </h2>
+              <p className="mt-2 text-base" style={{ color: 'var(--color-ink-muted)', maxWidth: '52ch' }}>
+                Familii care au folosit platforma în momentele care au contat.
+              </p>
+            </div>
+            <TestimonialsSlider testimonials={testimonials} />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {TESTIMONIALS.map((t) => (
-              <div
-                key={t.name}
-                className="rounded-2xl p-6 flex flex-col gap-4"
-                style={{ backgroundColor: 'var(--color-bg)', border: '1px solid var(--color-border)' }}
-              >
-                <div className="flex gap-0.5">
-                  {Array.from({ length: t.stars }).map((_, i) => (
-                    <Star key={i} size={13} fill="var(--color-amber)" color="var(--color-amber)" />
-                  ))}
-                </div>
-                <p className="text-sm leading-relaxed flex-1" style={{ color: 'var(--color-ink)' }}>
-                  &ldquo;{t.quote}&rdquo;
-                </p>
-                <div className="flex items-center justify-between gap-2 pt-3" style={{ borderTop: '1px solid var(--color-border)' }}>
-                  <div>
-                    <p className="text-sm font-bold" style={{ color: 'var(--color-ink)' }}>{t.name}</p>
-                    <p className="text-xs" style={{ color: 'var(--color-ink-faint)' }}>{t.location}</p>
-                  </div>
-                  <span
-                    className="text-xs font-semibold rounded-lg px-2.5 py-1 shrink-0"
-                    style={{ backgroundColor: 'var(--color-amber-light)', color: 'var(--color-amber-dark)' }}
-                  >
-                    {t.eventType}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ── Final CTA ── */}
       <section
