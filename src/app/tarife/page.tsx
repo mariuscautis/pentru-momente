@@ -62,7 +62,7 @@ export default function TarifePage() {
               Siguranța plăților este prioritatea noastră. De aceea, procesăm toate donațiile prin <strong style={{ color: 'var(--color-ink)' }}>Stripe</strong> — unul dintre cele mai sigure și mai folosite sisteme de plăți din lume, prezent în peste 40 de țări și folosit de milioane de platforme.
             </p>
             <p className="text-base leading-relaxed" style={{ color: 'var(--color-ink-muted)' }}>
-              Comisionul de 2,5% + 1,25 Lei acoperă costul procesării cardului, securitatea tranzacției și livrarea banilor în contul organizatorului. Aceasta este singura sumă reținută din donație — și este afișată clar pe pagina de donație, înainte de orice confirmare.
+              Comisionul de 2,5% + 1,25 Lei acoperă costul procesării cardului, securitatea tranzacției și livrarea banilor în contul organizatorului. Aceasta este singura sumă reținută din donație — nimic altceva nu se mai deduce.
             </p>
             <p className="text-base leading-relaxed" style={{ color: 'var(--color-ink-muted)' }}>
               Acceptăm plăți cu card de credit, card de debit, Apple Pay și Google Pay — tot ce îți oferă confort și siguranță.
