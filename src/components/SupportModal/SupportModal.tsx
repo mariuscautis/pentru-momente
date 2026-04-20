@@ -29,7 +29,7 @@ interface Props {
   accessToken: string
 }
 
-// ─── Design tokens (matches dashboard warm palette) ───────────────────────────
+// ─── Design tokens ────────────────────────────────────────────────────────────
 
 const d = {
   bg: '#FDFAF7',
@@ -51,8 +51,6 @@ const d = {
   bubble_admin: '#F5EDE3',
   shadow: '0 8px 32px rgba(45,32,22,0.14), 0 2px 8px rgba(45,32,22,0.08)',
 }
-
-// ─── Status helpers ───────────────────────────────────────────────────────────
 
 const STATUS_LABELS: Record<string, string> = {
   open: 'Deschis',
@@ -78,7 +76,7 @@ function fmtShort(iso: string) {
   return new Date(iso).toLocaleDateString('ro-RO', { day: '2-digit', month: 'short' })
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export function SupportModal({ accessToken }: Props) {
   const [open, setOpen] = useState(false)
@@ -130,6 +128,7 @@ export function SupportModal({ accessToken }: Props) {
       if (res.ok) {
         const j = await res.json() as { messages: TicketMessage[] }
         setMessages(j.messages)
+        // Mark as read locally
         setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, hasUnreadUser: false } : t))
       }
     } finally {
@@ -137,17 +136,22 @@ export function SupportModal({ accessToken }: Props) {
     }
   }, [authFetch])
 
-  // ── Initial ticket load when modal opens ──────────────────────────────────
+  // ── Load tickets on mount (so the unread badge is populated immediately) ──
+  useEffect(() => {
+    if (accessToken) loadTickets()
+  }, [accessToken, loadTickets])
+
+  // ── Reload list every time the modal is opened or navigated back to list ──
   useEffect(() => {
     if (open && view === 'list') loadTickets()
   }, [open, view, loadTickets])
 
-  // ── Scroll to bottom on new messages ─────────────────────────────────────
+  // ── Scroll to bottom when messages change ────────────────────────────────
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // ── Realtime: listen for new ticket_messages rows ─────────────────────────
+  // ── Realtime: new messages arriving ──────────────────────────────────────
   useEffect(() => {
     const supabase = getSupabase()
     const channel = supabase
@@ -160,24 +164,20 @@ export function SupportModal({ accessToken }: Props) {
             id: string; ticket_id: string; sender_role: string
             sender_name: string; body: string; created_at: string
           }
-          // If this message belongs to the open thread, append it
+          // If the admin replied and this thread is currently open, append it live
           if (activeTicketRef.current?.id === row.ticket_id && row.sender_role === 'admin') {
             const msg: TicketMessage = {
               id: row.id,
-              senderRole: row.sender_role as 'user' | 'admin',
+              senderRole: 'admin',
               senderName: row.sender_name,
               body: row.body,
               createdAt: row.created_at,
             }
-            setMessages(prev => {
-              // avoid duplicates (optimistic + realtime)
-              if (prev.some(m => m.id === msg.id)) return prev
-              return [...prev, msg]
-            })
-            // Mark as read immediately since thread is open
+            setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg])
+            // Mark read immediately since the thread is open
             authFetch(`/api/tickets/${row.ticket_id}/messages`).catch(() => null)
           }
-          // Refresh ticket list to update unread dots + timestamps
+          // Always refresh the ticket list so unread dots + timestamps stay current
           loadTickets()
         }
       )
@@ -186,7 +186,7 @@ export function SupportModal({ accessToken }: Props) {
     return () => { supabase.removeChannel(channel) }
   }, [authFetch, loadTickets])
 
-  // ── Realtime: listen for ticket status updates ────────────────────────────
+  // ── Realtime: ticket status / unread flag changes ─────────────────────────
   useEffect(() => {
     const supabase = getSupabase()
     const channel = supabase
@@ -213,6 +213,8 @@ export function SupportModal({ accessToken }: Props) {
     return () => { supabase.removeChannel(channel) }
   }, [])
 
+  // ── Actions ───────────────────────────────────────────────────────────────
+
   function openThread(ticket: Ticket) {
     setActiveTicket(ticket)
     setMessages([])
@@ -230,7 +232,6 @@ export function SupportModal({ accessToken }: Props) {
   async function sendReply() {
     if (!reply.trim() || !activeTicket) return
     setSending(true)
-    // Optimistic append
     const optimistic: TicketMessage = {
       id: `opt-${Date.now()}`,
       senderRole: 'user',
@@ -248,10 +249,8 @@ export function SupportModal({ accessToken }: Props) {
       })
       if (res.ok) {
         const j = await res.json() as { message: TicketMessage }
-        // Replace optimistic with real
         setMessages(prev => prev.map(m => m.id === optimistic.id ? j.message : m))
       } else {
-        // Roll back
         setMessages(prev => prev.filter(m => m.id !== optimistic.id))
         setReply(text)
       }
@@ -278,10 +277,8 @@ export function SupportModal({ accessToken }: Props) {
         setTickets(prev => [j.ticket, ...prev])
         setNewSubject('')
         setNewMessage('')
-        setActiveTicket(j.ticket)
-        setMessages([])
-        setView('thread')
-        loadMessages(j.ticket.id)
+        // Navigate straight into the new thread
+        openThread(j.ticket)
       } else {
         setFormErr('Eroare la trimitere. Încearcă din nou.')
       }
@@ -292,9 +289,10 @@ export function SupportModal({ accessToken }: Props) {
 
   const isClosed = activeTicket?.status === 'completed' || activeTicket?.status === 'cancelled'
 
+  // ─────────────────────────────────────────────────────────────────────────
   return (
     <>
-      {/* ── Floating trigger button ── */}
+      {/* ── Floating trigger button ───────────────────────────────────────── */}
       <button
         onClick={() => { setOpen(true); setView('list') }}
         className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:scale-105 active:scale-95"
@@ -313,10 +311,10 @@ export function SupportModal({ accessToken }: Props) {
         )}
       </button>
 
-      {/* ── Modal ── */}
+      {/* ── Modal ─────────────────────────────────────────────────────────── */}
       {open && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-end sm:justify-end" style={{ pointerEvents: 'none' }}>
-          {/* Backdrop mobile */}
+          {/* Mobile backdrop */}
           <div
             className="absolute inset-0 sm:hidden"
             style={{ backgroundColor: 'rgba(45,32,22,0.35)', pointerEvents: 'auto' }}
@@ -382,7 +380,7 @@ export function SupportModal({ accessToken }: Props) {
             {/* Body */}
             <div className="flex-1 overflow-hidden flex flex-col">
 
-              {/* ── LIST ── */}
+              {/* ── LIST ─────────────────────────────────────────────────── */}
               {view === 'list' && (
                 <div className="flex flex-col h-full">
                   <div className="flex-1 overflow-y-auto">
@@ -395,7 +393,9 @@ export function SupportModal({ accessToken }: Props) {
                         <MessageCircle size={32} style={{ color: d.textFaint }} />
                         <div>
                           <p className="text-sm font-medium" style={{ color: d.textMid }}>Niciun tichet încă</p>
-                          <p className="text-xs mt-1" style={{ color: d.textSoft }}>Deschide unul dacă ai nevoie de ajutor.</p>
+                          <p className="text-xs mt-1" style={{ color: d.textSoft }}>
+                            Deschide un tichet dacă ai nevoie de ajutor.
+                          </p>
                         </div>
                       </div>
                     ) : (
@@ -410,15 +410,23 @@ export function SupportModal({ accessToken }: Props) {
                             >
                               <div className="flex items-start justify-between gap-2">
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-2 mb-0.5">
                                     {t.hasUnreadUser && (
-                                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: d.accent }} />
+                                      <span
+                                        className="w-2 h-2 rounded-full shrink-0 animate-pulse"
+                                        style={{ backgroundColor: d.accent }}
+                                      />
                                     )}
-                                    <p className="text-sm font-semibold truncate" style={{ color: d.text }}>{t.subject}</p>
+                                    <p className="text-sm font-semibold truncate" style={{ color: d.text }}>
+                                      {t.subject}
+                                    </p>
                                   </div>
-                                  <p className="text-xs mt-0.5" style={{ color: d.textSoft }}>{fmtShort(t.updatedAt)}</p>
+                                  <p className="text-xs" style={{ color: d.textSoft }}>{fmtShort(t.updatedAt)}</p>
                                 </div>
-                                <span className="text-xs px-2 py-0.5 rounded-full font-medium shrink-0" style={STATUS_STYLES[t.status]}>
+                                <span
+                                  className="text-xs px-2 py-0.5 rounded-full font-medium shrink-0"
+                                  style={STATUS_STYLES[t.status]}
+                                >
                                   {STATUS_LABELS[t.status]}
                                 </span>
                               </div>
@@ -428,6 +436,8 @@ export function SupportModal({ accessToken }: Props) {
                       </ul>
                     )}
                   </div>
+
+                  {/* Footer: new ticket button */}
                   <div className="px-5 py-4 shrink-0" style={{ borderTop: `1px solid ${d.border}` }}>
                     <button
                       onClick={() => { setView('new'); setFormErr(''); setNewSubject(''); setNewMessage('') }}
@@ -443,12 +453,14 @@ export function SupportModal({ accessToken }: Props) {
                 </div>
               )}
 
-              {/* ── NEW TICKET ── */}
+              {/* ── NEW TICKET FORM ──────────────────────────────────────── */}
               {view === 'new' && (
                 <div className="flex flex-col h-full">
                   <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4">
                     <div>
-                      <label className="block text-xs font-semibold mb-1.5" style={{ color: d.textMid }}>Subiect *</label>
+                      <label className="block text-xs font-semibold mb-1.5" style={{ color: d.textMid }}>
+                        Subiect *
+                      </label>
                       <input
                         type="text"
                         value={newSubject}
@@ -462,7 +474,9 @@ export function SupportModal({ accessToken }: Props) {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold mb-1.5" style={{ color: d.textMid }}>Descrie problema *</label>
+                      <label className="block text-xs font-semibold mb-1.5" style={{ color: d.textMid }}>
+                        Descrie problema *
+                      </label>
                       <textarea
                         value={newMessage}
                         onChange={e => setNewMessage(e.target.value)}
@@ -475,9 +489,12 @@ export function SupportModal({ accessToken }: Props) {
                       />
                     </div>
                     {formErr && (
-                      <p className="text-xs rounded-lg px-3 py-2" style={{ backgroundColor: d.dangerBg, color: d.danger }}>{formErr}</p>
+                      <p className="text-xs rounded-lg px-3 py-2" style={{ backgroundColor: d.dangerBg, color: d.danger }}>
+                        {formErr}
+                      </p>
                     )}
                   </div>
+
                   <div className="px-5 py-4 shrink-0" style={{ borderTop: `1px solid ${d.border}` }}>
                     <button
                       onClick={submitNewTicket}
@@ -496,9 +513,10 @@ export function SupportModal({ accessToken }: Props) {
                 </div>
               )}
 
-              {/* ── THREAD ── */}
+              {/* ── THREAD ───────────────────────────────────────────────── */}
               {view === 'thread' && (
                 <div className="flex flex-col h-full">
+                  {/* Messages */}
                   <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
                     {loadingMessages ? (
                       <div className="flex items-center justify-center h-24">
@@ -510,13 +528,21 @@ export function SupportModal({ accessToken }: Props) {
                         <div key={m.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
                           <div
                             className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${isUser ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}
-                            style={{ backgroundColor: isUser ? d.bubble_user : d.bubble_admin, color: isUser ? '#fff' : d.text }}
+                            style={{
+                              backgroundColor: isUser ? d.bubble_user : d.bubble_admin,
+                              color: isUser ? '#fff' : d.text,
+                            }}
                           >
                             {!isUser && (
-                              <p className="text-xs font-semibold mb-1" style={{ color: d.accent }}>{m.senderName}</p>
+                              <p className="text-xs font-semibold mb-1" style={{ color: d.accent }}>
+                                {m.senderName}
+                              </p>
                             )}
                             <p className="text-sm leading-relaxed whitespace-pre-wrap">{m.body}</p>
-                            <p className="text-xs mt-1.5 text-right" style={{ color: isUser ? 'rgba(255,255,255,0.65)' : d.textFaint }}>
+                            <p
+                              className="text-xs mt-1.5 text-right"
+                              style={{ color: isUser ? 'rgba(255,255,255,0.65)' : d.textFaint }}
+                            >
                               {fmt(m.createdAt)}
                             </p>
                           </div>
@@ -526,20 +552,32 @@ export function SupportModal({ accessToken }: Props) {
                     <div ref={bottomRef} />
                   </div>
 
+                  {/* Reply or closed notice */}
                   {isClosed ? (
-                    <div className="px-5 py-4 shrink-0 flex items-center gap-2" style={{ borderTop: `1px solid ${d.border}`, backgroundColor: d.bg }}>
+                    <div
+                      className="px-5 py-4 shrink-0 flex items-center gap-2"
+                      style={{ borderTop: `1px solid ${d.border}`, backgroundColor: d.bg }}
+                    >
                       <CheckCircle2 size={16} style={{ color: d.textSoft }} />
                       <p className="text-xs" style={{ color: d.textSoft }}>
                         Acest tichet este {activeTicket?.status === 'completed' ? 'rezolvat' : 'anulat'}.
                       </p>
                     </div>
                   ) : (
-                    <div className="px-4 py-3 shrink-0" style={{ borderTop: `1px solid ${d.border}`, backgroundColor: d.bg }}>
-                      <div className="flex items-end gap-2 rounded-2xl px-3 py-2" style={{ border: `1px solid ${d.border}`, backgroundColor: d.surface }}>
+                    <div
+                      className="px-4 py-3 shrink-0"
+                      style={{ borderTop: `1px solid ${d.border}`, backgroundColor: d.bg }}
+                    >
+                      <div
+                        className="flex items-end gap-2 rounded-2xl px-3 py-2"
+                        style={{ border: `1px solid ${d.border}`, backgroundColor: d.surface }}
+                      >
                         <textarea
                           value={reply}
                           onChange={e => setReply(e.target.value)}
-                          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply() } }}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply() }
+                          }}
                           placeholder="Scrie un mesaj..."
                           rows={1}
                           className="flex-1 text-sm outline-none resize-none bg-transparent"
@@ -549,7 +587,11 @@ export function SupportModal({ accessToken }: Props) {
                           onClick={sendReply}
                           disabled={sending || !reply.trim()}
                           className="shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all"
-                          style={{ backgroundColor: reply.trim() ? d.accent : d.borderFaint, color: reply.trim() ? '#fff' : d.textFaint, opacity: sending ? 0.6 : 1 }}
+                          style={{
+                            backgroundColor: reply.trim() ? d.accent : d.borderFaint,
+                            color: reply.trim() ? '#fff' : d.textFaint,
+                            opacity: sending ? 0.6 : 1,
+                          }}
                           aria-label="Trimite"
                         >
                           {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
@@ -562,6 +604,7 @@ export function SupportModal({ accessToken }: Props) {
                   )}
                 </div>
               )}
+
             </div>
           </div>
         </div>

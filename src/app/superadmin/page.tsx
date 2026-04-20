@@ -503,22 +503,6 @@ function TestimonialeTab() {
         </div>
       )}
 
-      {/* SQL hint */}
-      <div className="rounded-xl px-4 py-3 text-xs" style={{ backgroundColor: c.warningBg, color: c.warning, border: `1px solid ${c.warning}30` }}>
-        <strong>SQL migration (run once in Supabase):</strong>
-        <pre className="mt-1 whitespace-pre-wrap font-mono text-xs" style={{ color: c.warning }}>{`create table if not exists testimonials (
-  id uuid primary key default gen_random_uuid(),
-  quote text not null,
-  name text not null,
-  city text not null,
-  event_type text not null,
-  image_url text,
-  sort_order integer default 0,
-  is_active boolean default true,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);`}</pre>
-      </div>
     </div>
   )
 }
@@ -1013,31 +997,6 @@ function TicheteTab({ onUnreadChange }: { onUnreadChange: (n: number) => void })
         )}
       </div>
 
-      {/* SQL migration hint */}
-      <div className="rounded-xl px-4 py-3 text-xs" style={{ backgroundColor: c.warningBg, color: c.warning, border: `1px solid ${c.warning}30` }}>
-        <strong>SQL migration (run once in Supabase):</strong>
-        <pre className="mt-1 whitespace-pre-wrap font-mono text-xs" style={{ color: c.warning }}>{`create table if not exists support_tickets (
-  id uuid primary key default gen_random_uuid(),
-  organiser_id uuid not null,
-  organiser_email text not null,
-  organiser_name text not null,
-  subject text not null,
-  status text default 'open',
-  has_unread_admin boolean default true,
-  has_unread_user boolean default false,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
-
-create table if not exists ticket_messages (
-  id uuid primary key default gen_random_uuid(),
-  ticket_id uuid references support_tickets(id) on delete cascade,
-  sender_role text not null,
-  sender_name text not null,
-  body text not null,
-  created_at timestamptz default now()
-);`}</pre>
-      </div>
     </div>
   )
 }
