@@ -1181,7 +1181,22 @@ function EventsTab() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Statistici Donații" description="Toate paginile de donații — vizualizare completă și control." />
+      <div className="flex items-start justify-between gap-4">
+        <PageHeader title="Statistici Donații" description="Toate paginile de donații — vizualizare completă și control." />
+        <button
+          onClick={load}
+          disabled={saving}
+          className="shrink-0 flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition-colors mt-1"
+          style={{ backgroundColor: c.surface, border: `1px solid ${c.border}`, color: c.textMid }}
+          title="Reîncarcă datele"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M23 4v6h-6M1 20v-6h6"/>
+            <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+          </svg>
+          Reîncarcă
+        </button>
+      </div>
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

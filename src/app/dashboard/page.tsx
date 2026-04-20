@@ -8,9 +8,20 @@ import { getSupabase } from '@/lib/db/supabase'
 import { Event, EventItem, Payout } from '@/types'
 import { IconPicker } from '@/components/ui/IconPicker'
 
+interface DonorEntry {
+  displayName: string | null
+  isAnonymous: boolean
+  amount: number
+  showAmount: boolean
+  createdAt: string
+  eventId: string
+  eventName: string
+}
+
 interface DashboardEvent extends Event {
   totalRaised: number
   payouts: Payout[]
+  donors: DonorEntry[]
 }
 
 const EVENT_TYPE_LABELS: Record<string, { label: string; emoji: string }> = {
@@ -32,6 +43,7 @@ export default function DashboardPage() {
   const [deletingFor, setDeletingFor] = useState<string | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [togglingFor, setTogglingFor] = useState<string | null>(null)
+  const [donorsModal, setDonorsModal] = useState(false)
 
   async function load() {
     const supabase = getSupabase()
@@ -52,17 +64,28 @@ export default function DashboardPage() {
     const enriched: DashboardEvent[] = await Promise.all(
       eventsData.map(async (row) => {
         const eventId = row.id as string
-        const [donationsRes, payoutsRes] = await Promise.all([
+        const eventName = row.name as string
+        const [donationsRes, donorsRes, payoutsRes] = await Promise.all([
           supabase.from('donations').select('amount').eq('event_id', eventId).in('status', ['confirmed', 'pending']),
+          supabase.from('donations').select('display_name, is_anonymous, amount, show_amount, created_at').eq('event_id', eventId).eq('status', 'confirmed').order('created_at', { ascending: false }),
           fetch(`/api/payouts?eventId=${eventId}`, { headers: { Authorization: `Bearer ${session.access_token}` } })
             .then((r) => r.json()).then((d) => (d.payouts ?? []) as Payout[]).catch(() => [] as Payout[]),
         ])
         const totalRaised = (donationsRes.data ?? []).reduce((sum, d) => sum + (d.amount as number), 0)
+        const donors: DonorEntry[] = (donorsRes.data ?? []).map((d) => ({
+          displayName: d.display_name as string | null,
+          isAnonymous: (d.is_anonymous as boolean) ?? false,
+          amount: d.amount as number,
+          showAmount: (d.show_amount as boolean) ?? true,
+          createdAt: d.created_at as string,
+          eventId,
+          eventName,
+        }))
         return {
           id: eventId,
           slug: row.slug as string,
           eventType: row.event_type as string,
-          name: row.name as string,
+          name: eventName,
           description: row.description as string | undefined,
           coverImageUrl: row.cover_image_url as string | undefined,
           goalAmount: row.goal_amount as number | undefined,
@@ -74,6 +97,7 @@ export default function DashboardPage() {
           createdAt: row.created_at as string,
           totalRaised,
           payouts: payoutsRes,
+          donors,
         }
       })
     )
@@ -153,6 +177,7 @@ export default function DashboardPage() {
   }
 
   const totalAcrossAll = events.reduce((sum, e) => sum + e.totalRaised, 0)
+  const totalDonors = events.reduce((sum, e) => sum + e.donors.length, 0)
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#FDFAF7' }}>
@@ -195,8 +220,17 @@ export default function DashboardPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <StatCard label="Pagini active" value={String(events.filter(e => e.isActive).length)} />
             <StatCard label="Total strâns" value={`${totalAcrossAll} RON`} highlight />
-            <StatCard label="Donatori" value="—" />
+            <StatCard
+              label="Donatori"
+              value={totalDonors > 0 ? String(totalDonors) : '0'}
+              clickable={totalDonors > 0}
+              onClick={() => setDonorsModal(true)}
+            />
           </div>
+        )}
+
+        {donorsModal && (
+          <DonorsModal events={events} onClose={() => setDonorsModal(false)} />
         )}
 
         {error && (
@@ -251,17 +285,36 @@ export default function DashboardPage() {
 
 // ─── Stat card ─────────────────────────────────────────────────────────────────
 
-function StatCard({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
-  return (
-    <div
-      className="rounded-2xl p-5"
-      style={{
-        backgroundColor: highlight ? '#2D2016' : '#FFFDFB',
-        border: highlight ? 'none' : '1px solid #EDE0D0',
-      }}
-    >
+function StatCard({ label, value, highlight, clickable, onClick }: {
+  label: string; value: string; highlight?: boolean; clickable?: boolean; onClick?: () => void
+}) {
+  const inner = (
+    <>
       <p className="text-xs font-medium mb-1" style={{ color: highlight ? '#C4956A' : '#9A7B60' }}>{label}</p>
       <p className="text-xl font-bold" style={{ color: highlight ? '#FDFAF7' : '#2D2016' }}>{value}</p>
+      {clickable && (
+        <p className="text-xs mt-1" style={{ color: '#C4956A' }}>Vezi detalii →</p>
+      )}
+    </>
+  )
+  const style = {
+    backgroundColor: highlight ? '#2D2016' : '#FFFDFB',
+    border: highlight ? 'none' : '1px solid #EDE0D0',
+  }
+  if (clickable && onClick) {
+    return (
+      <button
+        onClick={onClick}
+        className="rounded-2xl p-5 text-left w-full transition-opacity hover:opacity-80"
+        style={{ ...style, cursor: 'pointer' }}
+      >
+        {inner}
+      </button>
+    )
+  }
+  return (
+    <div className="rounded-2xl p-5" style={style}>
+      {inner}
     </div>
   )
 }
@@ -1107,6 +1160,104 @@ function FacebookShareIcon() {
     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
       <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
     </svg>
+  )
+}
+
+// ─── Donors modal ──────────────────────────────────────────────────────────────
+
+function DonorsModal({ events, onClose }: { events: DashboardEvent[]; onClose: () => void }) {
+  const eventsWithDonors = events.filter((e) => e.donors.length > 0)
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(
+    eventsWithDonors.length === 1 ? eventsWithDonors[0].id : null
+  )
+
+  const selectedEvent = eventsWithDonors.find((e) => e.id === selectedEventId) ?? null
+  const donors = selectedEvent?.donors ?? []
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-2xl max-h-[85vh] flex flex-col rounded-2xl overflow-hidden"
+        style={{ backgroundColor: '#FFFDFB', border: '1px solid #EDE0D0' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid #EDE0D0' }}>
+          <div>
+            <h2 className="text-base font-bold" style={{ color: '#2D2016' }}>Donatori</h2>
+            <p className="text-xs mt-0.5" style={{ color: '#9A7B60' }}>
+              {events.reduce((s, e) => s + e.donors.length, 0)} donații confirmate
+            </p>
+          </div>
+          <button onClick={onClose} className="text-sm px-2 py-1 transition-opacity hover:opacity-60" style={{ color: '#9A7B60' }}>✕</button>
+        </div>
+
+        {/* Page selector — shown when multiple pages have donors */}
+        {eventsWithDonors.length > 1 && (
+          <div className="px-6 pt-4 pb-2 flex flex-wrap gap-2">
+            <button
+              onClick={() => setSelectedEventId(null)}
+              className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors"
+              style={
+                selectedEventId === null
+                  ? { backgroundColor: '#2D2016', color: '#FDFAF7' }
+                  : { border: '1px solid #EDE0D0', color: '#7A6652' }
+              }
+            >
+              Toate ({events.reduce((s, e) => s + e.donors.length, 0)})
+            </button>
+            {eventsWithDonors.map((e) => (
+              <button
+                key={e.id}
+                onClick={() => setSelectedEventId(e.id)}
+                className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors"
+                style={
+                  selectedEventId === e.id
+                    ? { backgroundColor: '#C4956A', color: '#fff' }
+                    : { border: '1px solid #EDE0D0', color: '#7A6652' }
+                }
+              >
+                {e.name} ({e.donors.length})
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Donor list */}
+        <div className="overflow-y-auto flex-1 px-6 py-4 space-y-2">
+          {(selectedEventId === null ? eventsWithDonors.flatMap((e) => e.donors) : donors).map((d, i) => (
+            <div
+              key={i}
+              className="flex items-center justify-between gap-3 rounded-xl px-4 py-3"
+              style={{ backgroundColor: '#F5EDE3' }}
+            >
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold truncate" style={{ color: '#2D2016' }}>
+                  {d.isAnonymous ? 'Anonim' : (d.displayName || 'Anonim')}
+                </p>
+                {selectedEventId === null && (
+                  <p className="text-xs truncate mt-0.5" style={{ color: '#B09070' }}>{d.eventName}</p>
+                )}
+                <p className="text-xs mt-0.5" style={{ color: '#9A7B60' }}>
+                  {new Date(d.createdAt).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+              </div>
+              <span className="text-sm font-bold shrink-0" style={{ color: '#C4956A' }}>
+                {d.showAmount ? `${d.amount} RON` : '—'}
+              </span>
+            </div>
+          ))}
+
+          {(selectedEventId === null ? eventsWithDonors.flatMap((e) => e.donors) : donors).length === 0 && (
+            <p className="text-sm text-center py-8" style={{ color: '#9A7B60' }}>Nicio donație confirmată.</p>
+          )}
+        </div>
+      </div>
+    </div>
   )
 }
 
