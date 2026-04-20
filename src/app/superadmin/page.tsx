@@ -1302,7 +1302,18 @@ function EventsTab() {
                       <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: c.badge, color: c.badgeText }}>{event.eventType}</span>
                     </div>
                     <p className="text-xs mt-0.5" style={{ color: c.textSoft }}>
-                      {event.eventType}/{event.slug} · creat {new Date(event.createdAt).toLocaleDateString('ro-RO')}
+                      <a
+                        href={`/${event.eventType}/${event.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ color: c.accent, textDecoration: 'none' }}
+                        onMouseOver={(e) => { e.currentTarget.style.textDecoration = 'underline' }}
+                        onMouseOut={(e) => { e.currentTarget.style.textDecoration = 'none' }}
+                      >
+                        {event.eventType}/{event.slug}
+                      </a>
+                      {' · creat '}{new Date(event.createdAt).toLocaleDateString('ro-RO')}
                     </p>
                   </div>
 
