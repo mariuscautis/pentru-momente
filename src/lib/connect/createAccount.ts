@@ -22,7 +22,7 @@ export async function createConnectAccount(
     business_profile: {
       mcc: '8398',          // charitable/social service organisations
       url: process.env.NEXT_PUBLIC_APP_URL,
-      product_description: 'Fundraising platform for personal life events',
+      product_description: 'Platformă de strângere de fonduri pentru momente de viață',
     },
     capabilities: {
       card_payments: { requested: true },
