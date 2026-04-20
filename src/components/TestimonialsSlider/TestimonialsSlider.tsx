@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Star, ChevronLeft, ChevronRight } from 'lucide-react'
 
 export interface TestimonialItem {
@@ -22,24 +22,20 @@ function TestimonialCard({ t }: { t: TestimonialItem }) {
       className="rounded-2xl p-6 flex flex-col gap-4 h-full"
       style={{ backgroundColor: 'var(--color-bg)', border: '1px solid var(--color-border)' }}
     >
-      {/* Stars */}
       <div className="flex gap-0.5">
         {Array.from({ length: 5 }).map((_, i) => (
           <Star key={i} size={13} fill="var(--color-amber)" color="var(--color-amber)" />
         ))}
       </div>
 
-      {/* Quote */}
       <p className="text-sm leading-relaxed flex-1" style={{ color: 'var(--color-ink)' }}>
         &ldquo;{t.quote}&rdquo;
       </p>
 
-      {/* Footer */}
       <div
         className="flex items-center gap-3 pt-3"
         style={{ borderTop: '1px solid var(--color-border)' }}
       >
-        {/* Avatar */}
         {t.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -75,39 +71,29 @@ function TestimonialCard({ t }: { t: TestimonialItem }) {
 
 export function TestimonialsSlider({ testimonials }: Props) {
   const [current, setCurrent] = useState(0)
-  const [animating, setAnimating] = useState(false)
+  const sliding = useRef(false)
 
-  const go = useCallback((next: number) => {
-    if (animating || next === current) return
-    setAnimating(true)
-    setTimeout(() => {
-      setCurrent(next)
-      setAnimating(false)
-    }, 220)
-  }, [animating, current])
+  const go = (next: number) => {
+    if (sliding.current) return
+    sliding.current = true
+    setCurrent(next)
+    setTimeout(() => { sliding.current = false }, 380)
+  }
 
   const prev = () => go((current - 1 + testimonials.length) % testimonials.length)
   const next = () => go((current + 1) % testimonials.length)
 
-  // Auto-advance every 6 s
   useEffect(() => {
     if (testimonials.length <= 1) return
     const id = setInterval(() => {
-      go((current + 1) % testimonials.length)
+      setCurrent(c => (c + 1) % testimonials.length)
     }, 6000)
     return () => clearInterval(id)
-  }, [current, go, testimonials.length])
+  }, [testimonials.length])
 
   if (testimonials.length === 0) return null
 
-  // Desktop: show up to 3 at a time; mobile: always 1
   const desktopVisible = Math.min(testimonials.length, 3)
-  const desktopItems = Array.from({ length: desktopVisible }, (_, i) =>
-    testimonials[(current + i) % testimonials.length]
-  )
-  const mobileItem = testimonials[current]
-
-  // Show controls when there are more items than what's visible on that viewport
   const showMobileControls = testimonials.length > 1
   const showDesktopControls = testimonials.length > desktopVisible
 
@@ -122,7 +108,6 @@ export function TestimonialsSlider({ testimonials }: Props) {
         <ChevronLeft size={16} />
       </button>
 
-      {/* Dots */}
       <div className="flex gap-1.5">
         {testimonials.map((_, i) => (
           <button
@@ -152,31 +137,60 @@ export function TestimonialsSlider({ testimonials }: Props) {
 
   return (
     <div className="relative">
-      {/* Mobile: single card */}
-      <div
-        className="block md:hidden"
-        style={{ opacity: animating ? 0 : 1, transition: 'opacity 220ms ease' }}
-      >
-        <TestimonialCard t={mobileItem} />
+
+      {/* ── Mobile: single card, sliding strip ── */}
+      <div className="block md:hidden">
+        <div className="overflow-hidden rounded-2xl">
+          <div
+            className="flex"
+            style={{
+              transform: `translateX(-${current * 100}%)`,
+              transition: 'transform 360ms cubic-bezier(0.4, 0, 0.2, 1)',
+              willChange: 'transform',
+            }}
+          >
+            {testimonials.map((t) => (
+              <div key={t.id} className="w-full shrink-0 px-px">
+                <TestimonialCard t={t} />
+              </div>
+            ))}
+          </div>
+        </div>
         <Controls show={showMobileControls} />
       </div>
 
-      {/* Desktop: up to 3 columns */}
+      {/* ── Desktop: multi-column sliding strip ── */}
       <div className="hidden md:block">
-        <div
-          className="grid gap-4"
-          style={{
-            gridTemplateColumns: `repeat(${desktopVisible}, 1fr)`,
-            opacity: animating ? 0 : 1,
-            transition: 'opacity 220ms ease',
-          }}
-        >
-          {desktopItems.map((t, idx) => (
-            <TestimonialCard key={`${t.id}-${idx}`} t={t} />
-          ))}
+        <div className="overflow-hidden">
+          {/*
+            The strip holds ALL testimonials side-by-side, each card occupying
+            1/desktopVisible of the viewport width. We slide by one card-width
+            (= 100% / desktopVisible) per step.
+          */}
+          <div
+            className="flex items-stretch"
+            style={{
+              transform: `translateX(-${current * (100 / desktopVisible)}%)`,
+              transition: 'transform 360ms cubic-bezier(0.4, 0, 0.2, 1)',
+              willChange: 'transform',
+            }}
+          >
+            {/* Render enough cards so the visible window never shows a gap.
+                We duplicate the list once to handle wrap-around gracefully. */}
+            {[...testimonials, ...testimonials].map((t, idx) => (
+              <div
+                key={`${t.id}-${idx}`}
+                className="shrink-0 px-2"
+                style={{ width: `${100 / desktopVisible}%` }}
+              >
+                <TestimonialCard t={t} />
+              </div>
+            ))}
+          </div>
         </div>
         <Controls show={showDesktopControls} />
       </div>
+
     </div>
   )
 }
