@@ -49,6 +49,19 @@ interface AdminEvent {
 
 type Tab = 'seo' | 'blog' | 'terms' | 'cookies' | 'gdpr' | 'menu' | 'events' | 'coming-soon'
 
+interface AdminDonation {
+  id: string
+  amount: number
+  tipAmount: number
+  displayName: string | null
+  message: string | null
+  isAnonymous: boolean
+  showAmount: boolean
+  status: string
+  createdAt: string
+  itemId: string | null
+}
+
 // ─── Design tokens ─────────────────────────────────────────────────────────────
 
 const c = {
@@ -120,7 +133,7 @@ async function uploadImage(file: File, folder: string): Promise<string> {
 export default function SuperAdminPage() {
   const router = useRouter()
   const [checking, setChecking] = useState(true)
-  const [tab, setTab] = useState<Tab>('seo')
+  const [tab, setTab] = useState<Tab>('events')
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
@@ -153,6 +166,7 @@ export default function SuperAdminPage() {
   }
 
   const navItems: { id: Tab; label: string; icon: string }[] = [
+    { id: 'events',       label: 'Statistici Donații', icon: '📊' },
     { id: 'seo',          label: 'SEO',               icon: '⚙️' },
     { id: 'blog',         label: 'Blog',              icon: '📝' },
     { id: 'terms',        label: 'Termeni & Condiții', icon: '📋' },
@@ -160,7 +174,6 @@ export default function SuperAdminPage() {
     { id: 'gdpr',         label: 'Politica GDPR',     icon: '🔒' },
     { id: 'menu',         label: 'Meniu',             icon: '☰' },
     { id: 'coming-soon',  label: 'Coming Soon',       icon: '🚧' },
-    { id: 'events',       label: 'Statistici Donații', icon: '📊' },
   ]
 
   return (
@@ -1123,6 +1136,7 @@ function EventsTab() {
   const [reason, setReason] = useState('')
   const [saving, setSaving] = useState(false)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [donationsModal, setDonationsModal] = useState<{ eventId: string; eventName: string } | null>(null)
 
   const load = useCallback(async () => {
     const res = await apiFetch('/api/admin/events')
@@ -1426,6 +1440,20 @@ function EventsTab() {
                         )}
                       </div>
 
+                      {/* Donations log button */}
+                      <div className="px-5 pb-4 pt-1" style={{ borderTop: `1px solid ${c.border}` }}>
+                        <button
+                          onClick={() => setDonationsModal({ eventId: event.id, eventName: event.name })}
+                          className="flex items-center gap-2 text-xs font-semibold px-3 py-2 rounded-lg transition-colors mt-3"
+                          style={{ backgroundColor: c.badge, color: c.accent, border: `1px solid ${c.accent}20` }}
+                        >
+                          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                          </svg>
+                          Vezi donații
+                        </button>
+                      </div>
+
                     </div>
                   </div>
                 </div>
@@ -1447,6 +1475,244 @@ function EventsTab() {
           )}
         </div>
       )}
+
+      {/* Donations log modal */}
+      {donationsModal && (
+        <DonationsModal
+          eventId={donationsModal.eventId}
+          eventName={donationsModal.eventName}
+          onClose={() => setDonationsModal(null)}
+        />
+      )}
+    </div>
+  )
+}
+
+// ─── DonationsModal ───────────────────────────────────────────────────────────
+
+function DonationsModal({ eventId, eventName, onClose }: {
+  eventId: string
+  eventName: string
+  onClose: () => void
+}) {
+  const [donations, setDonations] = useState<AdminDonation[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true)
+      setError(null)
+      try {
+        const res = await apiFetch(`/api/admin/events/${eventId}/donations`)
+        if (!res.ok) throw new Error('Eroare la încărcare.')
+        const json = await res.json() as { donations: AdminDonation[] }
+        setDonations(json.donations)
+      } catch {
+        setError('Nu s-au putut încărca donațiile.')
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [eventId])
+
+  function exportCSV() {
+    const rows = [
+      ['Data', 'Nume', 'Suma (RON)', 'Comision (RON)', 'Mesaj', 'Anonim', 'Status'],
+      ...donations.map(d => [
+        new Date(d.createdAt).toLocaleString('ro-RO'),
+        d.isAnonymous ? 'Anonim' : (d.displayName ?? '—'),
+        d.amount.toFixed(2),
+        d.tipAmount.toFixed(2),
+        d.message ?? '',
+        d.isAnonymous ? 'Da' : 'Nu',
+        d.status,
+      ]),
+    ]
+    const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `donatii-${eventName.replace(/\s+/g, '-').toLowerCase()}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function exportExcel() {
+    // Build a minimal XLSX-compatible XML workbook (SpreadsheetML) — no library needed
+    const headers = ['Data', 'Nume', 'Suma (RON)', 'Comision (RON)', 'Mesaj', 'Anonim', 'Status']
+    const rows = donations.map(d => [
+      new Date(d.createdAt).toLocaleString('ro-RO'),
+      d.isAnonymous ? 'Anonim' : (d.displayName ?? '—'),
+      d.amount.toFixed(2),
+      d.tipAmount.toFixed(2),
+      d.message ?? '',
+      d.isAnonymous ? 'Da' : 'Nu',
+      d.status,
+    ])
+
+    const cell = (v: string) => `<Cell><Data ss:Type="String">${v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</Data></Cell>`
+    const xml = `<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+ <Worksheet ss:Name="Donatii">
+  <Table>
+   <Row>${headers.map(cell).join('')}</Row>
+   ${rows.map(r => `<Row>${r.map(cell).join('')}</Row>`).join('\n   ')}
+  </Table>
+ </Worksheet>
+</Workbook>`
+    const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `donatii-${eventName.replace(/\s+/g, '-').toLowerCase()}.xls`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const total = donations.filter(d => d.status === 'confirmed').reduce((s, d) => s + d.amount, 0)
+  const totalTips = donations.filter(d => d.status === 'confirmed').reduce((s, d) => s + d.tipAmount, 0)
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.55)' }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div
+        className="w-full flex flex-col rounded-2xl shadow-2xl"
+        style={{
+          backgroundColor: c.surface,
+          border: `1px solid ${c.border}`,
+          maxWidth: '780px',
+          maxHeight: '85vh',
+        }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 shrink-0" style={{ borderBottom: `1px solid ${c.border}` }}>
+          <div>
+            <h2 className="text-base font-bold" style={{ color: c.text }}>Donații — {eventName}</h2>
+            <p className="text-xs mt-0.5" style={{ color: c.textSoft }}>
+              {donations.length} {donations.length === 1 ? 'donație' : 'donații'}
+              {donations.length > 0 && (
+                <> · Total confirmat: <span style={{ color: c.success, fontWeight: 600 }}>{total.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} RON</span>
+                  {' '}· Comision: <span style={{ color: c.warning, fontWeight: 600 }}>{totalTips.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} RON</span>
+                </>
+              )}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {donations.length > 0 && (
+              <>
+                <button
+                  onClick={exportCSV}
+                  className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg"
+                  style={{ backgroundColor: c.badge, color: c.accent, border: `1px solid ${c.accent}25` }}
+                >
+                  <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  CSV
+                </button>
+                <button
+                  onClick={exportExcel}
+                  className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg"
+                  style={{ backgroundColor: '#E8F5E9', color: '#2E7D32', border: '1px solid #2E7D3225' }}
+                >
+                  <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Excel
+                </button>
+              </>
+            )}
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg"
+              style={{ color: c.textSoft }}
+              onMouseOver={e => (e.currentTarget.style.backgroundColor = c.surfaceHover)}
+              onMouseOut={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+            >
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="overflow-auto flex-1">
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="w-5 h-5 rounded-full animate-pulse" style={{ backgroundColor: c.accent }} />
+              <span className="ml-2 text-sm" style={{ color: c.textSoft }}>Se încarcă...</span>
+            </div>
+          ) : error ? (
+            <div className="py-12 text-center">
+              <p className="text-sm" style={{ color: c.danger }}>{error}</p>
+            </div>
+          ) : donations.length === 0 ? (
+            <div className="py-16 text-center">
+              <p className="text-sm font-medium" style={{ color: c.textMid }}>Nicio donație înregistrată.</p>
+            </div>
+          ) : (
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr style={{ backgroundColor: c.bg, borderBottom: `1px solid ${c.border}` }}>
+                  {['Data', 'Donator', 'Sumă', 'Comision', 'Status', 'Mesaj'].map(h => (
+                    <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold" style={{ color: c.textSoft }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {donations.map((d, i) => (
+                  <tr
+                    key={d.id}
+                    style={{
+                      backgroundColor: i % 2 === 0 ? c.surface : c.bg,
+                      borderBottom: `1px solid ${c.border}`,
+                    }}
+                  >
+                    <td className="px-4 py-2.5 text-xs whitespace-nowrap" style={{ color: c.textSoft }}>
+                      {new Date(d.createdAt).toLocaleString('ro-RO', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                    </td>
+                    <td className="px-4 py-2.5" style={{ color: c.text }}>
+                      <span className="font-medium">{d.isAnonymous ? 'Anonim' : (d.displayName ?? '—')}</span>
+                      {d.isAnonymous && (
+                        <span className="ml-1.5 text-xs px-1.5 py-0.5 rounded-full" style={{ backgroundColor: c.bg, color: c.textSoft }}>anonim</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2.5 font-semibold tabular-nums" style={{ color: c.success }}>
+                      {d.amount.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} RON
+                    </td>
+                    <td className="px-4 py-2.5 tabular-nums text-xs" style={{ color: d.tipAmount > 0 ? c.warning : c.textSoft }}>
+                      {d.tipAmount > 0 ? `${d.tipAmount.toFixed(2)} RON` : '—'}
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <span
+                        className="text-xs px-2 py-0.5 rounded-full font-medium"
+                        style={
+                          d.status === 'confirmed' ? { backgroundColor: c.successBg, color: c.success } :
+                          d.status === 'refunded'  ? { backgroundColor: c.dangerBg,  color: c.danger  } :
+                                                     { backgroundColor: c.warningBg, color: c.warning }
+                        }
+                      >
+                        {d.status === 'confirmed' ? 'confirmat' : d.status === 'refunded' ? 'returnat' : 'în așteptare'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 text-xs max-w-[180px] truncate" style={{ color: c.textMid }} title={d.message ?? ''}>
+                      {d.message || <span style={{ color: c.textSoft }}>—</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
