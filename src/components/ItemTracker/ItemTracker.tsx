@@ -130,7 +130,7 @@ function ItemRow({ item, config, cartItem, expanded, onExpand, onAddToCart, onRe
               </span>
             )}
 
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="font-semibold truncate" style={{ color: '#2D2016' }}>{item.name}</p>
               <p className="text-xs mt-0.5" style={{ color: '#9A7B60' }}>
                 {item.isFullyFunded && !item.isCustomAmount
@@ -141,6 +141,21 @@ function ItemRow({ item, config, cartItem, expanded, onExpand, onAddToCart, onRe
                   ? 'Alege suma'
                   : 'Donație liberă'}
               </p>
+              {/* Progress bar — only for targeted items that aren't fully funded */}
+              {hasTarget && !item.isCustomAmount && (
+                <div
+                  className="mt-2 rounded-full overflow-hidden"
+                  style={{ height: 5, backgroundColor: '#F0E8DC' }}
+                >
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{
+                      width: `${Math.min(100, Math.round((item.raisedAmount / item.targetAmount) * 100))}%`,
+                      backgroundColor: item.isFullyFunded ? '#22c55e' : '#C4956A',
+                    }}
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -188,20 +203,66 @@ function ItemRow({ item, config, cartItem, expanded, onExpand, onAddToCart, onRe
         <div style={{ overflow: 'hidden' }}>
         <div className="px-4 pb-4 pt-1 space-y-3" style={{ borderTop: '1px solid #F0E8DC' }}>
 
-          {/* Fixed amount: single confirm button, no picker */}
+          {/* Partial donation picker — for targeted items show remaining cap */}
           {hasTarget && !item.isCustomAmount ? (
             <>
               <p className="text-xs font-medium" style={{ color: '#7A6652' }}>
-                Suma pentru acest articol este {item.targetAmount} Lei.
+                Mai sunt necesari <strong>{remaining} Lei</strong> din {item.targetAmount} Lei. Poți contribui orice sumă.
               </p>
+
+              {/* Presets */}
+              <div className="flex gap-2 flex-wrap">
+                {presets.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => handlePreset(p)}
+                    className="rounded-xl px-4 py-2 text-sm font-semibold transition-colors"
+                    style={
+                      inputAmount === String(p)
+                        ? { backgroundColor: '#C4956A', color: '#fff' }
+                        : { backgroundColor: '#F5EDE3', color: '#7A6652' }
+                    }
+                  >
+                    {`${p} Lei`}
+                  </button>
+                ))}
+              </div>
+
+              {/* Custom input */}
+              <div className="relative">
+                <input
+                  type="number"
+                  min={1}
+                  max={remaining}
+                  value={inputAmount}
+                  onChange={(e) => setInputAmount(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === '-') e.preventDefault() }}
+                  placeholder="Altă sumă"
+                  className="w-full rounded-xl px-3 py-2.5 text-sm outline-none pr-14"
+                  style={{ border: '1px solid #E0D0C0', color: '#2D2016', backgroundColor: '#FDFAF7' }}
+                  onFocus={(e) => (e.target.style.borderColor = '#C4956A')}
+                  onBlur={(e) => (e.target.style.borderColor = '#E0D0C0')}
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: '#9A7B60' }}>
+                  Lei
+                </span>
+              </div>
+              {isOverTarget && (
+                <p className="text-xs" style={{ color: '#DC2626' }}>
+                  Suma maximă disponibilă pentru acest articol este {remaining} Lei.
+                </p>
+              )}
+
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => onAddToCart(item.targetAmount)}
-                  className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-                  style={{ backgroundColor: '#C4956A' }}
+                  onClick={handleConfirm}
+                  disabled={isConfirmDisabled}
+                  className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white transition-opacity"
+                  style={{ backgroundColor: '#C4956A', opacity: isConfirmDisabled ? 0.5 : 1 }}
                 >
-                  Adaugă {item.targetAmount} Lei în coș
+                  Adaugă în coș
                 </button>
                 <button
                   type="button"
