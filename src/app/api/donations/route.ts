@@ -25,6 +25,8 @@ interface CreateDonationBody {
   amount: number
   // Optional donor tip on top of the donation (0 if declined)
   tipAmount?: number
+  // Card region declared by donor — determines commission rate
+  cardRegion?: 'eu' | 'non-eu'
   displayName?: string
   donorEmail?: string
   message?: string
@@ -91,8 +93,9 @@ async function handlePost(req: NextRequest): Promise<NextResponse> {
   }
 
   const tipRon = body.tipAmount ?? 0
-  // Mandatory commission: deducted from organiser's share (not added to donor's charge)
-  const commissionRon = calculateCommission(body.amount)
+  // Commission rate depends on card region declared by donor
+  const cardCountry = body.cardRegion === 'non-eu' ? 'US' : 'RO'
+  const commissionRon = calculateCommission(body.amount, cardCountry)
 
   // Donor pays: donation + tip only.
   // Platform application_fee = commission + tip → routes to platform account.

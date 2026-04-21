@@ -5,10 +5,11 @@ import { Event, EventItem, EventTypeConfig } from '@/types'
 import { StepChooseAmount } from './StepChooseAmount'
 import { StepDonorDetails } from './StepDonorDetails'
 import { StepTip } from './StepTip'
+import { StepCardRegion } from './StepCardRegion'
 import { StepPayment } from './StepPayment'
 import { StepSuccess } from './StepSuccess'
 
-export type DonationStep = 'amount' | 'details' | 'tip' | 'payment' | 'success'
+export type DonationStep = 'amount' | 'details' | 'tip' | 'card-region' | 'payment' | 'success'
 
 // Each selected item has its own amount
 export interface SelectedItem {
@@ -28,6 +29,7 @@ export interface DonationState {
   message: string
   isAnonymous: boolean
   showAmount: boolean
+  cardRegion: 'eu' | 'non-eu' | null
   clientSecret?: string
   paymentIntentId?: string
 }
@@ -56,6 +58,7 @@ export function DonationFlow({ event, items, config, initialCart, onClose, onDon
     amount: 100,
     tipAmount: 20,
     stripeFee: 0,
+    cardRegion: null,
     displayName: '',
     donorEmail: '',
     message: '',
@@ -107,6 +110,14 @@ export function DonationFlow({ event, items, config, initialCart, onClose, onDon
             setState={setState}
             config={config}
             onBack={() => setStep('details')}
+            onNext={() => setStep('card-region')}
+          />
+        )}
+        {step === 'card-region' && (
+          <StepCardRegion
+            state={state}
+            setState={setState}
+            onBack={() => setStep('tip')}
             onNext={() => setStep('payment')}
           />
         )}
@@ -131,7 +142,8 @@ export function DonationFlow({ event, items, config, initialCart, onClose, onDon
 const STEPS: { key: DonationStep; label: string }[] = [
   { key: 'amount', label: 'Sumă' },
   { key: 'details', label: 'Detalii' },
-  { key: 'tip', label: 'Comision' },
+  { key: 'tip', label: 'Contribuție' },
+  { key: 'card-region', label: 'Card' },
   { key: 'payment', label: 'Plată' },
 ]
 
