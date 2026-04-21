@@ -1,34 +1,36 @@
 @import "tailwindcss";
 
 :root {
-  /* Core palette — deep navy + warm amber */
-  --color-ink:        #0F1923;   /* near-black navy — headlines, body */
-  --color-ink-muted:  #4A5568;   /* secondary text */
-  --color-ink-faint:  #8895A7;   /* tertiary / placeholders */
+  /* ── Core palette — warm linen + forest green + amber ── */
+  --color-ink:          #1A1208;   /* near-black warm — headlines */
+  --color-ink-muted:    #5C4A30;   /* secondary text — warm brown */
+  --color-ink-faint:    #9A856A;   /* tertiary / placeholders */
 
-  --color-amber:      #E8A020;   /* primary CTA accent — warm, energetic */
-  --color-amber-dark: #C4820A;   /* hover state */
-  --color-amber-light:#FFF3D4;   /* tinted backgrounds */
+  --color-amber:        #D4882A;   /* primary CTA — deep warm amber */
+  --color-amber-dark:   #B36B12;   /* hover */
+  --color-amber-light:  #FDF4E3;   /* tinted bg */
 
-  --color-navy:       #0F1923;   /* dark sections */
-  --color-navy-mid:   #1C2B3A;   /* dark card surfaces */
+  --color-forest:       #1E3A2F;   /* dark hero / footer — deep forest green */
+  --color-forest-mid:   #2A4D3A;   /* dark card surfaces */
+  --color-forest-light: #E8F0EB;   /* light green tint */
 
-  --color-surface:    #FFFFFF;
-  --color-bg:         #F6F8FA;   /* page background — cool-neutral, not warm beige */
-  --color-bg-alt:     #EDF0F4;   /* alternating section bg */
-  --color-border:     #DDE3EC;
-  --color-border-faint: #EFF2F6;
+  --color-surface:      #FFFDF8;   /* main surface — warm white */
+  --color-bg:           #F7F2EA;   /* page background — linen */
+  --color-bg-alt:       #EDE6D8;   /* alternating section bg */
+  --color-border:       #DDD0BC;
+  --color-border-faint: #EDE6D8;
 
-  /* Shadows — tinted with ink hue */
-  --shadow-sm:  0 1px 3px rgba(15,25,35,0.07), 0 1px 2px rgba(15,25,35,0.04);
-  --shadow-md:  0 4px 16px rgba(15,25,35,0.08), 0 2px 6px rgba(15,25,35,0.05);
-  --shadow-lg:  0 16px 48px rgba(15,25,35,0.12), 0 4px 16px rgba(15,25,35,0.06);
+  /* Shadows — tinted warm */
+  --shadow-sm:  0 1px 3px rgba(26,18,8,0.07), 0 1px 2px rgba(26,18,8,0.04);
+  --shadow-md:  0 4px 20px rgba(26,18,8,0.09), 0 2px 8px rgba(26,18,8,0.05);
+  --shadow-lg:  0 20px 60px rgba(26,18,8,0.13), 0 6px 20px rgba(26,18,8,0.07);
+  --shadow-warm: 0 8px 40px rgba(212,136,42,0.22);
 
   /* Radius */
-  --radius-sm:  8px;
+  --radius-sm:  6px;
   --radius-md:  12px;
   --radius-lg:  20px;
-  --radius-xl:  28px;
+  --radius-xl:  32px;
 
   /* Typography */
   --font-sans: var(--font-jakarta), system-ui, sans-serif;
@@ -42,7 +44,6 @@
   --font-mono: var(--font-mono);
 }
 
-/* Smooth scroll */
 html {
   scroll-behavior: smooth;
 }
@@ -55,7 +56,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Prevent orphaned words in headings */
 h1, h2, h3 {
   text-wrap: balance;
 }
@@ -69,8 +69,85 @@ p {
   transform: scale(0.98) translateY(1px);
 }
 
-/* Hero badge pulse dot */
+/* ── Animations ── */
 @keyframes pulse-dot {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+
+@keyframes float-up {
+  0% { opacity: 0; transform: translateY(24px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-float-up {
+  animation: float-up 0.7s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+.animate-marquee {
+  animation: marquee 28s linear infinite;
+}
+
+/* Stat number entrance */
+.stat-enter {
+  animation: count-up 0.5s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+/* Directional hover fill on buttons */
+.btn-fill {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.btn-fill::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.12);
+  transform: translateX(-101%);
+  transition: transform 0.32s cubic-bezier(0.22,1,0.36,1);
+  z-index: 0;
+}
+.btn-fill:hover::before {
+  transform: translateX(0);
+}
+.btn-fill > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Card hover lift */
+.card-lift {
+  transition: transform 0.25s cubic-bezier(0.22,1,0.36,1), box-shadow 0.25s ease;
+}
+.card-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Underline link */
+.link-underline {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1px;
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  transition: background-size 0.3s ease;
+}
+.link-underline:hover {
+  background-size: 100% 1px;
 }
