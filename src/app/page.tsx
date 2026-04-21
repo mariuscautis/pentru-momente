@@ -102,7 +102,7 @@ const TRUST_SIGNALS = [
   { label: '3 min', sub: 'creare pagină' },
   { label: '30 sec', sub: 'donație, fără cont' },
   { label: '100%', sub: 'direct în contul tău' },
-  { label: '5 min', sub: 'timp mediu de donație' },
+  { label: 'SSL', sub: 'date protejate' },
 ]
 
 const FuneralIcon = EVENT_TYPES[0].Icon
