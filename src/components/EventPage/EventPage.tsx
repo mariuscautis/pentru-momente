@@ -75,9 +75,9 @@ export function EventPage({ event, items, donations, config, totalRaised }: Even
   return (
     <div className="min-h-screen" style={{ backgroundColor: config.palette.background }}>
 
-      {/* ── Hero image with bottom gradient blending into background ── */}
-      {event.coverImageUrl && (
-        <div className="relative w-full" style={{ height: 'clamp(260px, 42vh, 500px)' }}>
+      {/* ── Hero: cover image if set, abstract SVG otherwise ── */}
+      <div className="relative w-full" style={{ height: 'clamp(260px, 42vh, 500px)' }}>
+        {event.coverImageUrl ? (
           <Image
             src={event.coverImageUrl}
             alt={event.name}
@@ -87,23 +87,25 @@ export function EventPage({ event, items, donations, config, totalRaised }: Even
             sizes="100vw"
             quality={90}
           />
-          <div
-            className="absolute inset-0"
-            style={{
-              background: `linear-gradient(
-                to bottom,
-                rgba(0,0,0,0.18) 0%,
-                transparent 35%,
-                ${hexToRgba(config.palette.background, 0.5)} 70%,
-                ${config.palette.background} 100%
-              )`,
-            }}
-          />
-        </div>
-      )}
+        ) : (
+          <AbstractHero primary={config.palette.primary} accent={config.palette.accent} background={config.palette.background} />
+        )}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `linear-gradient(
+              to bottom,
+              rgba(0,0,0,0.08) 0%,
+              transparent 35%,
+              ${hexToRgba(config.palette.background, 0.6)} 72%,
+              ${config.palette.background} 100%
+            )`,
+          }}
+        />
+      </div>
 
       {/* ── Main content — slight negative margin so gradient blends, title stays clear ── */}
-      <main className="mx-auto max-w-6xl px-4 pb-24" style={{ marginTop: event.coverImageUrl ? '1.5rem' : '1.5rem' }}>
+      <main className="mx-auto max-w-6xl px-4 pb-24" style={{ marginTop: '1.5rem' }}>
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 items-start">
 
           {/* ── LEFT COLUMN ── */}
@@ -554,6 +556,69 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
     <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#9A7B60' }}>
       {children}
     </h2>
+  )
+}
+
+function AbstractHero({ primary, accent, background }: { primary: string; accent: string; background: string }) {
+  const p = hexToRgba(primary, 1)
+  const p2 = hexToRgba(primary, 0.5)
+  const p3 = hexToRgba(primary, 0.18)
+  const a = hexToRgba(accent, 0.7)
+  const bg = background
+
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 1200 500"
+      preserveAspectRatio="xMidYMid slice"
+      className="absolute inset-0 w-full h-full"
+      aria-hidden="true"
+    >
+      <defs>
+        <radialGradient id="rg1" cx="25%" cy="40%" r="60%">
+          <stop offset="0%" stopColor={p} stopOpacity="0.22" />
+          <stop offset="100%" stopColor={bg} stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="rg2" cx="80%" cy="60%" r="55%">
+          <stop offset="0%" stopColor={a} stopOpacity="0.18" />
+          <stop offset="100%" stopColor={bg} stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="rg3" cx="55%" cy="20%" r="40%">
+          <stop offset="0%" stopColor={p2} stopOpacity="0.13" />
+          <stop offset="100%" stopColor={bg} stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      {/* Base fill */}
+      <rect width="1200" height="500" fill={bg} />
+
+      {/* Soft blobs */}
+      <rect width="1200" height="500" fill="url(#rg1)" />
+      <rect width="1200" height="500" fill="url(#rg2)" />
+      <rect width="1200" height="500" fill="url(#rg3)" />
+
+      {/* Large arcs */}
+      <ellipse cx="200" cy="520" rx="520" ry="320" fill={p3} opacity="0.5" />
+      <ellipse cx="1050" cy="-40" rx="400" ry="280" fill={hexToRgba(accent, 0.1)} opacity="0.6" />
+
+      {/* Thin arching lines */}
+      <path d="M-60 380 Q300 80 700 260 T1300 180" fill="none" stroke={p} strokeWidth="1" opacity="0.14" />
+      <path d="M-60 420 Q350 140 750 300 T1300 230" fill="none" stroke={p} strokeWidth="0.7" opacity="0.1" />
+      <path d="M100 500 Q500 200 900 350 T1300 280" fill="none" stroke={a} strokeWidth="0.8" opacity="0.1" />
+
+      {/* Small floating circles */}
+      <circle cx="920" cy="110" r="90" fill={p3} opacity="0.45" />
+      <circle cx="1100" cy="320" r="60" fill={hexToRgba(accent, 0.12)} opacity="0.5" />
+      <circle cx="140" cy="160" r="70" fill={p3} opacity="0.35" />
+      <circle cx="600" cy="60" r="44" fill={hexToRgba(primary, 0.08)} opacity="0.6" />
+
+      {/* Dot cluster */}
+      {[
+        [760, 140], [780, 160], [800, 145], [770, 178], [820, 162],
+      ].map(([cx, cy], i) => (
+        <circle key={i} cx={cx} cy={cy} r="3" fill={p} opacity="0.18" />
+      ))}
+    </svg>
   )
 }
 
