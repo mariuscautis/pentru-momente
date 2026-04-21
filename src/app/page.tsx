@@ -861,21 +861,31 @@ export default async function HomePage() {
         className="px-4 sm:px-6 py-7"
         style={{
           backgroundColor: 'var(--color-forest-mid)',
-          borderTop: '1px solid rgba(255,255,255,0.05)',
+          borderTop: '1px solid rgba(255,255,255,0.10)',
         }}
       >
         <div className="mx-auto max-w-5xl flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="font-extrabold tracking-tight text-sm" style={{ color: 'rgba(255,255,255,0.25)' }}>
+          <p className="font-extrabold tracking-tight text-sm" style={{ color: 'rgba(255,255,255,0.90)' }}>
             pentru<span style={{ color: 'var(--color-amber)' }}>momente</span>
           </p>
-          <p className="text-xs text-center" style={{ color: 'rgba(255,255,255,0.18)' }}>
+          <p className="text-xs text-center" style={{ color: 'rgba(255,255,255,0.55)' }}>
             © 2026 pentrumomente.ro · Plăți prin Stripe · Transferuri prin Stripe Connect
           </p>
-          <div className="flex items-center gap-4">
-            <span className="font-bold text-sm tracking-tight" style={{ color: '#635BFF' }}>stripe</span>
-            <div className="flex items-center gap-1">
-              <Lock size={10} strokeWidth={2} style={{ color: '#10B981' }} />
-              <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.20)' }}>SSL</span>
+          <div className="flex items-center gap-3">
+            {/* Stripe badge */}
+            <div
+              className="flex items-center gap-1.5 rounded-md px-2.5 py-1"
+              style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.15)' }}
+            >
+              <span className="font-bold text-xs tracking-tight" style={{ color: '#A89FF5' }}>stripe</span>
+            </div>
+            {/* SSL badge */}
+            <div
+              className="flex items-center gap-1.5 rounded-md px-2.5 py-1"
+              style={{ backgroundColor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.15)' }}
+            >
+              <Lock size={11} strokeWidth={2} style={{ color: '#6EE7B7' }} />
+              <span className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.80)' }}>SSL</span>
             </div>
           </div>
         </div>

@@ -28,7 +28,7 @@ interface DashboardEvent extends Event {
 const EVENT_TYPE_LABELS: Record<string, { label: string; emoji: string }> = {
   inmormantare: { label: 'Înmormântare', emoji: '🕯️' },
   nunta: { label: 'Nuntă', emoji: '💍' },
-  bebe: { label: 'Bebe', emoji: '👶' },
+  bebe: { label: 'Bebe', emoji: '🍼' },
   sanatate: { label: 'Sănătate', emoji: '🌿' },
   altele: { label: 'Altele', emoji: '🌟' },
 }

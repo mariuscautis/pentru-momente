@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Check, Minus, Plus, X } from 'lucide-react'
 import { EventItem, EventTypeConfig } from '@/types'
 import { SelectedItem } from '@/components/DonationFlow/DonationFlow'
 import { IconDisplay } from '@/components/ui/IconPicker'
@@ -17,9 +18,12 @@ export function ItemTracker({ items, config, cart, onCartChange }: ItemTrackerPr
 
   if (items.length === 0) {
     return (
-      <p className="text-sm text-center py-8" style={{ color: '#9A7B60' }}>
-        {config.copy.emptyState}
-      </p>
+      <div
+        className="rounded-2xl px-6 py-10 text-center"
+        style={{ backgroundColor: '#FFFDFB', border: '1px dashed #DDD0C0' }}
+      >
+        <p className="text-sm" style={{ color: '#9A7B60' }}>{config.copy.emptyState}</p>
+      </div>
     )
   }
 
@@ -42,9 +46,9 @@ export function ItemTracker({ items, config, cart, onCartChange }: ItemTrackerPr
   }
 
   return (
-    <ul className="space-y-3" aria-label="Lista articole">
+    <ul className="space-y-2.5" aria-label="Lista articole">
       {items.map((item) => (
-        <ItemRow
+        <ItemCard
           key={item.id}
           item={item}
           config={config}
@@ -59,7 +63,7 @@ export function ItemTracker({ items, config, cart, onCartChange }: ItemTrackerPr
   )
 }
 
-interface ItemRowProps {
+interface ItemCardProps {
   item: EventItem
   config: EventTypeConfig
   cartItem: SelectedItem | undefined
@@ -69,16 +73,15 @@ interface ItemRowProps {
   onRemoveFromCart: () => void
 }
 
-function ItemRow({ item, config, cartItem, expanded, onExpand, onAddToCart, onRemoveFromCart }: ItemRowProps) {
+function ItemCard({ item, config, cartItem, expanded, onExpand, onAddToCart, onRemoveFromCart }: ItemCardProps) {
   const hasTarget = item.targetAmount > 0
   const remaining = hasTarget ? Math.max(0, item.targetAmount - item.raisedAmount) : Infinity
+  const fillPercent = hasTarget ? Math.min(100, Math.round((item.raisedAmount / item.targetAmount) * 100)) : 0
 
-  // Default input: for targeted items pre-fill remaining; for free-choice items start blank
   const defaultInput = hasTarget ? String(remaining) : ''
   const [inputAmount, setInputAmount] = useState(defaultInput)
   const inCart = !!cartItem
 
-  // Presets: targeted items use remaining-based presets; free-choice items use sensible defaults
   const presets = item.isCustomAmount || !hasTarget
     ? [50, 100, 200]
     : remaining <= 50
@@ -94,7 +97,6 @@ function ItemRow({ item, config, cartItem, expanded, onExpand, onAddToCart, onRe
   function handleConfirm() {
     const num = parseFloat(inputAmount)
     if (!isNaN(num) && num >= 1) {
-      // For targeted items, cap at remaining; for free-choice allow any positive
       if (hasTarget && num > remaining) return
       onAddToCart(num)
     }
@@ -104,244 +106,231 @@ function ItemRow({ item, config, cartItem, expanded, onExpand, onAddToCart, onRe
   const isOverTarget = hasTarget && !isNaN(inputNum) && inputNum > remaining
   const isConfirmDisabled = !inputAmount || isNaN(inputNum) || inputNum < 1 || isOverTarget
 
+  const isFullyFunded = item.isFullyFunded && !item.isCustomAmount
+
   return (
     <li
-      className="rounded-2xl overflow-hidden transition-all"
+      className="rounded-2xl overflow-hidden transition-all duration-200"
       style={{
-        border: `1.5px solid ${inCart ? '#C4956A' : '#EDE0D0'}`,
-        backgroundColor: inCart ? '#FFFBF5' : '#FFFDFB',
+        border: `1.5px solid ${inCart ? config.palette.primary : isFullyFunded ? '#C8E6C8' : '#EDE0D0'}`,
+        backgroundColor: inCart ? '#FFFBF5' : isFullyFunded ? '#F6FBF6' : '#FFFDFB',
       }}
     >
-      {/* Main row */}
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-3 flex-1 min-w-0">
-            {/* Icon */}
-            {item.emoji && (
-              <span
-                className="shrink-0 flex items-center justify-center rounded-xl mt-0.5"
-                style={{
-                  width: 36, height: 36,
-                  backgroundColor: '#F5EDE3',
-                  color: config.palette.primary,
-                }}
-              >
-                <IconDisplay iconId={item.emoji} size={18} />
-              </span>
-            )}
+      {/* ── Main row ── */}
+      <div className="flex items-center gap-3 px-4 py-3.5">
 
-            <div className="min-w-0 flex-1">
-              <p className="font-semibold truncate" style={{ color: '#2D2016' }}>{item.name}</p>
-              <p className="text-xs mt-0.5" style={{ color: '#9A7B60' }}>
-                {item.isFullyFunded && !item.isCustomAmount
-                  ? 'Finanțat integral ✓'
-                  : hasTarget
-                  ? `${item.raisedAmount} Lei din ${item.targetAmount} Lei`
-                  : item.isCustomAmount
-                  ? 'Alege suma'
-                  : 'Donație liberă'}
-              </p>
-              {/* Progress bar — only for targeted items that aren't fully funded */}
-              {hasTarget && !item.isCustomAmount && (
-                <div
-                  className="mt-2 rounded-full overflow-hidden"
-                  style={{ height: 5, backgroundColor: '#F0E8DC' }}
-                >
-                  <div
-                    className="h-full rounded-full transition-all"
-                    style={{
-                      width: `${Math.min(100, Math.round((item.raisedAmount / item.targetAmount) * 100))}%`,
-                      backgroundColor: item.isFullyFunded ? '#22c55e' : '#C4956A',
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-
-          {item.isFullyFunded && !item.isCustomAmount ? (
-            <span
-              className="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium"
-              style={{ backgroundColor: '#F0FFF4', color: '#166534' }}
-            >
-              Complet
+        {/* Icon bubble */}
+        {item.emoji ? (
+          <span
+            className="shrink-0 flex items-center justify-center rounded-xl"
+            style={{
+              width: 40,
+              height: 40,
+              backgroundColor: isFullyFunded ? '#D4EDDA' : '#F5EDE3',
+              color: isFullyFunded ? '#2D7A3A' : config.palette.primary,
+            }}
+          >
+            <IconDisplay iconId={item.emoji} size={20} />
+          </span>
+        ) : (
+          <span
+            className="shrink-0 flex items-center justify-center rounded-xl"
+            style={{ width: 40, height: 40, backgroundColor: '#F5EDE3' }}
+          >
+            <span className="text-sm font-bold" style={{ color: config.palette.primary }}>
+              {item.name.charAt(0)}
             </span>
-          ) : inCart ? (
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="text-sm font-semibold" style={{ color: '#C4956A' }}>
-                {cartItem!.amount} Lei ✓
-              </span>
-              <button
-                onClick={onRemoveFromCart}
-                className="text-xs px-2 py-1 rounded-lg transition-colors"
-                style={{ color: '#9A7B60', border: '1px solid #EDE0D0' }}
+          </span>
+        )}
+
+        {/* Text */}
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-sm truncate" style={{ color: '#1C1209' }}>{item.name}</p>
+
+          {hasTarget && !item.isCustomAmount ? (
+            <div className="mt-1.5 space-y-1">
+              {/* Progress bar */}
+              <div
+                className="h-1.5 rounded-full overflow-hidden"
+                style={{ backgroundColor: '#F0E8DC' }}
               >
-                Elimină
-              </button>
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${fillPercent}%`,
+                    backgroundColor: isFullyFunded ? '#3DAB50' : config.palette.primary,
+                  }}
+                />
+              </div>
+              <p className="text-xs tabular-nums" style={{ color: '#9A7B60' }}>
+                {isFullyFunded
+                  ? 'Finanțat integral'
+                  : `${item.raisedAmount.toLocaleString('ro-RO')} din ${item.targetAmount.toLocaleString('ro-RO')} Lei`}
+              </p>
             </div>
           ) : (
-            <button
-              onClick={onExpand}
-              className="shrink-0 rounded-xl px-4 py-1.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-              style={{ backgroundColor: config.palette.primary }}
-            >
-              {expanded ? 'Închide' : config.copy.donationVerb}
-            </button>
+            <p className="text-xs mt-0.5" style={{ color: '#9A7B60' }}>
+              {item.isCustomAmount ? 'Alege suma' : 'Donație liberă'}
+            </p>
           )}
         </div>
 
+        {/* Right action */}
+        {isFullyFunded ? (
+          <span
+            className="shrink-0 flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold"
+            style={{ backgroundColor: '#D4EDDA', color: '#1E6B2B' }}
+          >
+            <Check size={11} strokeWidth={2.5} />
+            Complet
+          </span>
+        ) : inCart ? (
+          <div className="flex items-center gap-2 shrink-0">
+            <span
+              className="text-sm font-bold tabular-nums rounded-full px-3 py-1"
+              style={{ backgroundColor: hexToRgba(config.palette.primary, 0.12), color: config.palette.primary }}
+            >
+              {cartItem!.amount.toLocaleString('ro-RO')} Lei
+            </span>
+            <button
+              onClick={onRemoveFromCart}
+              className="flex items-center justify-center w-7 h-7 rounded-full transition-all duration-150 hover:bg-red-50 hover:scale-110 active:scale-95"
+              style={{ border: '1.5px solid #EDE0D0', color: '#9A7B60' }}
+              aria-label="Elimină din coș"
+            >
+              <X size={12} strokeWidth={2.5} />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={onExpand}
+            className="btn-fill shrink-0 flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold text-white transition-all duration-150 active:scale-[0.97]"
+            style={{
+              backgroundColor: config.palette.primary,
+              boxShadow: `0 2px 12px ${hexToRgba(config.palette.primary, 0.25)}`,
+            }}
+          >
+            {expanded ? (
+              <>
+                <Minus size={12} strokeWidth={2.5} />
+                Închide
+              </>
+            ) : (
+              <>
+                <Plus size={12} strokeWidth={2.5} />
+                {config.copy.donationVerb}
+              </>
+            )}
+          </button>
+        )}
       </div>
 
-      {/* Expanded amount picker — animated */}
+      {/* ── Expanded amount picker ── */}
       <div
         style={{
           display: 'grid',
-          gridTemplateRows: expanded && !(item.isFullyFunded && !item.isCustomAmount) ? '1fr' : '0fr',
-          transition: 'grid-template-rows 280ms ease',
+          gridTemplateRows: expanded && !isFullyFunded ? '1fr' : '0fr',
+          transition: 'grid-template-rows 260ms cubic-bezier(0.16,1,0.3,1)',
         }}
       >
         <div style={{ overflow: 'hidden' }}>
-        <div className="px-4 pb-4 pt-1 space-y-3" style={{ borderTop: '1px solid #F0E8DC' }}>
+          <div
+            className="px-4 pb-4 pt-3 space-y-3"
+            style={{ borderTop: '1px solid #F0E8DC' }}
+          >
+            {/* Context line */}
+            <p className="text-xs" style={{ color: '#7A6652' }}>
+              {hasTarget && !item.isCustomAmount
+                ? <>Mai sunt necesari <strong className="font-semibold">{remaining.toLocaleString('ro-RO')} Lei</strong> — poți contribui orice sumă.</>
+                : 'Cât vrei să contribui?'}
+            </p>
 
-          {/* Partial donation picker — for targeted items show remaining cap */}
-          {hasTarget && !item.isCustomAmount ? (
-            <>
-              <p className="text-xs font-medium" style={{ color: '#7A6652' }}>
-                Mai sunt necesari <strong>{remaining} Lei</strong> din {item.targetAmount} Lei. Poți contribui orice sumă.
-              </p>
-
-              {/* Presets */}
-              <div className="flex gap-2 flex-wrap">
-                {presets.map((p) => (
+            {/* Preset chips */}
+            <div className="flex flex-wrap gap-2">
+              {presets.map((p) => {
+                const active = inputAmount === String(p)
+                return (
                   <button
                     key={p}
                     type="button"
                     onClick={() => handlePreset(p)}
-                    className="rounded-xl px-4 py-2 text-sm font-semibold transition-colors"
+                    className="rounded-xl px-4 py-1.5 text-sm font-semibold transition-all duration-150 hover:brightness-95 active:scale-[0.97]"
                     style={
-                      inputAmount === String(p)
-                        ? { backgroundColor: '#C4956A', color: '#fff' }
+                      active
+                        ? { backgroundColor: config.palette.primary, color: '#fff' }
                         : { backgroundColor: '#F5EDE3', color: '#7A6652' }
                     }
                   >
-                    {`${p} Lei`}
+                    {p.toLocaleString('ro-RO')} Lei
                   </button>
-                ))}
-              </div>
+                )
+              })}
+            </div>
 
-              {/* Custom input */}
-              <div className="relative">
-                <input
-                  type="number"
-                  min={1}
-                  max={remaining}
-                  value={inputAmount}
-                  onChange={(e) => setInputAmount(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === '-') e.preventDefault() }}
-                  placeholder="Altă sumă"
-                  className="w-full rounded-xl px-3 py-2.5 text-sm outline-none pr-14"
-                  style={{ border: '1px solid #E0D0C0', color: '#2D2016', backgroundColor: '#FDFAF7' }}
-                  onFocus={(e) => (e.target.style.borderColor = '#C4956A')}
-                  onBlur={(e) => (e.target.style.borderColor = '#E0D0C0')}
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: '#9A7B60' }}>
-                  Lei
-                </span>
-              </div>
-              {isOverTarget && (
-                <p className="text-xs" style={{ color: '#DC2626' }}>
-                  Suma maximă disponibilă pentru acest articol este {remaining} Lei.
-                </p>
-              )}
+            {/* Custom amount input */}
+            <div className="relative">
+              <input
+                type="number"
+                min={1}
+                max={hasTarget && !item.isCustomAmount ? remaining : undefined}
+                value={inputAmount}
+                onChange={(e) => setInputAmount(e.target.value)}
+                onKeyDown={(e) => { if (e.key === '-') e.preventDefault() }}
+                placeholder="Altă sumă"
+                className="w-full rounded-xl px-4 py-2.5 text-sm outline-none pr-14 transition-colors"
+                style={{
+                  border: `1.5px solid ${isOverTarget ? '#DC2626' : '#E0D0C0'}`,
+                  color: '#2D2016',
+                  backgroundColor: '#FDFAF7',
+                }}
+                onFocus={(e) => (e.target.style.borderColor = isOverTarget ? '#DC2626' : config.palette.primary)}
+                onBlur={(e) => (e.target.style.borderColor = isOverTarget ? '#DC2626' : '#E0D0C0')}
+              />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-medium" style={{ color: '#9A7B60' }}>
+                Lei
+              </span>
+            </div>
+            {isOverTarget && (
+              <p className="text-xs font-medium" style={{ color: '#DC2626' }}>
+                Suma maximă disponibilă este {remaining.toLocaleString('ro-RO')} Lei.
+              </p>
+            )}
 
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={handleConfirm}
-                  disabled={isConfirmDisabled}
-                  className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white transition-opacity"
-                  style={{ backgroundColor: '#C4956A', opacity: isConfirmDisabled ? 0.5 : 1 }}
-                >
-                  Adaugă în coș
-                </button>
-                <button
-                  type="button"
-                  onClick={onExpand}
-                  className="rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
-                  style={{ border: '1px solid #EDE0D0', color: '#7A6652' }}
-                >
-                  Anulează
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-          <p className="text-xs font-medium" style={{ color: '#7A6652' }}>
-            Cât vrei să contribui?
-          </p>
-
-          {/* Preset buttons */}
-          <div className="flex gap-2 flex-wrap">
-            {presets.map((p) => (
+            {/* Actions */}
+            <div className="flex gap-2 pt-0.5">
               <button
-                key={p}
                 type="button"
-                onClick={() => handlePreset(p)}
-                className="rounded-xl px-4 py-2 text-sm font-semibold transition-colors"
-                style={
-                  inputAmount === String(p)
-                    ? { backgroundColor: '#C4956A', color: '#fff' }
-                    : { backgroundColor: '#F5EDE3', color: '#7A6652' }
-                }
+                onClick={handleConfirm}
+                disabled={isConfirmDisabled}
+                className="btn-fill flex-1 rounded-xl py-2.5 text-sm font-semibold text-white transition-all duration-150 active:scale-[0.98]"
+                style={{
+                  backgroundColor: config.palette.primary,
+                  opacity: isConfirmDisabled ? 0.45 : 1,
+                  boxShadow: isConfirmDisabled ? 'none' : `0 3px 14px ${hexToRgba(config.palette.primary, 0.3)}`,
+                }}
               >
-                {`${p} Lei`}
+                Adaugă în coș
               </button>
-            ))}
+              <button
+                type="button"
+                onClick={onExpand}
+                className="rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-150 hover:brightness-95 active:scale-[0.97]"
+                style={{ border: '1.5px solid #EDE0D0', color: '#7A6652' }}
+              >
+                Anulează
+              </button>
+            </div>
           </div>
-
-          {/* Custom input */}
-          <div className="relative">
-            <input
-              type="number"
-              min={1}
-              value={inputAmount}
-              onChange={(e) => setInputAmount(e.target.value)}
-              onKeyDown={(e) => { if (e.key === '-') e.preventDefault() }}
-              placeholder="Altă sumă"
-              className="w-full rounded-xl px-3 py-2.5 text-sm outline-none pr-14"
-              style={{ border: '1px solid #E0D0C0', color: '#2D2016', backgroundColor: '#FDFAF7' }}
-              onFocus={(e) => (e.target.style.borderColor = '#C4956A')}
-              onBlur={(e) => (e.target.style.borderColor = '#E0D0C0')}
-            />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: '#9A7B60' }}>
-              Lei
-            </span>
-          </div>
-
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={handleConfirm}
-              disabled={isConfirmDisabled}
-              className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white transition-opacity"
-              style={{ backgroundColor: '#C4956A', opacity: isConfirmDisabled ? 0.5 : 1 }}
-            >
-              Adaugă în coș
-            </button>
-            <button
-              type="button"
-              onClick={onExpand}
-              className="rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
-              style={{ border: '1px solid #EDE0D0', color: '#7A6652' }}
-            >
-              Anulează
-            </button>
-          </div>
-          </>
-          )}
-        </div>
         </div>
       </div>
     </li>
   )
+}
+
+function hexToRgba(hex: string, alpha: number): string {
+  const clean = hex.replace('#', '')
+  const r = parseInt(clean.slice(0, 2), 16)
+  const g = parseInt(clean.slice(2, 4), 16)
+  const b = parseInt(clean.slice(4, 6), 16)
+  return `rgba(${r},${g},${b},${alpha})`
 }

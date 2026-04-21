@@ -9,7 +9,7 @@ export const babyConfig: EventTypeConfig = {
     background: '#F0F8FF',
   },
   copy: {
-    pageTitle: 'Bun venit, {name}! 👶',
+    pageTitle: 'Bun venit, {name}!',
     donationVerb: 'Dăruiește',
     thankYouMessage: 'Mulțumim pentru cadoul minunat! {name} va fi răsfățat datorită ție.',
     emptyState: 'Fii primul care îi urează bun venit micuțului.',
