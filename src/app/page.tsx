@@ -99,10 +99,10 @@ const EVENT_TYPES = [
 ]
 
 const TRUST_SIGNALS = [
-  { label: '0% comision', sub: 'din donații' },
   { label: '3 min', sub: 'creare pagină' },
   { label: '30 sec', sub: 'donație, fără cont' },
   { label: '100%', sub: 'direct în contul tău' },
+  { label: '5 min', sub: 'timp mediu de donație' },
 ]
 
 const FuneralIcon = EVENT_TYPES[0].Icon
@@ -236,7 +236,7 @@ export default async function HomePage() {
               {/* Mini trust row */}
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
                 {[
-                  { icon: <Check size={12} strokeWidth={3} />, t: 'Fără comision' },
+                  { icon: <Check size={12} strokeWidth={3} />, t: 'Transparent la fiecare pas' },
                   { icon: <Lock size={12} strokeWidth={2.5} />, t: 'Stripe & SSL' },
                   { icon: <ShieldCheck size={12} strokeWidth={2} />, t: 'GDPR compliant' },
                 ].map(({ icon, t }) => (
@@ -339,8 +339,8 @@ export default async function HomePage() {
           {[...Array(2)].map((_, repeat) => (
             <div key={repeat} className="inline-flex items-center gap-0">
               {[
-                '0% comision din donații',
-                'Stripe Connect — plăți sigure',
+                'Plăți securizate Stripe',
+                'Transparent la fiecare pas',
                 'Pagina ta în 3 minute',
                 'Donare în 30 de secunde',
                 'Fără cont pentru donatori',
