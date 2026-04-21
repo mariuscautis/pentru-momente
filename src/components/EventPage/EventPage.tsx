@@ -235,7 +235,7 @@ export function EventPage({ event, items, donations, config, totalRaised }: Even
 
             {/* Donor wall — mobile only */}
             {config.showDonorWall && hasAnyDonors && (
-              <div id="donors" className="lg:hidden">
+              <div id="donors" className="lg:hidden space-y-3">
                 <SectionLabel>{config.donorWallLabel}</SectionLabel>
                 <DonorWall donations={donations} config={config} />
               </div>
