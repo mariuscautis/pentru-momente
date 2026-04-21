@@ -356,7 +356,7 @@ function FirstDonorNudge({
           Fii primul care donează pentru {name}
         </p>
         <p className="text-sm leading-relaxed max-w-[40ch] mx-auto" style={{ color: '#7A6652' }}>
-          Gestul tău poate inspira și pe alții să contribuie. Fiecare donație contează.
+          Fii primul care arată că îi pasă.
         </p>
       </div>
       <button
