@@ -261,12 +261,13 @@ export default function DashboardPage() {
         )}
 
         {/* Event cards */}
-        <div className="space-y-6">
-          {events.map((event) => (
+        <div className="space-y-3">
+          {events.map((event, index) => (
             <EventCard
               key={event.id}
               event={event}
               accessToken={accessToken}
+              defaultExpanded={index === 0}
               uploadingCover={uploadingFor === event.id}
               onUploadCover={(file) => uploadCover(event.id, file)}
               onEventUpdated={load}
@@ -333,6 +334,7 @@ interface LocalItem extends EventItem {
 interface EventCardProps {
   event: DashboardEvent
   accessToken: string
+  defaultExpanded: boolean
   uploadingCover: boolean
   onUploadCover: (file: File) => void
   onEventUpdated: () => void
@@ -346,11 +348,12 @@ interface EventCardProps {
 }
 
 function EventCard({
-  event, accessToken, uploadingCover, onUploadCover, onEventUpdated,
+  event, accessToken, defaultExpanded, uploadingCover, onUploadCover, onEventUpdated,
   confirmingDelete, deletingEvent, onDeleteRequest, onDeleteConfirm, onDeleteCancel,
   togglingActive, onToggleActive,
 }: EventCardProps) {
   const fileRef = useRef<HTMLInputElement>(null)
+  const [expanded, setExpanded] = useState(defaultExpanded)
   const [coverUrl, setCoverUrl] = useState(event.coverImageUrl ?? null)
   const [editing, setEditing] = useState(false)
   const [editName, setEditName] = useState(event.name)
@@ -503,6 +506,47 @@ function EventCard({
       className="rounded-2xl overflow-hidden"
       style={{ backgroundColor: '#FFFDFB', border: '1px solid #EDE0D0' }}
     >
+      {/* ── Collapsed header — always visible, click to expand/collapse ── */}
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors hover:brightness-95"
+        style={{ backgroundColor: expanded ? '#FFF8F2' : '#FFFDFB', borderBottom: expanded ? '1px solid #EDE0D0' : 'none' }}
+      >
+        <span className="text-xl shrink-0">{meta.emoji}</span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-bold truncate" style={{ color: '#2D2016' }}>{event.name}</span>
+            <span
+              className="text-xs px-2 py-0.5 rounded-full font-medium shrink-0"
+              style={
+                isExpired
+                  ? { backgroundColor: '#FEF2F2', color: '#B91C1C' }
+                  : event.isActive
+                  ? { backgroundColor: '#F0FFF4', color: '#166534' }
+                  : { backgroundColor: '#F5F5F5', color: '#6B7280' }
+              }
+            >
+              {isExpired ? 'Expirat' : event.isActive ? 'Activ' : 'Inactiv'}
+            </span>
+          </div>
+          <p className="text-xs mt-0.5" style={{ color: '#9A7B60' }}>
+            {event.totalRaised > 0 ? `${event.totalRaised.toLocaleString('ro-RO')} RON strânși` : meta.label}
+          </p>
+        </div>
+        <svg
+          width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+          className="shrink-0 transition-transform duration-200"
+          style={{ color: '#9A7B60', transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+
+      {/* ── Expanded body ── */}
+      {expanded && (
+        <>
       {/* Cover image area */}
       <div
         className="relative w-full group"
@@ -518,7 +562,7 @@ function EventCard({
           </div>
         )}
 
-        {/* Hover overlay — button sits on top of everything including the Image */}
+        {/* Hover overlay */}
         <button
           type="button"
           className="absolute inset-0 w-full flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
@@ -551,33 +595,8 @@ function EventCard({
       {/* Card body */}
       <div className="p-6 space-y-5">
 
-        {/* Title row */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2 mb-1">
-              <span className="text-base">{meta.emoji}</span>
-              <span className="text-xs font-medium" style={{ color: '#9A7B60' }}>{meta.label}</span>
-              <span
-                className="text-xs px-2 py-0.5 rounded-full font-medium"
-                style={
-                  isExpired
-                    ? { backgroundColor: '#FEF2F2', color: '#B91C1C' }
-                    : event.isActive
-                    ? { backgroundColor: '#F0FFF4', color: '#166534' }
-                    : { backgroundColor: '#F5F5F5', color: '#6B7280' }
-                }
-              >
-                {isExpired ? 'Expirat' : event.isActive ? 'Activ' : 'Inactiv'}
-              </span>
-              {event.expiresAt && !isExpired && (
-                <span className="text-xs" style={{ color: '#B09070' }}>
-                  Expiră {new Date(event.expiresAt).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' })}
-                </span>
-              )}
-            </div>
-            <h2 className="text-lg font-bold" style={{ color: '#2D2016' }}>{event.name}</h2>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
+        {/* Action buttons row */}
+        <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={editing ? cancelEdit : openEdit}
               className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
@@ -616,7 +635,6 @@ function EventCard({
               🗑
             </button>
           </div>
-        </div>
 
         {/* Delete confirmation */}
         {confirmingDelete && (
@@ -1018,6 +1036,8 @@ function EventCard({
         </div>
 
       </div>
+        </>
+      )}
     </article>
   )
 }
