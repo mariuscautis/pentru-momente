@@ -294,9 +294,9 @@ export default async function HomePage() {
                   <ShieldCheck size={16} strokeWidth={2} style={{ color: '#F0B860' }} />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-white mb-0.5">Banii merg direct la tine</p>
+                  <p className="text-sm font-bold text-white mb-0.5">Creat pentru momentele care contează</p>
                   <p className="text-xs leading-relaxed" style={{ color: '#6A8070' }}>
-                    Plăți prin Stripe Connect — platforma nu atinge niciodată fondurile donatorilor.
+                    Fie că e o nuntă, un botez sau un moment dificil — platforma se adaptează la povestea ta.
                   </p>
                 </div>
               </div>
