@@ -198,7 +198,7 @@ export default async function HomePage() {
                 </h1>
                 <p
                   className="leading-relaxed max-w-[46ch]"
-                  style={{ color: '#9DB0A0', fontSize: 'clamp(1rem, 1.6vw, 1.125rem)' }}
+                  style={{ color: '#C4D4CB', fontSize: 'clamp(1rem, 1.6vw, 1.125rem)' }}
                 >
                   Creează o pagină de donații în 3 minute. Distribui link-ul.
                   Banii ajung direct în contul tău bancar — simplu, sigur și transparent.
@@ -242,7 +242,7 @@ export default async function HomePage() {
                 ].map(({ icon, t }) => (
                   <div key={t} className="flex items-center gap-1.5">
                     <span style={{ color: 'var(--color-amber)' }}>{icon}</span>
-                    <span className="text-xs font-medium" style={{ color: '#6A8070' }}>{t}</span>
+                    <span className="text-xs font-medium" style={{ color: '#A8BFB4' }}>{t}</span>
                   </div>
                 ))}
               </div>
@@ -261,7 +261,7 @@ export default async function HomePage() {
                   WebkitBackdropFilter: 'blur(16px)',
                 }}
               >
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] mb-5" style={{ color: '#6A8070' }}>
+                <p className="text-[11px] font-bold uppercase tracking-[0.14em] mb-5" style={{ color: '#A8BFB4' }}>
                   Platforma în cifre
                 </p>
                 <div className="grid grid-cols-2 gap-6">
@@ -273,7 +273,7 @@ export default async function HomePage() {
                       >
                         {label}
                       </p>
-                      <p className="text-xs" style={{ color: '#5A7060' }}>{sub}</p>
+                      <p className="text-xs" style={{ color: '#A8BFB4' }}>{sub}</p>
                     </div>
                   ))}
                 </div>
@@ -295,7 +295,7 @@ export default async function HomePage() {
                 </div>
                 <div>
                   <p className="text-sm font-bold text-white mb-0.5">Creat pentru momentele care contează</p>
-                  <p className="text-xs leading-relaxed" style={{ color: '#6A8070' }}>
+                  <p className="text-xs leading-relaxed" style={{ color: '#A8BFB4' }}>
                     Fie că e o nuntă, un botez sau un moment dificil — platforma se adaptează la povestea ta.
                   </p>
                 </div>
@@ -820,7 +820,7 @@ export default async function HomePage() {
                 {['Gratuit', 'Fără card solicitat', 'Pornești în 3 minute'].map(t => (
                   <div key={t} className="flex items-center gap-1.5">
                     <Check size={12} strokeWidth={3} style={{ color: 'var(--color-amber)' }} />
-                    <span className="text-xs font-medium" style={{ color: '#6A8070' }}>{t}</span>
+                    <span className="text-xs font-medium" style={{ color: '#A8BFB4' }}>{t}</span>
                   </div>
                 ))}
               </div>
