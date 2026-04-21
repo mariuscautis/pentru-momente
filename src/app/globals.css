@@ -68,3 +68,9 @@ p {
 .btn-press:active {
   transform: scale(0.98) translateY(1px);
 }
+
+/* Hero badge pulse dot */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}

@@ -656,13 +656,6 @@ export default async function HomePage() {
         </div>
       )}
 
-      <style jsx>{`
-        @keyframes pulse-dot {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.4; }
-        }
-      `}</style>
-
     </div>
   )
 }
