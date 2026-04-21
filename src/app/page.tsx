@@ -717,7 +717,7 @@ export default async function HomePage() {
                 {
                   icon: <Check size={18} strokeWidth={2.5} />,
                   title: 'Transparent de la primul leu',
-                  body: 'Comisioanele sunt afișate clar înainte de orice plată. Nicio taxă ascunsă, nicio surpriză după confirmare.',
+                  body: 'Toate comisioanele sunt publicate pe pagina de tarife. Nicio taxă ascunsă, nicio surpriză după confirmare.',
                 },
                 {
                   icon: <Users size={18} strokeWidth={1.75} />,
