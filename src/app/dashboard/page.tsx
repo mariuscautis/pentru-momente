@@ -58,6 +58,7 @@ export default function DashboardPage() {
       .from('events')
       .select('*')
       .eq('organiser_id', session.user.id)
+      .neq('is_deleted', true)
       .order('created_at', { ascending: false })
 
     if (!eventsData) { setLoading(false); return }
