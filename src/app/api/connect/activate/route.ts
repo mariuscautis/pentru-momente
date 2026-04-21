@@ -53,7 +53,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // Check directly with Stripe
   try {
     const account = await getStripe().accounts.retrieve(accountId)
-    if (account.details_submitted) {
+    // charges_enabled is only true once Stripe has verified the account
+    // and enabled the transfers capability — safe to accept payments at this point.
+    if (account.charges_enabled) {
       await supabaseAdmin
         .from('events')
         .update({ connect_onboarding_complete: true, is_active: true })

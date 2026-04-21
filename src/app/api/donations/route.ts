@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
+import Stripe from 'stripe'
 import { calculateCommission } from '@/lib/payments/stripe'
 import { createPaymentIntent } from '@/lib/connect/createPaymentIntent'
 import { createDonation } from '@/lib/db/donations'
 import { getEventBySlug } from '@/lib/db/events'
 import { isValidEventType } from '@/config/event-types'
 import { ApiError } from '@/types'
+
+function getStripe() {
+  return new Stripe(process.env.STRIPE_SECRET_KEY!)
+}
 
 interface SelectedItem {
   itemId: string
@@ -65,6 +70,23 @@ async function handlePost(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json<ApiError>(
       { error: 'Pagina nu este încă activată pentru donații.' },
       { status: 400 }
+    )
+  }
+
+  // Verify the Connect account actually has transfers enabled before charging.
+  // charges_enabled is false until Stripe completes identity/capability verification.
+  try {
+    const account = await getStripe().accounts.retrieve(event.stripeConnectAccountId)
+    if (!account.charges_enabled) {
+      return NextResponse.json<ApiError>(
+        { error: 'Contul organizatorului nu este încă verificat de Stripe. Reîncearcă în câteva minute.' },
+        { status: 400 }
+      )
+    }
+  } catch {
+    return NextResponse.json<ApiError>(
+      { error: 'Nu s-a putut verifica contul de plăți al organizatorului.' },
+      { status: 500 }
     )
   }
 

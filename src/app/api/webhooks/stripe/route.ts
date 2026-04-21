@@ -183,10 +183,10 @@ async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent): Prom
 }
 
 async function handleAccountUpdated(account: Stripe.Account): Promise<void> {
-  // Activate as soon as the organiser has submitted their details.
-  // charges_enabled may lag in test mode and for accounts under review —
-  // we trust details_submitted as the signal that onboarding is done.
-  if (!account.details_submitted) return
+  // Only activate when Stripe has verified the account and enabled charges.
+  // charges_enabled requires both card_payments and transfers capabilities to
+  // be active — this is the correct signal that destination charges will succeed.
+  if (!account.charges_enabled) return
 
   await supabaseAdmin
     .from('events')
