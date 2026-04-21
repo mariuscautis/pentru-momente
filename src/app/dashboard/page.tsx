@@ -353,7 +353,39 @@ function EventCard({
   togglingActive, onToggleActive,
 }: EventCardProps) {
   const fileRef = useRef<HTMLInputElement>(null)
+  const bodyRef = useRef<HTMLDivElement>(null)
   const [expanded, setExpanded] = useState(defaultExpanded)
+  const [maxHeight, setMaxHeight] = useState(defaultExpanded ? 'none' : '0px')
+  const [overflow, setOverflow] = useState<'hidden' | 'visible'>(defaultExpanded ? 'visible' : 'hidden')
+
+  function toggleExpanded() {
+    if (expanded) {
+      // Collapse: snap to current height first, then animate to 0
+      const el = bodyRef.current
+      if (el) {
+        setMaxHeight(`${el.scrollHeight}px`)
+        setOverflow('hidden')
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => setMaxHeight('0px'))
+        })
+      }
+      setExpanded(false)
+    } else {
+      // Expand: animate from 0 to scrollHeight, then release to 'none'
+      const el = bodyRef.current
+      if (el) {
+        setOverflow('hidden')
+        setMaxHeight(`${el.scrollHeight}px`)
+        const onEnd = () => {
+          setMaxHeight('none')
+          setOverflow('visible')
+          el.removeEventListener('transitionend', onEnd)
+        }
+        el.addEventListener('transitionend', onEnd)
+      }
+      setExpanded(true)
+    }
+  }
   const [coverUrl, setCoverUrl] = useState(event.coverImageUrl ?? null)
   const [editing, setEditing] = useState(false)
   const [editName, setEditName] = useState(event.name)
@@ -509,7 +541,7 @@ function EventCard({
       {/* ── Collapsed header — always visible, click to expand/collapse ── */}
       <button
         type="button"
-        onClick={() => setExpanded((v) => !v)}
+        onClick={toggleExpanded}
         className="w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors hover:brightness-95"
         style={{ backgroundColor: expanded ? '#FFF8F2' : '#FFFDFB', borderBottom: expanded ? '1px solid #EDE0D0' : 'none' }}
       >
@@ -545,8 +577,14 @@ function EventCard({
       </button>
 
       {/* ── Expanded body ── */}
-      {expanded && (
-        <>
+      <div
+        ref={bodyRef}
+        style={{
+          maxHeight,
+          overflow,
+          transition: 'max-height 320ms cubic-bezier(0.4, 0, 0.2, 1)',
+        }}
+      >
       {/* Cover image area */}
       <div
         className="relative w-full group"
@@ -1036,8 +1074,8 @@ function EventCard({
         </div>
 
       </div>
-        </>
-      )}
+      {/* ── end animated body wrapper ── */}
+      </div>
     </article>
   )
 }
