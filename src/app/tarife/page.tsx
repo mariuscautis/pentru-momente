@@ -59,7 +59,7 @@ export default function TarifePage() {
                 1,25 Lei
               </p>
               <p className="mt-4 text-sm leading-relaxed" style={{ color: 'var(--color-ink-muted)' }}>
-                Carduri emise în UE, SEE sau Marea Britanie.
+                Carduri emise în UE sau SEE (Austria, Germania, România etc.).
               </p>
             </div>
             <div
@@ -78,7 +78,7 @@ export default function TarifePage() {
                 1,25 Lei
               </p>
               <p className="mt-4 text-sm leading-relaxed" style={{ color: 'var(--color-ink-muted)' }}>
-                Carduri emise în afara UE/SEE (SUA, Canada, etc.).
+                Carduri emise în afara UE/SEE (Marea Britanie, SUA, Canada etc.).
               </p>
             </div>
           </div>
@@ -160,7 +160,7 @@ export default function TarifePage() {
               </table>
             </div>
             <p className="text-xs" style={{ color: 'var(--color-ink-muted)' }}>
-              🇪🇺 Card european = UE, SEE, Marea Britanie &nbsp;·&nbsp; 🌍 Card non-european = SUA, Canada, și altele.
+              🇪🇺 Card european = UE, SEE &nbsp;·&nbsp; 🌍 Card non-european = Marea Britanie, SUA, Canada, și altele.
               Suma plătită de donator nu se modifică — comisionul mai mare pentru carduri non-UE acoperă exclusiv
               costul suplimentar de procesare Stripe și un 1% pentru platformă.
             </p>

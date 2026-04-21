@@ -19,13 +19,12 @@ export const stripe = new Proxy({} as Stripe, {
 })
 
 // EU/EEA country codes — Stripe uses ISO 3166-1 alpha-2
+// UK is NOT included — post-Brexit it attracts non-EU Stripe processing rates
 export const EU_COUNTRY_CODES = new Set([
   'AT','BE','BG','CY','CZ','DE','DK','EE','ES','FI','FR','GR','HR','HU',
   'IE','IT','LT','LU','LV','MT','NL','PL','PT','RO','SE','SI','SK',
   // EEA (same Stripe card fee tier as EU)
   'IS','LI','NO',
-  // UK still uses EU domestic rates via Stripe
-  'GB',
 ])
 
 export function isEuCard(countryCode: string): boolean {

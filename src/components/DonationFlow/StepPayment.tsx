@@ -138,8 +138,6 @@ function CheckoutForm({ config, state, onBack, onSuccess }: CheckoutFormProps) {
 
   const donationAmount = totalDonationAmount(state)
   const grandTotal = donationAmount + state.tipAmount
-  const organiserReceives = Math.round((donationAmount - state.stripeFee) * 100) / 100
-  const regionLabel = state.cardRegion === 'non-eu' ? '🌍 Card non-european' : '🇪🇺 Card european'
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -176,23 +174,12 @@ function CheckoutForm({ config, state, onBack, onSuccess }: CheckoutFormProps) {
             <span className="font-medium">{state.tipAmount} RON</span>
           </div>
         )}
-        <div className="flex justify-between text-sm" style={{ color: '#7A6652' }}>
-          <span className="flex items-center gap-1.5">
-            <span className="text-xs" style={{ color: '#9A7B60' }}>{regionLabel}</span>
-            <span>· Comision procesare</span>
-          </span>
-          <span className="font-medium">−{state.stripeFee.toFixed(2)} RON</span>
-        </div>
         <div
           className="flex justify-between text-sm font-bold pt-2"
           style={{ borderTop: '1px solid #EDE0D0', color: '#2D2016' }}
         >
           <span>Total de plătit</span>
           <span>{grandTotal} RON</span>
-        </div>
-        <div className="flex justify-between text-xs pt-1" style={{ color: '#9A7B60' }}>
-          <span>Familia primește</span>
-          <span className="font-semibold" style={{ color: '#166534' }}>{organiserReceives.toFixed(2)} RON</span>
         </div>
         <p className="text-xs pt-1" style={{ color: '#B09070' }}>
           Gestul tău contează mai mult decât orice sumă. Mulțumim că ești alături de ei.
