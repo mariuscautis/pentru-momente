@@ -37,7 +37,7 @@ const FAQ = [
   },
   {
     question: 'Ce se întâmplă dacă vreau să închid o pagină?',
-    answer: 'Poți dezactiva pagina oricând din dashboard. Odată dezactivată, donatorii vor vedea un mesaj că strângerea de fonduri s-a încheiat, iar link-ul nu va mai fi activ pentru donații noi.',
+    answer: 'Poți dezactiva pagina oricând din dashboard. Odată dezactivată, donatorii vor vedea un mesaj că strângerea de fonduri s-a încheiat.',
   },
   {
     question: 'Datele mele bancare sunt în siguranță?',
@@ -45,7 +45,7 @@ const FAQ = [
   },
   {
     question: 'Pot adăuga o imagine sau o descriere pe pagina mea?',
-    answer: 'Da. Poți adăuga o fotografie de copertă și o descriere personalizată. Imaginea apare și în previzualizarea link-ului pe WhatsApp și Facebook, ceea ce îi ajută pe oameni să înțeleagă contextul înainte să doneze.',
+    answer: 'Da. Poți adăuga o fotografie de copertă și o descriere personalizată. Imaginea apare și în previzualizarea link-ului pe WhatsApp și Facebook.',
   },
 ]
 
@@ -80,21 +80,24 @@ export default function ContactPage() {
       <Nav />
       <main className="min-h-screen" style={{ backgroundColor: 'var(--color-bg)' }}>
 
-        {/* Hero */}
-        <section style={{ backgroundColor: 'var(--color-navy)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-16 sm:py-20">
-            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--color-amber)' }}>Suntem aici</p>
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-3">
+        {/* ── Hero ── */}
+        <section style={{ backgroundColor: 'var(--color-forest)' }}>
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-16 sm:py-24">
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] mb-4" style={{ color: '#F0B860' }}>Suntem aici</p>
+            <h1
+              className="font-extrabold tracking-tight text-white leading-tight mb-4"
+              style={{ fontSize: 'clamp(2rem, 4vw, 3rem)' }}
+            >
               Contactează-ne
             </h1>
-            <p className="text-base max-w-lg" style={{ color: '#8895A7' }}>
+            <p className="text-base leading-relaxed max-w-xl" style={{ color: '#7A9A88' }}>
               Ai o întrebare sau ai nevoie de ajutor? Îți răspundem în cel mult 24 de ore.
             </p>
           </div>
         </section>
 
-        {/* Contact + Form */}
-        <section className="mx-auto max-w-5xl px-4 sm:px-6 py-14 sm:py-16">
+        {/* ── Contact + Form ── */}
+        <section className="mx-auto max-w-5xl px-4 sm:px-6 py-14 sm:py-20">
           <div className="grid md:grid-cols-5 gap-8 sm:gap-12">
 
             {/* Left: contact info */}
@@ -102,36 +105,35 @@ export default function ContactPage() {
               <div className="space-y-4">
                 <h2 className="text-lg font-bold" style={{ color: 'var(--color-ink)' }}>Informații de contact</h2>
                 <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <div
-                      className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center"
-                      style={{ backgroundColor: 'var(--color-amber-light)' }}
-                    >
-                      <Mail size={15} strokeWidth={2} style={{ color: 'var(--color-amber-dark)' }} />
+                  {[
+                    {
+                      icon: <Mail size={15} strokeWidth={2} style={{ color: 'var(--color-amber-dark)' }} />,
+                      label: 'Email',
+                      content: <a href="mailto:info@pentrumomente.ro" className="text-sm font-semibold hover:underline" style={{ color: 'var(--color-amber)' }}>info@pentrumomente.ro</a>,
+                    },
+                    {
+                      icon: <Clock size={15} strokeWidth={2} style={{ color: 'var(--color-amber-dark)' }} />,
+                      label: 'Program răspuns',
+                      content: <p className="text-sm font-semibold" style={{ color: 'var(--color-ink)' }}>Luni – Vineri, 9:00 – 18:00</p>,
+                    },
+                  ].map(({ icon, label, content }) => (
+                    <div key={label} className="flex items-start gap-3">
+                      <div
+                        className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center"
+                        style={{ backgroundColor: 'var(--color-amber-light)' }}
+                      >
+                        {icon}
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: 'var(--color-ink-faint)' }}>{label}</p>
+                        {content}
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'var(--color-ink-faint)' }}>Email</p>
-                      <a href="mailto:info@pentrumomente.ro" className="text-sm font-semibold transition-colors hover:underline" style={{ color: 'var(--color-amber)' }}>
-                        info@pentrumomente.ro
-                      </a>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div
-                      className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center"
-                      style={{ backgroundColor: 'var(--color-amber-light)' }}
-                    >
-                      <Clock size={15} strokeWidth={2} style={{ color: 'var(--color-amber-dark)' }} />
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'var(--color-ink-faint)' }}>Program răspuns</p>
-                      <p className="text-sm font-semibold" style={{ color: 'var(--color-ink)' }}>Luni – Vineri, 9:00 – 18:00</p>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
 
-              {/* Quick FAQ links */}
+              {/* Quick links */}
               <div
                 className="rounded-2xl p-5 space-y-1"
                 style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
@@ -159,7 +161,7 @@ export default function ContactPage() {
             {/* Right: form */}
             <div className="md:col-span-3">
               <div
-                className="rounded-2xl p-6 sm:p-8"
+                className="rounded-3xl p-7 sm:p-9"
                 style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-sm)' }}
               >
                 {sent ? (
@@ -179,7 +181,7 @@ export default function ContactPage() {
                     </p>
                     <button
                       onClick={() => { setSent(false); setName(''); setEmail(''); setSubject(''); setMessage('') }}
-                      className="text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors"
+                      className="text-sm font-semibold px-5 py-2.5 rounded-xl"
                       style={{ color: 'var(--color-amber-dark)', border: '1px solid var(--color-amber)', backgroundColor: 'var(--color-amber-light)' }}
                     >
                       Trimite alt mesaj
@@ -196,24 +198,15 @@ export default function ContactPage() {
 
                     <div className="grid sm:grid-cols-2 gap-4">
                       <FormField label="Numele tău" required>
-                        <ContactInput
-                          type="text" value={name} onChange={setName}
-                          placeholder="Ion Popescu" required
-                        />
+                        <ContactInput type="text" value={name} onChange={setName} placeholder="Ion Popescu" required />
                       </FormField>
                       <FormField label="Adresa de email" required>
-                        <ContactInput
-                          type="email" value={email} onChange={setEmail}
-                          placeholder="ion@exemplu.ro" required
-                        />
+                        <ContactInput type="email" value={email} onChange={setEmail} placeholder="ion@exemplu.ro" required />
                       </FormField>
                     </div>
 
                     <FormField label="Subiect">
-                      <ContactInput
-                        type="text" value={subject} onChange={setSubject}
-                        placeholder="ex: Întrebare despre plăți"
-                      />
+                      <ContactInput type="text" value={subject} onChange={setSubject} placeholder="ex: Întrebare despre plăți" />
                     </FormField>
 
                     <FormField label="Mesajul tău" required>
@@ -223,7 +216,7 @@ export default function ContactPage() {
                         rows={5} required
                         className="w-full rounded-xl px-4 py-3 text-sm outline-none resize-none transition-all"
                         style={{ backgroundColor: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-ink)' }}
-                        onFocus={e => { e.currentTarget.style.borderColor = 'var(--color-amber)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(232,160,32,0.12)' }}
+                        onFocus={e => { e.currentTarget.style.borderColor = 'var(--color-amber)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(212,136,42,0.12)' }}
                         onBlur={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.boxShadow = 'none' }}
                       />
                     </FormField>
@@ -234,8 +227,8 @@ export default function ContactPage() {
 
                     <button
                       type="submit" disabled={sending}
-                      className="btn-press w-full rounded-xl py-3.5 text-sm font-bold text-white transition-all"
-                      style={{ backgroundColor: 'var(--color-amber)', boxShadow: '0 4px 14px rgba(232,160,32,0.35)', opacity: sending ? 0.7 : 1 }}
+                      className="btn-press btn-fill w-full rounded-xl py-3.5 text-sm font-bold text-white"
+                      style={{ backgroundColor: 'var(--color-amber)', boxShadow: 'var(--shadow-warm)', opacity: sending ? 0.7 : 1 }}
                     >
                       {sending ? 'Se deschide email...' : 'Trimite mesajul'}
                     </button>
@@ -251,18 +244,23 @@ export default function ContactPage() {
           </div>
         </section>
 
-        {/* FAQ Section */}
+        {/* ── FAQ ── */}
         <section
           className="px-4 sm:px-6 py-14 sm:py-20"
           style={{ borderTop: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)' }}
         >
           <div className="mx-auto max-w-3xl">
             <div className="mb-10">
-              <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'var(--color-amber)' }}>Întrebări frecvente</p>
-              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight" style={{ color: 'var(--color-ink)' }}>
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] mb-3" style={{ color: 'var(--color-amber-dark)' }}>
+                Întrebări frecvente
+              </p>
+              <h2
+                className="font-extrabold tracking-tight"
+                style={{ color: 'var(--color-ink)', fontSize: 'clamp(1.6rem, 3vw, 2.25rem)' }}
+              >
                 Tot ce vrei să știi
               </h2>
-              <p className="mt-2 text-base" style={{ color: 'var(--color-ink-muted)', maxWidth: '52ch' }}>
+              <p className="mt-3 text-base" style={{ color: 'var(--color-ink-muted)', maxWidth: '52ch' }}>
                 Nu găsești răspunsul? Scrie-ne — suntem la un email distanță.
               </p>
             </div>
@@ -272,13 +270,15 @@ export default function ContactPage() {
                 <div
                   key={idx}
                   id={`faq-${idx}`}
-                  className="rounded-xl overflow-hidden"
-                  style={{ border: '1px solid var(--color-border)', backgroundColor: openFaq === idx ? 'var(--color-surface)' : 'var(--color-bg)' }}
+                  className="rounded-2xl overflow-hidden"
+                  style={{
+                    border: '1px solid var(--color-border)',
+                    backgroundColor: openFaq === idx ? 'var(--color-surface)' : 'var(--color-bg)',
+                  }}
                 >
                   <button
                     onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
                     className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left"
-                    style={{ transition: 'background-color 0.15s ease' }}
                   >
                     <span className="text-sm font-bold" style={{ color: 'var(--color-ink)' }}>{item.question}</span>
                     <ChevronDown
@@ -306,7 +306,7 @@ export default function ContactPage() {
                       {item.link && (
                         <Link
                           href={item.link.href}
-                          className="inline-flex items-center gap-1.5 text-sm font-semibold transition-colors"
+                          className="inline-flex items-center gap-1.5 text-sm font-semibold"
                           style={{ color: 'var(--color-amber)' }}
                         >
                           {item.link.label}
@@ -321,18 +321,20 @@ export default function ContactPage() {
           </div>
         </section>
 
-        {/* Footer strip */}
-        <section style={{ backgroundColor: 'var(--color-navy)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-sm" style={{ color: '#4A5568' }}>
-              pentrumomente.ro · Platformă românească de strângere de fonduri
+        {/* ── Footer ── */}
+        <footer style={{ backgroundColor: 'var(--color-forest-mid)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="font-extrabold tracking-tight text-sm" style={{ color: 'rgba(255,255,255,0.25)' }}>
+              pentru<span style={{ color: 'var(--color-amber)' }}>momente</span>
             </p>
-            <div className="flex items-center gap-4">
-              <Link href="/despre-noi" className="text-sm transition-colors hover:underline" style={{ color: '#4A5568' }}>Despre noi</Link>
-              <Link href="/termeni-si-conditii" className="text-sm transition-colors hover:underline" style={{ color: '#4A5568' }}>Termeni</Link>
+            <div className="flex items-center gap-5">
+              {[['/', 'Acasă'], ['/despre-noi', 'Despre noi'], ['/tarife', 'Tarife']].map(([href, label]) => (
+                <Link key={href} href={href} className="text-xs hover:underline" style={{ color: 'rgba(255,255,255,0.25)' }}>{label}</Link>
+              ))}
             </div>
           </div>
-        </section>
+        </footer>
+
       </main>
     </>
   )
@@ -341,7 +343,7 @@ export default function ContactPage() {
 function FormField({ label, children, required }: { label: string; children: React.ReactNode; required?: boolean }) {
   return (
     <div>
-      <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--color-ink-muted)' }}>
+      <label className="block text-[11px] font-bold uppercase tracking-[0.12em] mb-2" style={{ color: 'var(--color-ink-muted)' }}>
         {label}{required && <span style={{ color: 'var(--color-amber)' }}> *</span>}
       </label>
       {children}
@@ -349,14 +351,8 @@ function FormField({ label, children, required }: { label: string; children: Rea
   )
 }
 
-function ContactInput({
-  type, value, onChange, placeholder, required,
-}: {
-  type: string
-  value: string
-  onChange: (v: string) => void
-  placeholder?: string
-  required?: boolean
+function ContactInput({ type, value, onChange, placeholder, required }: {
+  type: string; value: string; onChange: (v: string) => void; placeholder?: string; required?: boolean
 }) {
   return (
     <input
@@ -364,7 +360,7 @@ function ContactInput({
       placeholder={placeholder} required={required}
       className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all"
       style={{ backgroundColor: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-ink)' }}
-      onFocus={e => { e.currentTarget.style.borderColor = 'var(--color-amber)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(232,160,32,0.12)' }}
+      onFocus={e => { e.currentTarget.style.borderColor = 'var(--color-amber)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(212,136,42,0.12)' }}
       onBlur={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.boxShadow = 'none' }}
     />
   )

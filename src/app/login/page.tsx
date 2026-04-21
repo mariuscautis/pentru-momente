@@ -71,200 +71,190 @@ export default function LoginPage() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center px-4 py-12"
+      className="min-h-screen flex"
       style={{ backgroundColor: 'var(--color-bg)' }}
     >
-      <div className="w-full max-w-sm">
+      {/* Left panel — forest brand column (desktop only) */}
+      <div
+        className="hidden lg:flex flex-col justify-between w-[420px] shrink-0 p-10 relative overflow-hidden"
+        style={{ backgroundColor: 'var(--color-forest)' }}
+      >
+        {/* Ambient glow */}
+        <div
+          className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full pointer-events-none"
+          aria-hidden="true"
+          style={{ background: 'radial-gradient(circle, rgba(212,136,42,0.18) 0%, transparent 70%)' }}
+        />
+
         {/* Logo */}
-        <div className="text-center mb-8">
-          <a href="/" className="text-xl font-extrabold tracking-tight" style={{ color: 'var(--color-ink)' }}>
-            pentru<span style={{ color: 'var(--color-amber)' }}>momente</span>
-          </a>
+        <a href="/" className="font-extrabold tracking-tight text-xl" style={{ color: 'white' }}>
+          pentru<span style={{ color: 'var(--color-amber)' }}>momente</span>
+        </a>
+
+        <div className="space-y-6">
+          <p
+            className="font-extrabold tracking-tight text-white leading-tight"
+            style={{ fontSize: 'clamp(1.5rem, 2.5vw, 2rem)' }}
+          >
+            Strânge fonduri pentru momentele care contează
+          </p>
+          <ul className="space-y-3">
+            {[
+              'Pagina creată în 3 minute',
+              'Donatori fără cont necesar',
+              'Banii direct în IBAN-ul tău',
+              '0% comision din donații',
+            ].map(item => (
+              <li key={item} className="flex items-center gap-2.5 text-sm" style={{ color: '#7A9A88' }}>
+                <span
+                  className="shrink-0 w-4 h-4 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: 'rgba(212,136,42,0.20)', border: '1px solid rgba(212,136,42,0.30)' }}
+                >
+                  <svg width="8" height="8" viewBox="0 0 12 12" fill="none">
+                    <path d="M2 6l3 3 5-5" stroke="#D4882A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </span>
+                {item}
+              </li>
+            ))}
+          </ul>
         </div>
 
-        {/* Card */}
-        <div
-          className="rounded-2xl p-8 space-y-6"
-          style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-md)' }}
-        >
-          <div>
-            <h1 className="text-xl font-extrabold tracking-tight" style={{ color: 'var(--color-ink)' }}>
-              {mode === 'login' ? 'Bine ai revenit' : 'Creează un cont'}
-            </h1>
-            <p className="text-sm mt-1" style={{ color: 'var(--color-ink-muted)' }}>
-              {mode === 'login'
-                ? 'Intră în contul tău pentru a gestiona paginile.'
-                : 'Înregistrează-te pentru a crea o pagină de donații.'}
+        <p className="text-xs" style={{ color: '#3A5A48' }}>
+          © 2026 pentrumomente.ro
+        </p>
+      </div>
+
+      {/* Right panel — form */}
+      <div className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-sm">
+
+          {/* Mobile logo */}
+          <div className="lg:hidden text-center mb-8">
+            <a href="/" className="text-xl font-extrabold tracking-tight" style={{ color: 'var(--color-ink)' }}>
+              pentru<span style={{ color: 'var(--color-amber)' }}>momente</span>
+            </a>
+          </div>
+
+          {/* Card */}
+          <div
+            className="rounded-3xl p-8 space-y-6"
+            style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-md)' }}
+          >
+            <div>
+              <h1 className="text-xl font-extrabold tracking-tight" style={{ color: 'var(--color-ink)' }}>
+                {mode === 'login' ? 'Bine ai revenit' : 'Creează un cont'}
+              </h1>
+              <p className="text-sm mt-1" style={{ color: 'var(--color-ink-muted)' }}>
+                {mode === 'login'
+                  ? 'Intră în contul tău pentru a gestiona paginile.'
+                  : 'Înregistrează-te pentru a crea o pagină de donații.'}
+              </p>
+            </div>
+
+            {/* OAuth */}
+            <div className="space-y-2">
+              <OAuthButton onClick={() => handleOAuth('google')} loading={oauthLoading === 'google'} icon={<GoogleIcon />}>
+                Continuă cu Google
+              </OAuthButton>
+              <OAuthButton onClick={() => handleOAuth('facebook')} loading={oauthLoading === 'facebook'} icon={<FacebookIcon />}>
+                Continuă cu Facebook
+              </OAuthButton>
+            </div>
+
+            {/* Divider */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border)' }} />
+              <span className="text-xs font-medium" style={{ color: 'var(--color-ink-faint)' }}>sau cu email</span>
+              <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border)' }} />
+            </div>
+
+            {/* Email form */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <Field label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" placeholder="adresa@email.ro" />
+              <Field
+                label="Parolă" type="password" value={password} onChange={setPassword}
+                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                placeholder={mode === 'register' ? 'Minim 8 caractere' : ''}
+              />
+              {mode === 'register' && (
+                <Field label="Confirmă parola" type="password" value={confirmPassword} onChange={setConfirmPassword} autoComplete="new-password" placeholder="Repetă parola" />
+              )}
+
+              {error && (
+                <p className="text-sm rounded-xl px-4 py-3" style={{ backgroundColor: '#FEF2F2', color: '#B91C1C', border: '1px solid #FECACA' }}>
+                  {error}
+                </p>
+              )}
+              {success && (
+                <p className="text-sm rounded-xl px-4 py-3 leading-relaxed" style={{ backgroundColor: '#F0FFF4', color: '#166534', border: '1px solid #BBF7D0' }}>
+                  {success}
+                </p>
+              )}
+
+              {!success && (
+                <button
+                  type="submit" disabled={loading}
+                  className="btn-press btn-fill w-full rounded-xl py-3.5 text-sm font-bold text-white"
+                  style={{ backgroundColor: 'var(--color-amber)', boxShadow: 'var(--shadow-warm)', opacity: loading ? 0.7 : 1 }}
+                >
+                  {loading ? 'Se procesează...' : mode === 'login' ? 'Intră în cont' : 'Creează cont'}
+                </button>
+              )}
+            </form>
+
+            <p className="text-center text-sm" style={{ color: 'var(--color-ink-muted)' }}>
+              {mode === 'login' ? 'Nu ai cont?' : 'Ai deja cont?'}{' '}
+              <button
+                onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(null); setSuccess(null); setConfirmPassword('') }}
+                className="font-bold"
+                style={{ color: 'var(--color-amber)' }}
+              >
+                {mode === 'login' ? 'Înregistrează-te' : 'Intră'}
+              </button>
             </p>
           </div>
-
-          {/* OAuth buttons */}
-          <div className="space-y-2">
-            <OAuthButton
-              onClick={() => handleOAuth('google')}
-              loading={oauthLoading === 'google'}
-              icon={<GoogleIcon />}
-            >
-              Continuă cu Google
-            </OAuthButton>
-            <OAuthButton
-              onClick={() => handleOAuth('facebook')}
-              loading={oauthLoading === 'facebook'}
-              icon={<FacebookIcon />}
-            >
-              Continuă cu Facebook
-            </OAuthButton>
-          </div>
-
-          {/* Divider */}
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border)' }} />
-            <span className="text-xs font-medium" style={{ color: 'var(--color-ink-faint)' }}>sau cu email</span>
-            <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border)' }} />
-          </div>
-
-          {/* Email form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Field
-              label="Email"
-              type="email"
-              value={email}
-              onChange={setEmail}
-              autoComplete="email"
-              placeholder="adresa@email.ro"
-            />
-            <Field
-              label="Parolă"
-              type="password"
-              value={password}
-              onChange={setPassword}
-              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              placeholder={mode === 'register' ? 'Minim 8 caractere' : ''}
-            />
-            {mode === 'register' && (
-              <Field
-                label="Confirmă parola"
-                type="password"
-                value={confirmPassword}
-                onChange={setConfirmPassword}
-                autoComplete="new-password"
-                placeholder="Repetă parola"
-              />
-            )}
-
-            {error && (
-              <p className="text-sm rounded-xl px-4 py-3" style={{ backgroundColor: '#FEF2F2', color: '#B91C1C', border: '1px solid #FECACA' }}>
-                {error}
-              </p>
-            )}
-            {success && (
-              <p className="text-sm rounded-xl px-4 py-3 leading-relaxed" style={{ backgroundColor: '#F0FFF4', color: '#166534', border: '1px solid #BBF7D0' }}>
-                {success}
-              </p>
-            )}
-
-            {!success && (
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn-press w-full rounded-xl py-3.5 text-sm font-bold text-white transition-all"
-                style={{ backgroundColor: 'var(--color-amber)', boxShadow: '0 4px 14px rgba(232,160,32,0.35)', opacity: loading ? 0.7 : 1 }}
-              >
-                {loading
-                  ? 'Se procesează...'
-                  : mode === 'login'
-                  ? 'Intră în cont'
-                  : 'Creează cont'}
-              </button>
-            )}
-          </form>
-
-          <p className="text-center text-sm" style={{ color: 'var(--color-ink-muted)' }}>
-            {mode === 'login' ? 'Nu ai cont?' : 'Ai deja cont?'}{' '}
-            <button
-              onClick={() => {
-                setMode(mode === 'login' ? 'register' : 'login')
-                setError(null)
-                setSuccess(null)
-                setConfirmPassword('')
-              }}
-              className="font-bold transition-colors"
-              style={{ color: 'var(--color-amber)' }}
-            >
-              {mode === 'login' ? 'Înregistrează-te' : 'Intră'}
-            </button>
-          </p>
         </div>
       </div>
     </div>
   )
 }
 
-// ─── Primitives ───────────────────────────────────────────────────────────────
-
-function Field({
-  label, type, value, onChange, autoComplete, placeholder,
-}: {
-  label: string
-  type: string
-  value: string
-  onChange: (v: string) => void
-  autoComplete?: string
-  placeholder?: string
+function Field({ label, type, value, onChange, autoComplete, placeholder }: {
+  label: string; type: string; value: string; onChange: (v: string) => void; autoComplete?: string; placeholder?: string
 }) {
   return (
     <div>
-      <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: 'var(--color-ink-muted)' }}>
+      <label className="block text-[11px] font-bold uppercase tracking-[0.12em] mb-1.5" style={{ color: 'var(--color-ink-muted)' }}>
         {label}
       </label>
       <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        required
-        autoComplete={autoComplete}
-        placeholder={placeholder}
+        type={type} value={value} onChange={e => onChange(e.target.value)}
+        required autoComplete={autoComplete} placeholder={placeholder}
         className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all"
-        style={{
-          border: '1px solid var(--color-border)',
-          color: 'var(--color-ink)',
-          backgroundColor: 'var(--color-bg)',
-        }}
-        onFocus={(e) => { e.target.style.borderColor = 'var(--color-amber)'; e.target.style.boxShadow = '0 0 0 3px rgba(232,160,32,0.12)' }}
-        onBlur={(e) => { e.target.style.borderColor = 'var(--color-border)'; e.target.style.boxShadow = 'none' }}
+        style={{ border: '1px solid var(--color-border)', color: 'var(--color-ink)', backgroundColor: 'var(--color-bg)' }}
+        onFocus={e => { e.target.style.borderColor = 'var(--color-amber)'; e.target.style.boxShadow = '0 0 0 3px rgba(212,136,42,0.12)' }}
+        onBlur={e => { e.target.style.borderColor = 'var(--color-border)'; e.target.style.boxShadow = 'none' }}
       />
     </div>
   )
 }
 
-function OAuthButton({
-  onClick, loading, icon, children,
-}: {
-  onClick: () => void
-  loading: boolean
-  icon: React.ReactNode
-  children: React.ReactNode
+function OAuthButton({ onClick, loading, icon, children }: {
+  onClick: () => void; loading: boolean; icon: React.ReactNode; children: React.ReactNode
 }) {
   return (
     <button
-      type="button"
-      onClick={onClick}
-      disabled={loading}
+      type="button" onClick={onClick} disabled={loading}
       className="w-full flex items-center justify-center gap-3 rounded-xl py-2.5 text-sm font-semibold transition-colors"
-      style={{
-        border: '1px solid var(--color-border)',
-        color: 'var(--color-ink)',
-        backgroundColor: loading ? 'var(--color-bg)' : 'var(--color-surface)',
-      }}
+      style={{ border: '1px solid var(--color-border)', color: 'var(--color-ink)', backgroundColor: loading ? 'var(--color-bg)' : 'var(--color-surface)' }}
     >
       {loading ? (
         <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
         </svg>
-      ) : (
-        icon
-      )}
+      ) : icon}
       {children}
     </button>
   )

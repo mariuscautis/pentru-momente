@@ -322,12 +322,6 @@ export default async function HomePage() {
           </div>
         </div>
 
-        {/* Bottom wave divider */}
-        <div className="absolute bottom-0 left-0 right-0 h-12 pointer-events-none" aria-hidden="true"
-          style={{
-            background: 'linear-gradient(to bottom, transparent, var(--color-bg))',
-          }}
-        />
       </section>
 
       {/* ══════════════════════════════════════════════
@@ -507,19 +501,11 @@ export default async function HomePage() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-            {HOW_IT_WORKS.map(({ n, title, description, icon: StepIcon }, idx) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
+            {HOW_IT_WORKS.map(({ n, title, description, icon: StepIcon }) => (
               <div key={n} className="relative">
-                {/* Connector on desktop */}
-                {idx < HOW_IT_WORKS.length - 1 && (
-                  <div
-                    className="hidden md:block absolute top-7 left-full w-8 lg:w-14 h-px -translate-x-1/2 pointer-events-none"
-                    style={{ background: 'linear-gradient(to right, var(--color-border), transparent)' }}
-                    aria-hidden="true"
-                  />
-                )}
                 <div
-                  className="rounded-3xl p-7 h-full"
+                  className="rounded-3xl p-7 h-full mx-2"
                   style={{
                     backgroundColor: 'var(--color-surface)',
                     border: '1px solid var(--color-border)',
