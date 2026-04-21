@@ -29,6 +29,7 @@ export interface DonationState {
   isAnonymous: boolean
   showAmount: boolean
   clientSecret?: string
+  paymentIntentId?: string
 }
 
 export function totalDonationAmount(state: DonationState): number {

@@ -42,26 +42,49 @@ export default function TarifePage() {
         <section className="mx-auto max-w-3xl px-4 sm:px-6 py-14 sm:py-20 space-y-16">
 
           {/* ── Commission highlight ── */}
-          <div
-            className="rounded-3xl p-10 sm:p-12 text-center"
-            style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-md)' }}
-          >
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] mb-4" style={{ color: 'var(--color-amber-dark)' }}>
-              Comision per tranzacție
-            </p>
-            <p
-              className="font-extrabold tracking-tight leading-none tabular-nums"
-              style={{ color: 'var(--color-ink)', fontSize: 'clamp(2.8rem, 8vw, 4.5rem)' }}
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div
+              className="rounded-3xl p-8 sm:p-10 text-center"
+              style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-md)' }}
             >
-              2,5%{' '}
-              <span style={{ fontSize: '55%', fontWeight: 700, color: 'var(--color-ink-faint)' }}>+</span>{' '}
-              1,25 Lei
-            </p>
-            <p className="mt-6 text-base leading-relaxed max-w-lg mx-auto" style={{ color: 'var(--color-ink-muted)' }}>
-              Comisionul se deduce automat din suma donată — familia beneficiară primește tot ce rămâne.
-              Nicio taxă în plus, niciun abonament.
-            </p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] mb-3" style={{ color: 'var(--color-amber-dark)' }}>
+                🇪🇺 Card european
+              </p>
+              <p
+                className="font-extrabold tracking-tight leading-none tabular-nums"
+                style={{ color: 'var(--color-ink)', fontSize: 'clamp(2rem, 6vw, 3rem)' }}
+              >
+                2,5%{' '}
+                <span style={{ fontSize: '55%', fontWeight: 700, color: 'var(--color-ink-faint)' }}>+</span>{' '}
+                1,25 Lei
+              </p>
+              <p className="mt-4 text-sm leading-relaxed" style={{ color: 'var(--color-ink-muted)' }}>
+                Carduri emise în UE, SEE sau Marea Britanie.
+              </p>
+            </div>
+            <div
+              className="rounded-3xl p-8 sm:p-10 text-center"
+              style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-md)' }}
+            >
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] mb-3" style={{ color: 'var(--color-amber-dark)' }}>
+                🌍 Card non-european
+              </p>
+              <p
+                className="font-extrabold tracking-tight leading-none tabular-nums"
+                style={{ color: 'var(--color-ink)', fontSize: 'clamp(2rem, 6vw, 3rem)' }}
+              >
+                4,25%{' '}
+                <span style={{ fontSize: '55%', fontWeight: 700, color: 'var(--color-ink-faint)' }}>+</span>{' '}
+                1,25 Lei
+              </p>
+              <p className="mt-4 text-sm leading-relaxed" style={{ color: 'var(--color-ink-muted)' }}>
+                Carduri emise în afara UE/SEE (SUA, Canada, etc.).
+              </p>
+            </div>
           </div>
+          <p className="text-sm text-center" style={{ color: 'var(--color-ink-muted)' }}>
+            Comisionul se deduce automat din suma donată — familia primește restul. Nicio taxă în plus, niciun abonament.
+          </p>
 
           {/* ── What is it ── */}
           <div className="space-y-4">
@@ -96,15 +119,19 @@ export default function TarifePage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ backgroundColor: 'var(--color-forest)' }}>
-                    <th className="px-5 py-3.5 text-left font-semibold text-white">Donație</th>
-                    <th className="px-5 py-3.5 text-right font-semibold" style={{ color: '#7A9A88' }}>Comision reținut</th>
-                    <th className="px-5 py-3.5 text-right font-semibold text-white">Familia primește</th>
+                    <th className="px-4 py-3.5 text-left font-semibold text-white">Donație</th>
+                    <th className="px-4 py-3.5 text-right font-semibold" style={{ color: '#7A9A88' }}>Comision 🇪🇺</th>
+                    <th className="px-4 py-3.5 text-right font-semibold text-white">Familie primește</th>
+                    <th className="px-4 py-3.5 text-right font-semibold" style={{ color: '#7A9A88' }}>Comision 🌍</th>
+                    <th className="px-4 py-3.5 text-right font-semibold text-white">Familie primește</th>
                   </tr>
                 </thead>
                 <tbody>
                   {[50, 100, 200, 500, 1000].map((amount, i) => {
-                    const commission = Math.round((amount * 0.025 + 1.25) * 100) / 100
-                    const organiserGets = Math.round((amount - commission) * 100) / 100
+                    const commissionEu = Math.round((amount * 0.025 + 1.25) * 100) / 100
+                    const organiserEu = Math.round((amount - commissionEu) * 100) / 100
+                    const commissionNonEu = Math.round((amount * 0.0425 + 1.25) * 100) / 100
+                    const organiserNonEu = Math.round((amount - commissionNonEu) * 100) / 100
                     return (
                       <tr
                         key={amount}
@@ -113,12 +140,18 @@ export default function TarifePage() {
                           borderTop: '1px solid var(--color-border)',
                         }}
                       >
-                        <td className="px-5 py-3.5 font-semibold" style={{ color: 'var(--color-ink)' }}>{amount} Lei</td>
-                        <td className="px-5 py-3.5 text-right font-mono text-sm tabular-nums" style={{ color: 'var(--color-ink-muted)' }}>
-                          {commission.toFixed(2)} Lei
+                        <td className="px-4 py-3.5 font-semibold" style={{ color: 'var(--color-ink)' }}>{amount} Lei</td>
+                        <td className="px-4 py-3.5 text-right font-mono text-sm tabular-nums" style={{ color: 'var(--color-ink-muted)' }}>
+                          {commissionEu.toFixed(2)} Lei
                         </td>
-                        <td className="px-5 py-3.5 text-right font-bold font-mono text-sm tabular-nums" style={{ color: 'var(--color-ink)' }}>
-                          {organiserGets.toFixed(2)} Lei
+                        <td className="px-4 py-3.5 text-right font-bold font-mono text-sm tabular-nums" style={{ color: 'var(--color-ink)' }}>
+                          {organiserEu.toFixed(2)} Lei
+                        </td>
+                        <td className="px-4 py-3.5 text-right font-mono text-sm tabular-nums" style={{ color: 'var(--color-ink-muted)' }}>
+                          {commissionNonEu.toFixed(2)} Lei
+                        </td>
+                        <td className="px-4 py-3.5 text-right font-bold font-mono text-sm tabular-nums" style={{ color: 'var(--color-ink)' }}>
+                          {organiserNonEu.toFixed(2)} Lei
                         </td>
                       </tr>
                     )
@@ -126,6 +159,11 @@ export default function TarifePage() {
                 </tbody>
               </table>
             </div>
+            <p className="text-xs" style={{ color: 'var(--color-ink-muted)' }}>
+              🇪🇺 Card european = UE, SEE, Marea Britanie &nbsp;·&nbsp; 🌍 Card non-european = SUA, Canada, și altele.
+              Suma plătită de donator nu se modifică — comisionul mai mare pentru carduri non-UE acoperă exclusiv
+              costul suplimentar de procesare Stripe și un 1% pentru platformă.
+            </p>
           </div>
 
           {/* ── Optional tip + why ── */}
@@ -218,6 +256,7 @@ export default function TarifePage() {
                 'Suma pe care o vede familia pe pagina de donație este suma pe care o va primi efectiv, minus comisionul afișat.',
                 'Nu există abonamente, taxe de creare a paginii sau costuri ascunse de niciun fel.',
                 'Contribuția voluntară pentru platformă este mereu opțională și separată de donație.',
+                'Cardurile non-europene (SUA, Canada etc.) au un comision mai mare (4,25% + 1,25 Lei) pentru a acoperi costul suplimentar de procesare Stripe. Suma plătită de donator nu se modifică — diferența se deduce din suma transferată familiei. Comisionul aplicat este afișat transparent în fereastra de plată înainte de confirmare.',
                 'Plățile sunt procesate securizat prin Stripe, conform standardelor PCI-DSS.',
               ].map(item => (
                 <li key={item} className="flex gap-3 text-sm leading-relaxed" style={{ color: 'var(--color-ink)' }}>
