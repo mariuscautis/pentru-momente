@@ -101,30 +101,38 @@ interface PageBodyProps {
   coverPreviewUrl: string | null; donationVerb: string; s: number
 }
 
-function PreviewPageBody({ primary, accent, bg, title, description, goalAmount, visibleItems, coverPreviewUrl, donationVerb, s }: PageBodyProps) {
+function PreviewHero({ primary, accent, bg, coverPreviewUrl, s }: { primary: string; accent: string; bg: string; coverPreviewUrl: string | null; s: number }) {
   const heroH = Math.round(90 * s)
+  const px = Math.round(14 * s)
+  const r = (n: number) => Math.round(n * s)
+  return (
+    <div style={{ position: 'relative', height: heroH, overflow: 'hidden', flexShrink: 0 }}>
+      {coverPreviewUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={coverPreviewUrl} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+      ) : (
+        <svg viewBox="0 0 400 90" style={{ display: 'block', width: '100%', height: '100%' }} preserveAspectRatio="xMidYMid slice">
+          <rect width="400" height="90" fill={primary} />
+          <ellipse cx="320" cy="10" rx="130" ry="80" fill={accent} fillOpacity="0.32" />
+          <ellipse cx="50" cy="80" rx="110" ry="70" fill={accent} fillOpacity="0.20" />
+        </svg>
+      )}
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '45%', background: `linear-gradient(to bottom, transparent, ${bg})` }} />
+      <div style={{ position: 'absolute', top: r(5), left: px, fontSize: r(7), fontWeight: 800, color: 'rgba(255,255,255,0.9)', textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>
+        pentru<span style={{ color: '#F5C07A' }}>momente</span>
+      </div>
+    </div>
+  )
+}
+
+function PreviewPageBody({ primary, accent, bg, title, description, goalAmount, visibleItems, coverPreviewUrl, donationVerb, s }: PageBodyProps) {
   const px = Math.round(14 * s)
   const r = (n: number) => Math.round(n * s)
 
   return (
     <div style={{ backgroundColor: bg, display: 'block', boxSizing: 'border-box', minHeight: '100%' }}>
-      {/* Hero */}
-      <div style={{ position: 'relative', height: heroH, overflow: 'hidden' }}>
-        {coverPreviewUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={coverPreviewUrl} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-        ) : (
-          <svg viewBox="0 0 400 90" style={{ display: 'block', width: '100%', height: '100%' }} preserveAspectRatio="xMidYMid slice">
-            <rect width="400" height="90" fill={primary} />
-            <ellipse cx="320" cy="10" rx="130" ry="80" fill={accent} fillOpacity="0.32" />
-            <ellipse cx="50" cy="80" rx="110" ry="70" fill={accent} fillOpacity="0.20" />
-          </svg>
-        )}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '45%', background: `linear-gradient(to bottom, transparent, ${bg})` }} />
-        <div style={{ position: 'absolute', top: r(5), left: px, fontSize: r(7), fontWeight: 800, color: 'rgba(255,255,255,0.9)', textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>
-          pentru<span style={{ color: '#F5C07A' }}>momente</span>
-        </div>
-      </div>
+      {/* Hero — only rendered in mobile (desktop renders it separately above the columns) */}
+      <PreviewHero primary={primary} accent={accent} bg={bg} coverPreviewUrl={coverPreviewUrl} s={s} />
 
       {/* Content */}
       <div style={{ padding: `${r(6)}px ${px}px ${r(14)}px`, boxSizing: 'border-box' }}>
@@ -209,7 +217,7 @@ function PreviewDonorSidebar({ primary, s }: { primary: string; s: number }) {
   const r = (n: number) => Math.round(n * s)
   // Fixed pixel width at scale 1 = 160px, mirrors real sidebar proportion
   return (
-    <div style={{ width: r(140), flexShrink: 0, borderLeft: '1px solid #EDE0D0', backgroundColor: '#FFFDFB', padding: `${r(10)}px ${r(8)}px`, alignSelf: 'flex-start' }}>
+    <div style={{ width: r(140), flexShrink: 0, borderLeft: '1px solid #EDE0D0', backgroundColor: '#FFFDFB', padding: `${r(10)}px ${r(8)}px` }}>
       <div style={{ fontSize: r(6.5), fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9A7B60', marginBottom: r(8), paddingBottom: r(6), borderBottom: '1px solid #F0E8DC' }}>Donatori</div>
       {[{ w: 38, a: '150 RON' }, { w: 50, a: '75 RON' }, { w: 42, a: '200 RON' }].map(({ w, a }, i) => (
         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: r(5), marginBottom: r(8), paddingBottom: r(8), borderBottom: i < 2 ? '1px solid #F5EDE3' : 'none' }}>
@@ -277,17 +285,22 @@ function LivePreview({ config, name, description, goalAmount, items, coverPrevie
               <span style={{ color: '#777' }}>{previewUrl}</span>
             </div>
           </div>
-          {/* Page content — two column */}
-          <div style={{ display: 'flex', backgroundColor: bg, maxHeight: 300, overflow: 'hidden' }}>
-            <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-              <PreviewPageBody
-                primary={primary} accent={accent} bg={bg} title={title}
-                description={description} goalAmount={goalAmount}
-                visibleItems={visibleItems} coverPreviewUrl={coverPreviewUrl}
-                donationVerb={config.copy.donationVerb} s={0.54}
-              />
+          {/* Page content */}
+          <div style={{ backgroundColor: bg, maxHeight: 320, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            {/* Hero — full width */}
+            <PreviewHero primary={primary} accent={accent} bg={bg} coverPreviewUrl={coverPreviewUrl} s={0.54} />
+            {/* Two columns below hero */}
+            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+              <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                <PreviewPageBody
+                  primary={primary} accent={accent} bg={bg} title={title}
+                  description={description} goalAmount={goalAmount}
+                  visibleItems={visibleItems} coverPreviewUrl={null}
+                  donationVerb={config.copy.donationVerb} s={0.54}
+                />
+              </div>
+              <PreviewDonorSidebar primary={primary} s={0.54} />
             </div>
-            <PreviewDonorSidebar primary={primary} s={0.54} />
           </div>
         </div>
       </div>
