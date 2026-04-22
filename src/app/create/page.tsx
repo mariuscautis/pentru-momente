@@ -114,7 +114,7 @@ function PreviewContent({
   const primary = config.palette.primary
   const accent = config.palette.accent
   const bg = config.palette.background
-  const heroH = Math.round(110 * scale)
+  const heroH = Math.round(70 * scale)
   const px = Math.round(16 * scale)
   const itemIconSize = Math.round(28 * scale)
   const fontSize = (base: number) => Math.round(base * scale)
@@ -127,14 +127,13 @@ function PreviewContent({
           // eslint-disable-next-line @next/next/no-img-element
           <img src={coverPreviewUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
         ) : (
-          <svg viewBox="0 0 400 110" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice">
-            <rect width="400" height="110" fill={primary} />
-            <ellipse cx="320" cy="15" rx="120" ry="85" fill={accent} fillOpacity="0.30" />
-            <ellipse cx="60" cy="95" rx="100" ry="70" fill={accent} fillOpacity="0.18" />
-            <ellipse cx="200" cy="55" rx="70" ry="45" fill="rgba(255,255,255,0.06)" />
+          <svg viewBox="0 0 400 70" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice">
+            <rect width="400" height="70" fill={primary} />
+            <ellipse cx="320" cy="10" rx="120" ry="70" fill={accent} fillOpacity="0.30" />
+            <ellipse cx="60" cy="60" rx="100" ry="60" fill={accent} fillOpacity="0.18" />
+            <ellipse cx="200" cy="35" rx="70" ry="40" fill="rgba(255,255,255,0.06)" />
           </svg>
         )}
-        <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, rgba(0,0,0,0.06) 0%, transparent 35%, ${bg} 100%)` }} />
         {/* Logo */}
         <div
           className="absolute font-extrabold tracking-tight"
@@ -142,10 +141,12 @@ function PreviewContent({
         >
           pentru<span style={{ color: '#F5C07A' }}>momente</span>
         </div>
+        {/* Bottom fade into page bg */}
+        <div className="absolute bottom-0 left-0 right-0" style={{ height: '40%', background: `linear-gradient(to bottom, transparent, ${bg})` }} />
       </div>
 
       {/* Content */}
-      <div style={{ padding: `${Math.round(4 * scale)}px ${px}px ${Math.round(12 * scale)}px`, marginTop: Math.round(-14 * scale) }}>
+      <div style={{ padding: `${Math.round(8 * scale)}px ${px}px ${Math.round(12 * scale)}px` }}>
         {/* Title */}
         <h3
           className="font-bold leading-snug"
