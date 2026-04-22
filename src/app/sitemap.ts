@@ -1,8 +1,10 @@
 import { MetadataRoute } from 'next'
 import { getSupabaseAdmin } from '@/lib/db/supabase'
 
-// Regenerate sitemap at most once per hour (ISR)
-export const revalidate = 3600
+// Regenerate sitemap at most once per minute as a baseline.
+// The events API also calls revalidatePath('/sitemap.xml') immediately
+// whenever a page is blocked or deleted, so stale entries are purged on-demand.
+export const revalidate = 60
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL!

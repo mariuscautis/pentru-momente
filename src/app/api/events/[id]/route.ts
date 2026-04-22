@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { supabase, supabaseAdmin } from '@/lib/db/supabase'
 import { deleteEvent, getEventById } from '@/lib/db/events'
 import { getEventSummaryStats } from '@/lib/db/donations'
@@ -71,6 +72,11 @@ export async function PATCH(
     return NextResponse.json<ApiError>({ error: updateError.message }, { status: 500 })
   }
 
+  // Purge the sitemap cache immediately when a page is blocked or reactivated
+  if (body.isActive !== undefined) {
+    revalidatePath('/sitemap.xml')
+  }
+
   // Send summary email when organiser manually deactivates an active page
   const isBeingClosed = body.isActive === false && (existing.is_active as boolean) === true
   if (isBeingClosed) {
@@ -115,6 +121,9 @@ export async function DELETE(
   if (!ok) {
     return NextResponse.json<ApiError>({ error: 'Event not found' }, { status: 404 })
   }
+
+  // Purge the sitemap cache immediately on deletion
+  revalidatePath('/sitemap.xml')
 
   if (eventData) {
     try {
