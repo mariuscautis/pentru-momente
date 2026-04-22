@@ -131,8 +131,8 @@ export default function DespreNoiPage() {
                 <circle cx="240" cy="170" r="3" fill="#D4882A" opacity="0.35"/>
                 <line x1="103" y1="175" x2="148" y2="198" stroke="#D4882A" strokeWidth="1" strokeDasharray="3,5" opacity="0.2"/>
                 <line x1="237" y1="170" x2="195" y2="196" stroke="#D4882A" strokeWidth="1" strokeDasharray="3,5" opacity="0.2"/>
-                <text x="170" y="238" textAnchor="middle" fontSize="11" fontWeight="700" fill="white" opacity="0.7" fontFamily="system-ui, sans-serif">Creat în România</text>
-                <text x="170" y="254" textAnchor="middle" fontSize="9.5" fill="#6A9A80" fontFamily="system-ui, sans-serif">pentru familiile românești</text>
+                <text x="170" y="238" textAnchor="middle" fontSize="11" fontWeight="700" fill="white" opacity="0.7" fontFamily="system-ui, sans-serif">Creat de echipa romaneasca</text>
+                <text x="170" y="254" textAnchor="middle" fontSize="9.5" fill="#6A9A80" fontFamily="system-ui, sans-serif">pentru familiile romanesti</text>
               </svg>
             </div>
           </div>
