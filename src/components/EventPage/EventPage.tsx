@@ -77,15 +77,17 @@ export function EventPage({ event, items, donations, config, totalRaised }: Even
 
       {/* ── Hero: cover image if set, abstract SVG otherwise ── */}
       <div className="relative w-full" style={{ height: 'clamp(260px, 42vh, 500px)' }}>
-        {/* Logo — top-left, links back to homepage */}
-        <a
-          href="/"
-          className="absolute top-4 left-4 z-10 flex items-center gap-1 font-extrabold tracking-tight text-sm"
-          style={{ color: 'rgba(255,255,255,0.92)', textShadow: '0 1px 4px rgba(0,0,0,0.35)' }}
-          aria-label="pentrumomente.ro — pagina principală"
-        >
-          pentru<span style={{ color: '#F5C07A' }}>momente</span>
-        </a>
+        {/* Logo — aligned to the same max-w-6xl container as main content */}
+        <div className="absolute top-4 left-0 right-0 z-10 mx-auto max-w-6xl px-4">
+          <a
+            href="/"
+            className="inline-flex items-center gap-1 font-extrabold tracking-tight text-sm"
+            style={{ color: 'rgba(255,255,255,0.92)', textShadow: '0 1px 4px rgba(0,0,0,0.35)' }}
+            aria-label="pentrumomente.ro — pagina principală"
+          >
+            pentru<span style={{ color: '#F5C07A' }}>momente</span>
+          </a>
+        </div>
         {event.coverImageUrl ? (
           <Image
             src={event.coverImageUrl}
