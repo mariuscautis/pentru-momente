@@ -76,8 +76,8 @@ export function StepChooseAmount({ state, setState, config, onBack, onNext }: St
         <div className="relative mt-2">
           <input
             ref={inputRef}
-            type="number"
-            min={1}
+            type="text"
+            inputMode="numeric"
             placeholder="Altă sumă"
             value={customValue}
             onFocus={handleCustomFocus}

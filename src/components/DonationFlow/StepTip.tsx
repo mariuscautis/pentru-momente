@@ -172,8 +172,8 @@ export function StepTip({ state, setState, config, onBack, onNext }: StepTipProp
           </div>
           <div className="relative">
             <input
-              type="number"
-              min={0}
+              type="text"
+              inputMode="numeric"
               placeholder="Altă sumă"
               value={customValue}
               onChange={(e) => handleCustomFixed(e.target.value)}
