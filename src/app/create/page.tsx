@@ -107,7 +107,7 @@ function PreviewPageBody({ primary, accent, bg, title, description, goalAmount, 
   const r = (n: number) => Math.round(n * s)
 
   return (
-    <div style={{ backgroundColor: bg, display: 'block', boxSizing: 'border-box' }}>
+    <div style={{ backgroundColor: bg, display: 'block', boxSizing: 'border-box', minHeight: '100%' }}>
       {/* Hero */}
       <div style={{ position: 'relative', height: heroH, overflow: 'hidden' }}>
         {coverPreviewUrl ? (
