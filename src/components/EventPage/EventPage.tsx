@@ -106,7 +106,7 @@ export function EventPage({ event, items, donations, config, totalRaised }: Even
 
       {/* ── Main content — slight negative margin so gradient blends, title stays clear ── */}
       <main className="mx-auto max-w-6xl px-4 pb-24" style={{ marginTop: '1.5rem' }}>
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 items-start">
+        <div className={hasAnyDonors ? 'grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 items-start' : 'mx-auto max-w-2xl'}>
 
           {/* ── LEFT COLUMN ── */}
           <div className="min-w-0 space-y-6">
