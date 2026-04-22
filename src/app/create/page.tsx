@@ -93,6 +93,196 @@ interface PreviewProps {
   coverPreviewUrl: string | null
 }
 
+/** Shared inner content for both mobile and desktop previews */
+function PreviewContent({
+  config,
+  title,
+  description,
+  goalAmount,
+  visibleItems,
+  coverPreviewUrl,
+  scale,
+}: {
+  config: EventTypeConfig
+  title: string
+  description: string
+  goalAmount: string
+  visibleItems: ItemInput[]
+  coverPreviewUrl: string | null
+  scale: number
+}) {
+  const primary = config.palette.primary
+  const accent = config.palette.accent
+  const bg = config.palette.background
+  const heroH = Math.round(110 * scale)
+  const px = Math.round(16 * scale)
+  const itemIconSize = Math.round(28 * scale)
+  const fontSize = (base: number) => Math.round(base * scale)
+
+  return (
+    <div style={{ backgroundColor: bg, fontSize: fontSize(11), lineHeight: 1.4 }}>
+      {/* Hero */}
+      <div className="relative overflow-hidden" style={{ height: heroH }}>
+        {coverPreviewUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={coverPreviewUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        ) : (
+          <svg viewBox="0 0 400 110" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice">
+            <rect width="400" height="110" fill={primary} />
+            <ellipse cx="320" cy="15" rx="120" ry="85" fill={accent} fillOpacity="0.30" />
+            <ellipse cx="60" cy="95" rx="100" ry="70" fill={accent} fillOpacity="0.18" />
+            <ellipse cx="200" cy="55" rx="70" ry="45" fill="rgba(255,255,255,0.06)" />
+          </svg>
+        )}
+        <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, rgba(0,0,0,0.06) 0%, transparent 35%, ${bg} 100%)` }} />
+        {/* Logo */}
+        <div
+          className="absolute font-extrabold tracking-tight"
+          style={{ top: Math.round(6 * scale), left: px, fontSize: fontSize(8), color: 'rgba(255,255,255,0.88)', textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
+        >
+          pentru<span style={{ color: '#F5C07A' }}>momente</span>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div style={{ padding: `${Math.round(4 * scale)}px ${px}px ${Math.round(12 * scale)}px`, marginTop: Math.round(-14 * scale) }}>
+        {/* Title */}
+        <h3
+          className="font-bold leading-snug"
+          style={{ color: '#1C1209', fontSize: fontSize(12), marginBottom: Math.round(5 * scale) }}
+        >
+          {title}
+        </h3>
+
+        {/* Stat chips */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: Math.round(4 * scale), marginBottom: Math.round(6 * scale) }}>
+          {[
+            '♥ 0 RON strânși',
+            ...(goalAmount ? ['↗ 0% din obiectiv'] : []),
+          ].map((t) => (
+            <span
+              key={t}
+              style={{
+                display: 'inline-flex', alignItems: 'center',
+                background: `${primary}18`, color: primary,
+                borderRadius: 999, padding: `${Math.round(2 * scale)}px ${Math.round(6 * scale)}px`,
+                fontSize: fontSize(9), fontWeight: 600,
+              }}
+            >
+              {t}
+            </span>
+          ))}
+        </div>
+
+        {/* Goal progress */}
+        {goalAmount && (
+          <div style={{ marginBottom: Math.round(6 * scale) }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: fontSize(8), color: '#9A7B60', marginBottom: Math.round(3 * scale) }}>
+              <span>0 RON strânși</span>
+              <span>din {goalAmount} RON</span>
+            </div>
+            <div style={{ height: Math.round(4 * scale), borderRadius: 999, backgroundColor: '#EDE0D0', overflow: 'hidden' }}>
+              <div style={{ width: '0%', height: '100%', backgroundColor: primary }} />
+            </div>
+          </div>
+        )}
+
+        {/* Description */}
+        {description && (
+          <p style={{ fontSize: fontSize(9), color: '#7A6652', lineHeight: 1.5, marginBottom: Math.round(6 * scale), display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+            {description}
+          </p>
+        )}
+
+        {/* Donate CTA */}
+        <div
+          style={{
+            width: '100%', borderRadius: Math.round(10 * scale), backgroundColor: primary,
+            color: '#fff', fontWeight: 700, textAlign: 'center',
+            padding: `${Math.round(7 * scale)}px 0`,
+            fontSize: fontSize(10), marginBottom: Math.round(8 * scale),
+          }}
+        >
+          {config.copy.donationVerb}
+        </div>
+
+        {/* Trust strip */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: Math.round(10 * scale), marginBottom: Math.round(8 * scale) }}>
+          {[
+            { icon: '🔒', label: 'Plată securizată SSL' },
+            { icon: '✓', label: 'Protejat prin Stripe' },
+          ].map(({ icon, label }) => (
+            <span key={label} style={{ display: 'flex', alignItems: 'center', gap: Math.round(3 * scale), fontSize: fontSize(8), color: '#9A7B60' }}>
+              <span>{icon}</span>{label}
+            </span>
+          ))}
+        </div>
+
+        {/* Items */}
+        {visibleItems.length > 0 && (
+          <div>
+            <p style={{ fontSize: fontSize(8), fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9A7B60', marginBottom: Math.round(5 * scale) }}>
+              Articole
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: Math.round(4 * scale) }}>
+              {visibleItems.slice(0, 3).map((item, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: Math.round(6 * scale),
+                    backgroundColor: '#FFFDFB', border: '1px solid #EDE0D0',
+                    borderRadius: Math.round(10 * scale), padding: `${Math.round(5 * scale)}px ${Math.round(8 * scale)}px`,
+                  }}
+                >
+                  {/* Icon bubble */}
+                  <div style={{
+                    width: itemIconSize, height: itemIconSize, borderRadius: Math.round(6 * scale),
+                    backgroundColor: '#F5EDE3', flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: fontSize(11), color: primary, fontWeight: 700,
+                  }}>
+                    {item.iconId
+                      ? <span style={{ fontSize: Math.round(13 * scale) }}>{item.iconId}</span>
+                      : <span style={{ fontSize: fontSize(9), color: primary }}>{item.name.charAt(0)}</span>
+                    }
+                  </div>
+                  {/* Name + bar */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: fontSize(9), fontWeight: 600, color: '#1C1209', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {item.name}
+                    </div>
+                    {!item.isCustomAmount && (
+                      <div style={{ marginTop: Math.round(2 * scale), height: Math.round(3 * scale), borderRadius: 999, backgroundColor: '#F0E8DC', overflow: 'hidden' }}>
+                        <div style={{ width: '0%', height: '100%', backgroundColor: primary }} />
+                      </div>
+                    )}
+                    <div style={{ fontSize: fontSize(8), color: '#9A7B60', marginTop: Math.round(1 * scale) }}>
+                      {item.isCustomAmount ? 'Alege suma' : `0 din ${item.targetAmount} Lei`}
+                    </div>
+                  </div>
+                  {/* Button */}
+                  <div style={{
+                    backgroundColor: primary, color: '#fff',
+                    borderRadius: Math.round(7 * scale), padding: `${Math.round(3 * scale)}px ${Math.round(7 * scale)}px`,
+                    fontSize: fontSize(8), fontWeight: 700, flexShrink: 0,
+                  }}>
+                    {config.copy.donationVerb}
+                  </div>
+                </div>
+              ))}
+              {visibleItems.length > 3 && (
+                <p style={{ textAlign: 'center', fontSize: fontSize(8), color: '#B09070' }}>
+                  + {visibleItems.length - 3} mai multe
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function LivePreview({ config, name, description, goalAmount, items, coverPreviewUrl }: PreviewProps) {
   if (!config) return null
 
@@ -106,139 +296,97 @@ function LivePreview({ config, name, description, goalAmount, items, coverPrevie
   const primary = config.palette.primary
   const bg = config.palette.background
 
+  const browserBar = (url: string) => (
+    <div
+      style={{
+        display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px',
+        backgroundColor: '#1E2A20', borderBottom: '1px solid rgba(255,255,255,0.07)',
+      }}
+    >
+      <div style={{ display: 'flex', gap: 4 }}>
+        {['rgba(255,255,255,0.18)', 'rgba(255,255,255,0.18)', 'rgba(255,255,255,0.18)'].map((c, i) => (
+          <div key={i} style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: c }} />
+        ))}
+      </div>
+      <div style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 4, padding: '2px 8px', fontSize: 9, color: 'rgba(255,255,255,0.38)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {url}
+      </div>
+    </div>
+  )
+
+  const sharedProps = { config, title, description, goalAmount, visibleItems, coverPreviewUrl }
+
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-md)' }}>
+    <div className="space-y-5">
 
-      {/* Mock browser bar */}
-      <div
-        className="flex items-center gap-2 px-3 py-2"
-        style={{ backgroundColor: '#1E2A20', borderBottom: '1px solid rgba(255,255,255,0.07)' }}
-      >
-        <div className="flex gap-1">
-          <div className="h-2 w-2 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.14)' }} />
-          <div className="h-2 w-2 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.14)' }} />
-          <div className="h-2 w-2 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.14)' }} />
-        </div>
-        <div
-          className="flex-1 rounded px-2 py-0.5 text-[10px] truncate"
-          style={{ backgroundColor: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.35)' }}
-        >
-          pentrumomente.ro/{config.slug}/…
-        </div>
-      </div>
-
-      {/* Hero */}
-      <div className="relative" style={{ height: 80, backgroundColor: primary, overflow: 'hidden' }}>
-        {coverPreviewUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={coverPreviewUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
-        ) : (
-          /* Abstract SVG blobs — mimics real AbstractHero */
-          <svg viewBox="0 0 340 80" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice">
-            <rect width="340" height="80" fill={primary} />
-            <ellipse cx="280" cy="10" rx="90" ry="60" fill={config.palette.accent} fillOpacity="0.28" />
-            <ellipse cx="60" cy="70" rx="80" ry="50" fill={config.palette.accent} fillOpacity="0.18" />
-            <ellipse cx="170" cy="40" rx="60" ry="36" fill="rgba(255,255,255,0.07)" />
-          </svg>
-        )}
-        {/* Gradient fade to bg */}
-        <div
-          className="absolute inset-0"
-          style={{ background: `linear-gradient(to bottom, transparent 20%, ${bg} 100%)` }}
-        />
-        {/* Logo */}
-        <div className="absolute top-2 left-3 text-[9px] font-extrabold tracking-tight" style={{ color: 'rgba(255,255,255,0.85)', textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>
-          pentru<span style={{ color: '#F5C07A' }}>momente</span>
-        </div>
-      </div>
-
-      {/* Page content */}
-      <div className="px-4 pb-4 space-y-3" style={{ backgroundColor: bg, marginTop: -12 }}>
-
-        {/* Title */}
-        <h3 className="font-bold text-[13px] leading-snug" style={{ color: '#1C1209' }}>{title}</h3>
-
-        {/* Stat chips */}
-        <div className="flex flex-wrap gap-1.5">
-          <span
-            className="inline-flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5"
-            style={{ backgroundColor: `${primary}18`, color: primary }}
-          >
-            ♥ 0 RON strânși
-          </span>
-          {goalAmount && (
-            <span
-              className="inline-flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5"
-              style={{ backgroundColor: `${primary}18`, color: primary }}
-            >
-              ↗ 0% din obiectiv
-            </span>
-          )}
-        </div>
-
-        {/* Goal progress bar */}
-        {goalAmount && (
-          <div>
-            <div className="flex justify-between text-[10px] mb-1" style={{ color: '#9A7B60' }}>
-              <span>0 RON</span>
-              <span>din {goalAmount} RON</span>
+      {/* ── Desktop mockup ── */}
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] mb-2 flex items-center gap-1.5" style={{ color: 'var(--color-ink-faint)' }}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><polyline points="8 21 12 17 16 21"/></svg>
+          Desktop
+        </p>
+        <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-sm)' }}>
+          {browserBar(`pentrumomente.ro/${config.slug}/…`)}
+          {/* Two-column layout mimicking the real desktop grid */}
+          <div style={{ display: 'flex', backgroundColor: bg, gap: 0 }}>
+            {/* Left: main content */}
+            <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+              <PreviewContent {...sharedProps} scale={0.52} />
             </div>
-            <div className="h-1.5 rounded-full" style={{ backgroundColor: '#E0D4C8' }}>
-              <div className="h-1.5 w-0 rounded-full" style={{ backgroundColor: primary }} />
-            </div>
-          </div>
-        )}
-
-        {/* Description */}
-        {description && (
-          <p className="text-[10px] leading-relaxed line-clamp-2" style={{ color: '#7A6652' }}>
-            {description}
-          </p>
-        )}
-
-        {/* Donate CTA */}
-        <button
-          className="w-full rounded-xl py-2 text-[11px] font-semibold text-white"
-          style={{ backgroundColor: primary }}
-          tabIndex={-1}
-          aria-hidden="true"
-        >
-          {config.copy.donationVerb}
-        </button>
-
-        {/* Items */}
-        {visibleItems.length > 0 && (
-          <div className="space-y-1.5 pt-1">
-            <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: '#9A7B60' }}>Articole</p>
-            {visibleItems.slice(0, 3).map((item, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between rounded-lg px-2.5 py-1.5"
-                style={{ backgroundColor: 'rgba(255,255,255,0.65)', border: '1px solid rgba(0,0,0,0.06)' }}
-              >
-                <span className="text-[10px] font-medium truncate" style={{ color: '#2D2016' }}>
-                  {item.iconId && <span className="mr-1">{item.iconId}</span>}{item.name}
-                </span>
-                <span className="text-[10px] shrink-0 ml-2" style={{ color: '#9A7B60' }}>
-                  {item.isCustomAmount ? 'Sumă liberă' : `${item.targetAmount} Lei`}
-                </span>
-              </div>
-            ))}
-            {visibleItems.length > 3 && (
-              <p className="text-center text-[10px]" style={{ color: '#B09070' }}>
-                + {visibleItems.length - 3} mai multe
+            {/* Right: donor wall sidebar */}
+            <div style={{ width: 90, flexShrink: 0, borderLeft: '1px solid #EDE0D0', backgroundColor: '#FFFDFB', padding: '10px 8px' }}>
+              <p style={{ fontSize: 7, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9A7B60', marginBottom: 8 }}>
+                Donatori
               </p>
-            )}
+              {[1, 2, 3].map((i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 7 }}>
+                  <div style={{ width: 18, height: 18, borderRadius: '50%', backgroundColor: `${primary}20`, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: primary, opacity: 0.6 }} />
+                  </div>
+                  <div>
+                    <div style={{ width: 36 + i * 6, height: 5, backgroundColor: '#EDE0D0', borderRadius: 3, marginBottom: 3 }} />
+                    <div style={{ width: 24, height: 4, backgroundColor: '#F5EDE3', borderRadius: 3 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        )}
-
-        {/* Trust row */}
-        <div className="flex items-center justify-center gap-3 pt-1">
-          {['🔒 Plată securizată', '✓ 100% familiei'].map((t) => (
-            <span key={t} className="text-[9px]" style={{ color: '#B09070' }}>{t}</span>
-          ))}
         </div>
       </div>
+
+      {/* ── Mobile mockup ── */}
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] mb-2 flex items-center gap-1.5" style={{ color: 'var(--color-ink-faint)' }}>
+          <svg width="10" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="18" r="1" fill="currentColor"/></svg>
+          Mobil
+        </p>
+        {/* Phone shell */}
+        <div className="mx-auto" style={{ width: 190 }}>
+          <div
+            style={{
+              border: '2.5px solid #2A2A2A', borderRadius: 20, overflow: 'hidden',
+              boxShadow: '0 8px 30px rgba(0,0,0,0.18)',
+            }}
+          >
+            {/* Status bar */}
+            <div style={{ backgroundColor: '#1C1C1C', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 10px' }}>
+              <span style={{ fontSize: 7, color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>9:41</span>
+              <div style={{ width: 30, height: 8, backgroundColor: '#1C1C1C', borderRadius: 4, border: '1px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 2 }}>
+                <div style={{ width: 16, height: 5, backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: 2 }} />
+              </div>
+            </div>
+            {/* Page content */}
+            <div style={{ maxHeight: 360, overflowY: 'auto' }}>
+              <PreviewContent {...sharedProps} scale={0.46} />
+            </div>
+            {/* Home indicator */}
+            <div style={{ backgroundColor: bg, display: 'flex', justifyContent: 'center', padding: '5px 0 3px' }}>
+              <div style={{ width: 36, height: 3, backgroundColor: '#C0B4A8', borderRadius: 2 }} />
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   )
 }
@@ -1100,9 +1248,9 @@ export default function CreateEventPage() {
             </div>
 
             {/* Right — sticky live preview */}
-            <div className="hidden lg:block sticky top-20 space-y-3">
+            <div className="hidden lg:block sticky top-20">
               <p
-                className="text-[11px] font-bold uppercase tracking-[0.14em] px-1"
+                className="text-[10px] font-bold uppercase tracking-[0.14em] px-1 mb-4"
                 style={{ color: 'var(--color-ink-faint)' }}
               >
                 Previzualizare live
@@ -1115,7 +1263,7 @@ export default function CreateEventPage() {
                 items={items}
                 coverPreviewUrl={coverPreviewUrl}
               />
-              <p className="text-xs text-center" style={{ color: 'var(--color-ink-faint)' }}>
+              <p className="text-[10px] text-center mt-3" style={{ color: 'var(--color-ink-faint)' }}>
                 Se actualizează pe măsură ce completezi
               </p>
             </div>
