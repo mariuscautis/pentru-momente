@@ -140,6 +140,11 @@ p {
   box-shadow: var(--shadow-md);
 }
 
+/* TOC anchor hover */
+.toc-link:hover {
+  background-color: var(--color-bg-alt);
+}
+
 /* Underline link */
 .link-underline {
   background-image: linear-gradient(currentColor, currentColor);
