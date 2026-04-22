@@ -1,11 +1,13 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { getSupabase } from '@/lib/db/supabase'
 
-export default function LoginPage() {
+function LoginPageInner() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const nextUrl = searchParams.get('next') ?? '/dashboard'
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -37,7 +39,7 @@ export default function LoginPage() {
       if (authError) {
         setError('Email sau parolă incorectă.')
       } else {
-        router.push('/dashboard')
+        router.push(nextUrl)
       }
     } else {
       const { error: authError } = await supabase.auth.signUp({
@@ -217,6 +219,14 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginPageInner />
+    </Suspense>
   )
 }
 

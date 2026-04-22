@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { getAllEventTypes } from '@/config/event-types'
@@ -272,6 +272,63 @@ export default function CreateEventPage() {
   const [error, setError] = useState<string | null>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
 
+  // Restore draft from sessionStorage on mount (after login redirect)
+  useEffect(() => {
+    const saved = sessionStorage.getItem('create_draft')
+    if (!saved) return
+    try {
+      const draft = JSON.parse(saved) as {
+        step: CreateStep
+        selectedConfigSlug: string
+        name: string
+        name2: string
+        slug: string
+        slugManuallyEdited: boolean
+        description: string
+        goalAmount: string
+        expiresAt: string
+        accountType: 'individual' | 'company'
+        items: ItemInput[]
+      }
+      const config = getAllEventTypes().find(c => c.slug === draft.selectedConfigSlug)
+      if (config) {
+        setSelectedConfig(config)
+        setStep(draft.step)
+        setName(draft.name)
+        setName2(draft.name2)
+        setSlug(draft.slug)
+        setSlugManuallyEdited(draft.slugManuallyEdited)
+        setDescription(draft.description)
+        setGoalAmount(draft.goalAmount)
+        setExpiresAt(draft.expiresAt)
+        setAccountType(draft.accountType)
+        setItems(draft.items)
+      }
+    } catch {
+      // ignore malformed draft
+    }
+    sessionStorage.removeItem('create_draft')
+  }, [])
+
+  function saveDraftAndRedirect(path: string) {
+    if (selectedConfig) {
+      sessionStorage.setItem('create_draft', JSON.stringify({
+        step,
+        selectedConfigSlug: selectedConfig.slug,
+        name,
+        name2,
+        slug,
+        slugManuallyEdited,
+        description,
+        goalAmount,
+        expiresAt,
+        accountType,
+        items,
+      }))
+    }
+    router.push(path)
+  }
+
   function selectType(config: EventTypeConfig) {
     setSelectedConfig(config)
     setItems(config.suggestedItems.map((s) => ({
@@ -301,7 +358,8 @@ export default function CreateEventPage() {
     const supabase = getSupabase()
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
-      router.push('/login?next=/create')
+      setLoading(false)
+      saveDraftAndRedirect('/login?next=/create')
       return
     }
 

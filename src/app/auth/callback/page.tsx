@@ -26,7 +26,8 @@ function AuthCallbackInner() {
       // After exchange (or if session already in hash), verify we have a session
       const { data } = await supabase.auth.getSession()
       if (data.session) {
-        router.replace('/dashboard')
+        const hasDraft = !!sessionStorage.getItem('create_draft')
+        router.replace(hasDraft ? '/create' : '/dashboard')
       } else {
         router.replace('/login?error=auth')
       }
