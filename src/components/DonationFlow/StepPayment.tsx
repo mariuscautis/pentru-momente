@@ -186,7 +186,7 @@ function CheckoutForm({ config, state, onBack, onSuccess }: CheckoutFormProps) {
         </p>
       </div>
 
-      <PaymentElement />
+      <PaymentElement options={{ fields: { billingDetails: { address: { country: 'never' } } } }} />
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
