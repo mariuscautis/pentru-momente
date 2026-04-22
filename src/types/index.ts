@@ -69,6 +69,7 @@ export interface Donation {
   message?: string
   isAnonymous: boolean
   showAmount: boolean
+  cardCountry?: string            // ISO 3166-1 alpha-2, declared by donor at checkout
   stripePaymentIntentId: string
   status: 'pending' | 'confirmed' | 'refunded'
   createdAt: string

@@ -12,6 +12,7 @@ function rowToDonation(row: Record<string, unknown>): Donation {
     message: row.message as string | undefined,
     isAnonymous: row.is_anonymous as boolean,
     showAmount: row.show_amount as boolean,
+    cardCountry: (row.card_country as string | undefined) ?? undefined,
     stripePaymentIntentId: row.stripe_payment_intent_id as string,
     status: row.status as Donation['status'],
     createdAt: row.created_at as string,
@@ -60,6 +61,7 @@ export async function createDonation(
       message: input.message ?? null,
       is_anonymous: input.isAnonymous,
       show_amount: input.showAmount,
+      card_country: input.cardCountry ?? null,
       stripe_payment_intent_id: input.stripePaymentIntentId,
       status: 'pending',
     })

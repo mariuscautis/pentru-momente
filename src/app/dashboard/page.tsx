@@ -46,6 +46,7 @@ export default function DashboardPage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [togglingFor, setTogglingFor] = useState<string | null>(null)
   const [donorsModal, setDonorsModal] = useState(false)
+  const [donationsModalEventId, setDonationsModalEventId] = useState<string | null>(null)
 
   async function load() {
     const supabase = getSupabase()
@@ -286,10 +287,21 @@ export default function DashboardPage() {
               onDeleteCancel={() => setConfirmDeleteId(null)}
               togglingActive={togglingFor === event.id}
               onToggleActive={() => handleToggleActive(event.id, event.isActive)}
+              onShowDonations={() => setDonationsModalEventId(event.id)}
             />
           ))}
         </div>
       </main>
+
+      {/* Donations modal */}
+      {donationsModalEventId && (
+        <DonationsModal
+          eventId={donationsModalEventId}
+          eventName={events.find(e => e.id === donationsModalEventId)?.name ?? ''}
+          accessToken={accessToken}
+          onClose={() => setDonationsModalEventId(null)}
+        />
+      )}
 
       {/* Support floating button + modal */}
       {accessToken && <SupportModal accessToken={accessToken} />}
@@ -353,12 +365,13 @@ interface EventCardProps {
   onDeleteCancel: () => void
   togglingActive: boolean
   onToggleActive: () => void
+  onShowDonations: () => void
 }
 
 function EventCard({
   event, accessToken, defaultExpanded, uploadingCover, onUploadCover, onEventUpdated,
   confirmingDelete, deletingEvent, onDeleteRequest, onDeleteConfirm, onDeleteCancel,
-  togglingActive, onToggleActive,
+  togglingActive, onToggleActive, onShowDonations,
 }: EventCardProps) {
   const fileRef = useRef<HTMLInputElement>(null)
   const bodyRef = useRef<HTMLDivElement>(null)
@@ -683,6 +696,13 @@ function EventCard({
                 Pagina a fost suspendată. Contactează-ne pentru detalii.
               </span>
             )}
+            <button
+              onClick={onShowDonations}
+              className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
+              style={{ border: '1px solid #EDE0D0', color: '#7A6652' }}
+            >
+              Donații
+            </button>
             <button
               onClick={onDeleteRequest}
               className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
@@ -1337,6 +1357,136 @@ function DonorsModal({ events, onClose }: { events: DashboardEvent[]; onClose: (
             <p className="text-sm text-center py-8" style={{ color: '#9A7B60' }}>Nicio donație confirmată.</p>
           )}
         </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Donations modal ──────────────────────────────────────────────────────────
+
+interface DonationRow {
+  id: string
+  amount: number
+  displayName: string | null
+  isAnonymous: boolean
+  message: string | null
+  cardCountry: string | null
+  createdAt: string
+}
+
+// Maps ISO 3166-1 alpha-2 → emoji flag (covers all countries via regional indicator symbols)
+function countryFlag(code: string): string {
+  return code.toUpperCase().replace(/./g, (c) =>
+    String.fromCodePoint(0x1F1E6 - 65 + c.charCodeAt(0))
+  )
+}
+
+function DonationsModal({ eventId, eventName, accessToken, onClose }: {
+  eventId: string
+  eventName: string
+  accessToken: string
+  onClose: () => void
+}) {
+  const [donations, setDonations] = useState<DonationRow[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true)
+      try {
+        const res = await fetch(`/api/donations/for-event?eventId=${eventId}`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        })
+        if (!res.ok) { setError('Nu s-au putut încărca donațiile.'); return }
+        const json = await res.json() as { donations: DonationRow[] }
+        setDonations(json.donations)
+      } catch {
+        setError('Eroare de rețea.')
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [eventId, accessToken])
+
+  const total = donations.reduce((s, d) => s + d.amount, 0)
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-lg max-h-[85vh] flex flex-col rounded-2xl overflow-hidden"
+        style={{ backgroundColor: '#FFFDFB', border: '1px solid #EDE0D0' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 shrink-0" style={{ borderBottom: '1px solid #EDE0D0' }}>
+          <div>
+            <h2 className="text-base font-bold" style={{ color: '#2D2016' }}>Donații</h2>
+            <p className="text-xs mt-0.5" style={{ color: '#9A7B60' }}>{eventName}</p>
+          </div>
+          <button onClick={onClose} className="text-sm px-2 py-1 transition-opacity hover:opacity-60" style={{ color: '#9A7B60' }}>✕</button>
+        </div>
+
+        {/* Body */}
+        <div className="overflow-y-auto flex-1 px-6 py-4 space-y-2">
+          {loading && (
+            <p className="text-sm text-center py-8" style={{ color: '#9A7B60' }}>Se încarcă...</p>
+          )}
+          {error && (
+            <p className="text-sm text-center py-8" style={{ color: '#DC2626' }}>{error}</p>
+          )}
+          {!loading && !error && donations.length === 0 && (
+            <p className="text-sm text-center py-8" style={{ color: '#9A7B60' }}>Nicio donație confirmată încă.</p>
+          )}
+          {!loading && !error && donations.map((d) => (
+            <div
+              key={d.id}
+              className="flex items-center justify-between gap-3 rounded-xl px-4 py-3"
+              style={{ backgroundColor: '#F5EDE3', border: '1px solid #EDE0D0' }}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                {/* Country flag */}
+                <span className="text-xl shrink-0" title={d.cardCountry ?? ''}>
+                  {d.cardCountry ? countryFlag(d.cardCountry) : '🌍'}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold truncate" style={{ color: '#2D2016' }}>
+                    {d.isAnonymous ? 'Anonim' : (d.displayName ?? 'Anonim')}
+                  </p>
+                  {d.message && (
+                    <p className="text-xs truncate mt-0.5" style={{ color: '#9A7B60' }}>"{d.message}"</p>
+                  )}
+                  <p className="text-xs mt-0.5" style={{ color: '#B09070' }}>
+                    {new Date(d.createdAt).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </p>
+                </div>
+              </div>
+              <span className="text-sm font-bold shrink-0" style={{ color: '#C4956A' }}>
+                {d.amount.toLocaleString('ro-RO')} Lei
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer total */}
+        {!loading && donations.length > 0 && (
+          <div
+            className="flex items-center justify-between px-6 py-4 shrink-0"
+            style={{ borderTop: '1px solid #EDE0D0' }}
+          >
+            <span className="text-sm font-medium" style={{ color: '#7A6652' }}>
+              {donations.length} donație{donations.length !== 1 ? 'i' : ''}
+            </span>
+            <span className="text-base font-bold" style={{ color: '#2D2016' }}>
+              Total: {total.toLocaleString('ro-RO')} Lei
+            </span>
+          </div>
+        )}
       </div>
     </div>
   )

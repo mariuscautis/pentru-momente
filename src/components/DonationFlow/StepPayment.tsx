@@ -44,6 +44,7 @@ export function StepPayment({ state, setState, event, config, onBack, onSuccess 
             amount: totalDonationAmount(state),
             tipAmount: state.tipAmount,
             cardRegion: state.cardRegion,
+            cardCountry: state.cardCountry || undefined,
             displayName: state.displayName || undefined,
             donorEmail: state.donorEmail || undefined,
             message: state.message || undefined,

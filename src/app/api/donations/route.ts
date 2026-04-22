@@ -27,6 +27,7 @@ interface CreateDonationBody {
   tipAmount?: number
   // Card region declared by donor — determines commission rate
   cardRegion?: 'eu' | 'non-eu'
+  cardCountry?: string
   displayName?: string
   donorEmail?: string
   message?: string
@@ -130,6 +131,7 @@ async function handlePost(req: NextRequest): Promise<NextResponse> {
         itemId: selected.itemId,
         amount: selected.amount,
         tipAmount: i === 0 ? totalPlatformRevenue : 0,
+        cardCountry: body.cardCountry,
         displayName: body.displayName,
         message: body.message,
         isAnonymous: body.isAnonymous,
@@ -143,6 +145,7 @@ async function handlePost(req: NextRequest): Promise<NextResponse> {
       itemId: undefined,
       amount: body.amount,
       tipAmount: totalPlatformRevenue,
+      cardCountry: body.cardCountry,
       displayName: body.displayName,
       message: body.message,
       isAnonymous: body.isAnonymous,
