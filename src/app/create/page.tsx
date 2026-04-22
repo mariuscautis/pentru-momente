@@ -114,7 +114,7 @@ function PreviewContent({
   const primary = config.palette.primary
   const accent = config.palette.accent
   const bg = config.palette.background
-  const heroH = Math.round(70 * scale)
+  const heroH = Math.round(100 * scale)
   const px = Math.round(16 * scale)
   const itemIconSize = Math.round(28 * scale)
   const fontSize = (base: number) => Math.round(base * scale)
@@ -127,11 +127,11 @@ function PreviewContent({
           // eslint-disable-next-line @next/next/no-img-element
           <img src={coverPreviewUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
         ) : (
-          <svg viewBox="0 0 400 70" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice">
-            <rect width="400" height="70" fill={primary} />
-            <ellipse cx="320" cy="10" rx="120" ry="70" fill={accent} fillOpacity="0.30" />
-            <ellipse cx="60" cy="60" rx="100" ry="60" fill={accent} fillOpacity="0.18" />
-            <ellipse cx="200" cy="35" rx="70" ry="40" fill="rgba(255,255,255,0.06)" />
+          <svg viewBox="0 0 400 100" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice">
+            <rect width="400" height="100" fill={primary} />
+            <ellipse cx="320" cy="15" rx="120" ry="85" fill={accent} fillOpacity="0.30" />
+            <ellipse cx="60" cy="85" rx="100" ry="70" fill={accent} fillOpacity="0.18" />
+            <ellipse cx="200" cy="50" rx="70" ry="45" fill="rgba(255,255,255,0.06)" />
           </svg>
         )}
         {/* Logo */}
@@ -362,27 +362,32 @@ function LivePreview({ config, name, description, goalAmount, items, coverPrevie
           Mobil
         </p>
         {/* Phone shell */}
-        <div className="mx-auto" style={{ width: 190 }}>
+        <div className="mx-auto" style={{ width: 210 }}>
           <div
             style={{
-              border: '2.5px solid #2A2A2A', borderRadius: 20, overflow: 'hidden',
-              boxShadow: '0 8px 30px rgba(0,0,0,0.18)',
+              border: '3px solid #1A1A1A', borderRadius: 28, overflow: 'hidden',
+              boxShadow: '0 12px 40px rgba(0,0,0,0.22), 0 0 0 1px rgba(255,255,255,0.06) inset',
+              backgroundColor: '#1A1A1A',
             }}
           >
-            {/* Status bar */}
-            <div style={{ backgroundColor: '#1C1C1C', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 10px' }}>
-              <span style={{ fontSize: 7, color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>9:41</span>
-              <div style={{ width: 30, height: 8, backgroundColor: '#1C1C1C', borderRadius: 4, border: '1px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 2 }}>
-                <div style={{ width: 16, height: 5, backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: 2 }} />
+            {/* Notch / status bar */}
+            <div style={{ backgroundColor: '#1A1A1A', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 12px 4px' }}>
+              <span style={{ fontSize: 7.5, color: 'rgba(255,255,255,0.75)', fontWeight: 600 }}>9:41</span>
+              {/* Notch pill */}
+              <div style={{ width: 40, height: 10, backgroundColor: '#0A0A0A', borderRadius: 6 }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                <svg width="9" height="7" viewBox="0 0 12 9" fill="rgba(255,255,255,0.65)"><path d="M0 9h2V5H0v4zm3 0h2V3H3v6zm3 0h2V1H6v8zm3 0h2V0H9v9z"/></svg>
+                <svg width="9" height="7" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.65)" strokeWidth="2"><path d="M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/></svg>
+                <svg width="12" height="7" viewBox="0 0 24 12" fill="none"><rect x="0.5" y="0.5" width="20" height="11" rx="3.5" stroke="rgba(255,255,255,0.65)" strokeWidth="1.5"/><rect x="21" y="3.5" width="2.5" height="5" rx="1" fill="rgba(255,255,255,0.65)"/><rect x="2" y="2" width="15" height="8" rx="2" fill="rgba(255,255,255,0.65)"/></svg>
               </div>
             </div>
-            {/* Page content */}
-            <div style={{ maxHeight: 360, overflowY: 'auto' }}>
-              <PreviewContent {...sharedProps} scale={0.46} />
+            {/* Page content — scrollable */}
+            <div style={{ maxHeight: 480, overflowY: 'auto', overflowX: 'hidden' }}>
+              <PreviewContent {...sharedProps} scale={0.48} />
             </div>
             {/* Home indicator */}
-            <div style={{ backgroundColor: bg, display: 'flex', justifyContent: 'center', padding: '5px 0 3px' }}>
-              <div style={{ width: 36, height: 3, backgroundColor: '#C0B4A8', borderRadius: 2 }} />
+            <div style={{ backgroundColor: config.palette.background, display: 'flex', justifyContent: 'center', padding: '6px 0 4px' }}>
+              <div style={{ width: 44, height: 3.5, backgroundColor: '#C0B4A8', borderRadius: 2 }} />
             </div>
           </div>
         </div>
