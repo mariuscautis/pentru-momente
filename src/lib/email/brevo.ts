@@ -419,6 +419,191 @@ function buildAdminActionHtml(params: {
 </html>`
 }
 
+// Triggered when a new event is created — notifies the super admin
+export async function sendNewEventAdminNotification(
+  organiserEmail: string,
+  organiserName: string,
+  eventName: string,
+  eventType: string,
+  eventSlug: string
+): Promise<void> {
+  const eventUrl = `${APP_URL}/${eventType}/${eventSlug}`
+  const adminUrl = `${APP_URL}/superadmin`
+  const eventTypeLabels: Record<string, string> = {
+    inmormantare: 'Înmormântare',
+    nunta: 'Nuntă',
+    bebe: 'Nou-născut',
+    sanatate: 'Sănătate',
+    altele: 'Altele',
+  }
+  const typeLabel = eventTypeLabels[eventType] ?? eventType
+
+  const html = `<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pagină nouă creată — ${eventName}</title>
+</head>
+<body style="margin:0;padding:0;background:#FAF6F1;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#FAF6F1;padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table width="520" cellpadding="0" cellspacing="0" style="max-width:520px;width:100%;background:#FFFFFF;border-radius:16px;overflow:hidden;border:1px solid #EDE0D0;">
+          <tr>
+            <td style="background:#2D2016;padding:28px 32px;text-align:center;">
+              <p style="margin:0 0 4px;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.5);">pentrumomente.ro · Admin</p>
+              <h1 style="margin:8px 0 0;font-size:20px;font-weight:700;color:#FFFFFF;line-height:1.3;">🆕 Pagină nouă creată</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-radius:10px;overflow:hidden;border:1px solid #EDE0D0;margin-bottom:24px;">
+                <tr style="background:#F5EDE3;">
+                  <td colspan="2" style="padding:12px 18px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#9A7B60;">Detalii pagină</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 18px;font-size:14px;color:#7A6652;border-bottom:1px solid #F0E8DC;">Numele paginii</td>
+                  <td style="padding:10px 18px;font-size:14px;font-weight:600;color:#2D2016;text-align:right;border-bottom:1px solid #F0E8DC;">${eventName}</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 18px;font-size:14px;color:#7A6652;border-bottom:1px solid #F0E8DC;">Tip eveniment</td>
+                  <td style="padding:10px 18px;font-size:14px;font-weight:600;color:#2D2016;text-align:right;border-bottom:1px solid #F0E8DC;">${typeLabel}</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 18px;font-size:14px;color:#7A6652;border-bottom:1px solid #F0E8DC;">Organizator</td>
+                  <td style="padding:10px 18px;font-size:14px;font-weight:600;color:#2D2016;text-align:right;border-bottom:1px solid #F0E8DC;">${organiserName}</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 18px;font-size:14px;color:#7A6652;">Email organizator</td>
+                  <td style="padding:10px 18px;font-size:14px;font-weight:600;color:#2D2016;text-align:right;">${organiserEmail}</td>
+                </tr>
+              </table>
+              <div style="text-align:center;margin:8px 0 16px;display:flex;gap:12px;justify-content:center;">
+                <a href="${eventUrl}" style="display:inline-block;background:#C4956A;color:#FFFFFF;font-size:13px;font-weight:600;text-decoration:none;padding:10px 22px;border-radius:8px;margin:4px;">
+                  Vezi pagina
+                </a>
+                <a href="${adminUrl}" style="display:inline-block;background:#2D2016;color:#FFFFFF;font-size:13px;font-weight:600;text-decoration:none;padding:10px 22px;border-radius:8px;margin:4px;">
+                  Panou admin
+                </a>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#FAF6F1;padding:16px 32px;text-align:center;border-top:1px solid #EDE0D0;">
+              <p style="margin:0;font-size:12px;color:#B09070;">
+                Notificare automată · <a href="${APP_URL}" style="color:#C4956A;text-decoration:none;">pentrumomente.ro</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
+
+  await sendEmail({
+    to: [{ email: 'info@pentrumomente.ro', name: 'Admin pentrumomente.ro' }],
+    subject: `Pagină nouă: ${eventName} (${typeLabel}) — ${organiserEmail}`,
+    htmlContent: html,
+  })
+}
+
+// Triggered when Stripe onboarding completes and the event page goes live
+export async function sendPageActivatedEmail(
+  organiserEmail: string,
+  organiserName: string,
+  eventName: string,
+  eventType: string,
+  eventSlug: string,
+  primaryColor: string
+): Promise<void> {
+  const eventUrl = `${APP_URL}/${eventType}/${eventSlug}`
+
+  const html = `<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pagina ta este activă — ${eventName}</title>
+</head>
+<body style="margin:0;padding:0;background:#FAF6F1;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#FAF6F1;padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table width="520" cellpadding="0" cellspacing="0" style="max-width:520px;width:100%;background:#FFFFFF;border-radius:16px;overflow:hidden;border:1px solid #EDE0D0;">
+          <tr>
+            <td style="background:${primaryColor};padding:36px 32px;text-align:center;">
+              <p style="margin:0 0 6px;font-size:28px;line-height:1;">🎉</p>
+              <p style="margin:0 0 4px;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.65);">pentrumomente.ro</p>
+              <h1 style="margin:8px 0 0;font-size:22px;font-weight:700;color:#FFFFFF;line-height:1.3;">Pagina ta este activă!</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:36px 32px;">
+              <p style="margin:0 0 16px;font-size:15px;color:#4A3728;line-height:1.6;">
+                Bună, <strong>${organiserName}</strong>,
+              </p>
+              <p style="margin:0 0 20px;font-size:15px;color:#4A3728;line-height:1.6;">
+                Contul tău Stripe a fost verificat cu succes și pagina de donații pentru <strong>${eventName}</strong> este acum activă și accesibilă publicului.
+              </p>
+              <p style="margin:0 0 28px;font-size:15px;color:#4A3728;line-height:1.6;">
+                Donatorii pot contribui direct pe pagina ta, iar fondurile vor ajunge automat în contul tău bancar prin Stripe.
+              </p>
+
+              <!-- What to do next -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-radius:10px;overflow:hidden;border:1px solid #EDE0D0;margin-bottom:28px;">
+                <tr style="background:#F5EDE3;">
+                  <td style="padding:12px 18px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#9A7B60;">Ce urmează</td>
+                </tr>
+                <tr>
+                  <td style="padding:12px 18px;font-size:14px;color:#4A3728;line-height:1.6;border-bottom:1px solid #F0E8DC;">
+                    ✅ &nbsp;Distribuie linkul paginii tale pe WhatsApp, Facebook sau prin SMS
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:12px 18px;font-size:14px;color:#4A3728;line-height:1.6;border-bottom:1px solid #F0E8DC;">
+                    ✅ &nbsp;Urmărește donațiile primite din panoul tău de control
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:12px 18px;font-size:14px;color:#4A3728;line-height:1.6;">
+                    ✅ &nbsp;Fondurile se vor vira automat în contul tău bancar
+                  </td>
+                </tr>
+              </table>
+
+              <div style="text-align:center;margin:8px 0;">
+                <a href="${eventUrl}"
+                   style="display:inline-block;background:${primaryColor};color:#FFFFFF;font-size:15px;font-weight:600;text-decoration:none;padding:14px 32px;border-radius:10px;">
+                  Deschide pagina ta
+                </a>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#FAF6F1;padding:20px 32px;text-align:center;border-top:1px solid #EDE0D0;">
+              <p style="margin:0;font-size:12px;color:#B09070;line-height:1.6;">
+                Ai întrebări? Ne găsești la <a href="${APP_URL}/contact" style="color:#C4956A;text-decoration:none;">pentrumomente.ro/contact</a><br/>
+                <a href="${APP_URL}" style="color:#C4956A;text-decoration:none;">pentrumomente.ro</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
+
+  await sendEmail({
+    to: [{ email: organiserEmail, name: organiserName }],
+    subject: `Pagina ta este activă — ${eventName}`,
+    htmlContent: html,
+  })
+}
+
 // Triggered when an event is closed (manually or by expiry)
 export async function sendEventClosedSummaryEmail(
   organiserEmail: string,

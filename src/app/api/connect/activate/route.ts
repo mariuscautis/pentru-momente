@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { supabase, supabaseAdmin } from '@/lib/db/supabase'
+import { sendPageActivatedEmail } from '@/lib/email/brevo'
+import { getEventTypeConfig } from '@/config/event-types'
 import { ApiError } from '@/types'
 
 function getStripe() {
@@ -32,7 +34,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const { data: eventRow } = await supabase
     .from('events')
-    .select('id, organiser_id, stripe_connect_account_id, connect_onboarding_complete')
+    .select('id, slug, event_type, name, organiser_id, stripe_connect_account_id, connect_onboarding_complete')
     .eq('slug', body.eventSlug)
     .single()
 
@@ -60,6 +62,27 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         .from('events')
         .update({ connect_onboarding_complete: true, is_active: true })
         .eq('id', eventRow.id as string)
+
+      // Send activation email to organiser — fire-and-forget
+      try {
+        const { data: userData } = await supabaseAdmin.auth.admin.getUserById(user.id)
+        const organiserEmail = userData?.user?.email ?? user.email ?? ''
+        const organiserName = (userData?.user?.user_metadata?.full_name as string | undefined)
+          ?? (userData?.user?.user_metadata?.name as string | undefined)
+          ?? organiserEmail
+        const config = getEventTypeConfig(eventRow.event_type as string)
+        await sendPageActivatedEmail(
+          organiserEmail,
+          organiserName,
+          eventRow.name as string,
+          eventRow.event_type as string,
+          eventRow.slug as string,
+          config.palette.primary
+        )
+      } catch (err) {
+        console.error('[connect/activate] failed to send activation email:', err)
+      }
+
       return NextResponse.json({ isActive: true })
     }
   } catch {
