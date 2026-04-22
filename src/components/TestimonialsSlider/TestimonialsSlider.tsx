@@ -72,6 +72,7 @@ function TestimonialCard({ t }: { t: TestimonialItem }) {
 export function TestimonialsSlider({ testimonials }: Props) {
   const [current, setCurrent] = useState(0)
   const sliding = useRef(false)
+  const touchStartX = useRef<number | null>(null)
 
   const go = (next: number) => {
     if (sliding.current) return
@@ -82,6 +83,17 @@ export function TestimonialsSlider({ testimonials }: Props) {
 
   const prev = () => go((current - 1 + testimonials.length) % testimonials.length)
   const next = () => go((current + 1) % testimonials.length)
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+  }
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    touchStartX.current = null
+    if (Math.abs(dx) < 40) return   // ignore small taps
+    if (dx < 0) next(); else prev()
+  }
 
   useEffect(() => {
     if (testimonials.length <= 1) return
@@ -140,7 +152,7 @@ export function TestimonialsSlider({ testimonials }: Props) {
 
       {/* ── Mobile: single card, sliding strip ── */}
       <div className="block md:hidden">
-        <div className="overflow-hidden rounded-2xl">
+        <div className="overflow-hidden rounded-2xl" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
           <div
             className="flex"
             style={{

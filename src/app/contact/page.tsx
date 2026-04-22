@@ -214,7 +214,7 @@ export default function ContactPage() {
                         value={message} onChange={e => setMessage(e.target.value)}
                         placeholder="Descrie pe scurt ce dorești să ne transmiți..."
                         rows={5} required
-                        className="w-full rounded-xl px-4 py-3 text-sm outline-none resize-none transition-all"
+                        className="w-full rounded-xl px-4 py-3 text-sm outline-none resize-none transition-all placeholder:text-[#C4B5A5]"
                         style={{ backgroundColor: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-ink)' }}
                         onFocus={e => { e.currentTarget.style.borderColor = 'var(--color-amber)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(212,136,42,0.12)' }}
                         onBlur={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.boxShadow = 'none' }}
@@ -294,11 +294,12 @@ export default function ContactPage() {
                   </button>
                   <div
                     style={{
-                      maxHeight: openFaq === idx ? '400px' : '0px',
-                      overflow: 'hidden',
-                      transition: 'max-height 0.35s cubic-bezier(0.16,1,0.3,1)',
+                      display: 'grid',
+                      gridTemplateRows: openFaq === idx ? '1fr' : '0fr',
+                      transition: 'grid-template-rows 0.35s cubic-bezier(0.16,1,0.3,1)',
                     }}
                   >
+                  <div style={{ overflow: 'hidden' }}>
                     <div className="px-5 pb-5 space-y-3" style={{ borderTop: '1px solid var(--color-border-faint)' }}>
                       <p className="text-sm leading-relaxed pt-3" style={{ color: 'var(--color-ink-muted)' }}>
                         {item.answer}
@@ -314,6 +315,7 @@ export default function ContactPage() {
                         </Link>
                       )}
                     </div>
+                  </div>
                   </div>
                 </div>
               ))}
@@ -358,7 +360,7 @@ function ContactInput({ type, value, onChange, placeholder, required }: {
     <input
       type={type} value={value} onChange={e => onChange(e.target.value)}
       placeholder={placeholder} required={required}
-      className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all"
+      className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all placeholder:text-[#C4B5A5]"
       style={{ backgroundColor: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-ink)' }}
       onFocus={e => { e.currentTarget.style.borderColor = 'var(--color-amber)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(212,136,42,0.12)' }}
       onBlur={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.boxShadow = 'none' }}

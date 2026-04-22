@@ -501,7 +501,7 @@ export default async function HomePage() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-0 gap-y-3 md:gap-y-0">
             {HOW_IT_WORKS.map(({ n, title, description, icon: StepIcon }) => (
               <div key={n} className="relative">
                 <div

@@ -229,6 +229,10 @@ input[type="number"] {
   border-collapse: collapse;
   font-size: 0.875rem;
   margin-bottom: 1rem;
+  /* Prevent table from breaking out of container on mobile */
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .legal-content th,
 .legal-content td {
@@ -236,11 +240,19 @@ input[type="number"] {
   padding: 0.5rem 0.75rem;
   border: 1px solid #EAD8C8;
   color: #5A4030;
+  white-space: nowrap;
 }
 .legal-content th {
   background-color: #F5EDE3;
   font-weight: 600;
   color: #2D1A0E;
+}
+/* On small screens, allow td text to wrap so tables stay compact */
+@media (max-width: 480px) {
+  .legal-content td {
+    white-space: normal;
+    min-width: 80px;
+  }
 }
 
 /* Underline link */
