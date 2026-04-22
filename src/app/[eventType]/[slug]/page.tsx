@@ -18,7 +18,13 @@ export async function generateMetadata({ params }: PageParams): Promise<Metadata
   if (!isValidEventType(eventType)) return {}
 
   const event = await getEventBySlug(eventType, slug)
-  if (!event) return {}
+
+  // Inactive, deleted, or expired — tell crawlers not to index this URL
+  if (!event) {
+    return {
+      robots: { index: false, follow: false },
+    }
+  }
 
   const config = getEventTypeConfig(eventType)
   const appUrl = process.env.NEXT_PUBLIC_APP_URL
@@ -31,6 +37,7 @@ export async function generateMetadata({ params }: PageParams): Promise<Metadata
   return {
     title,
     description: event.description ?? `${config.copy.donationVerb} pentru ${event.name} pe pentrumomente.ro`,
+    robots: { index: true, follow: true },
     openGraph: {
       title,
       description: event.description ?? `${config.copy.donationVerb} pentru ${event.name}`,
