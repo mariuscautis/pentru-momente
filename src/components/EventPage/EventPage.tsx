@@ -30,9 +30,15 @@ export function EventPage({ event, items, donations, config, totalRaised }: Even
   const confirmedDonations = donations.filter((d) => d.status === 'confirmed')
   const derivedTotalRaised = confirmedDonations.reduce((sum, d) => sum + d.amount, 0) || totalRaised
 
-  const goalPercent = event.goalAmount
-    ? Math.min(100, Math.round((derivedTotalRaised / event.goalAmount) * 100))
+  const goalPercentRaw = event.goalAmount
+    ? Math.min(100, (derivedTotalRaised / event.goalAmount) * 100)
     : null
+  // Round down, but never show 0% when there is actually progress
+  const goalPercent = goalPercentRaw === null
+    ? null
+    : goalPercentRaw > 0 && goalPercentRaw < 1
+      ? -1   // sentinel: render as "< 1%"
+      : Math.round(goalPercentRaw)
 
   const cartTotal = cart.reduce((sum, i) => sum + i.amount, 0)
   const donorCount = confirmedDonations.length
@@ -154,7 +160,7 @@ export function EventPage({ event, items, donations, config, totalRaised }: Even
                 {event.goalAmount && goalPercent !== null && (
                   <StatChip
                     icon={<TrendingUp size={13} strokeWidth={2} />}
-                    value={`${goalPercent}%`}
+                    value={goalPercent === -1 ? '< 1%' : `${goalPercent}%`}
                     label="din obiectiv"
                     color={config.palette.primary}
                   />
@@ -547,20 +553,20 @@ function GoalProgress({
           className="shrink-0 text-sm font-bold tabular-nums rounded-full px-3 py-1"
           style={{ backgroundColor: hexToRgba(primary, 0.12), color: primary }}
         >
-          {goalPercent}%
+          {goalPercent === -1 ? '< 1%' : `${goalPercent}%`}
         </span>
       </div>
       <div
         className="h-2.5 rounded-full overflow-hidden"
         style={{ backgroundColor: '#F0E8DC' }}
         role="progressbar"
-        aria-valuenow={goalPercent}
+        aria-valuenow={goalPercent === -1 ? 0 : goalPercent}
         aria-valuemin={0}
         aria-valuemax={100}
       >
         <div
           className="h-full rounded-full transition-all duration-700"
-          style={{ width: `${goalPercent}%`, backgroundColor: primary }}
+          style={{ width: goalPercent === -1 ? '0.5%' : `${goalPercent}%`, backgroundColor: primary }}
         />
       </div>
     </div>
