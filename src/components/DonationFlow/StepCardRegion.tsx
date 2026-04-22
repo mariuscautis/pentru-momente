@@ -86,98 +86,70 @@ function CountryDropdown({
   onSelect: (code: string) => void
 }) {
   const [query, setQuery] = useState('')
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
+  const selectedCountry = countries.find((c) => c.code === selected)
   const filtered = query.trim()
     ? countries.filter((c) => c.name.toLowerCase().includes(query.toLowerCase()))
     : countries
 
-  const selectedCountry = countries.find((c) => c.code === selected)
-
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [])
-
   return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-sm transition-colors"
-        style={{
-          border: `1px solid ${open ? '#C4956A' : '#E0D0C0'}`,
-          backgroundColor: '#FFFDFB',
-          color: selectedCountry ? '#2D2016' : '#B09070',
-        }}
-      >
-        <span className="flex items-center gap-2">
-          {selectedCountry ? (
-            <>
-              <span>{selectedCountry.flag}</span>
-              <span>{selectedCountry.name}</span>
-            </>
-          ) : (
-            <span>{placeholder}</span>
-          )}
-        </span>
-        <svg
-          width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-          style={{ color: '#9A7B60', transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 150ms' }}
-        >
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-      </button>
+    <div className="space-y-2">
+      {/* Search input — always visible once panel is open */}
+      <div className="relative">
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={selectedCountry ? `${selectedCountry.flag} ${selectedCountry.name}` : placeholder}
+          className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
+          style={{
+            border: '1px solid #E0D0C0',
+            backgroundColor: '#FDFAF7',
+            color: '#2D2016',
+          }}
+          onFocus={(e) => (e.target.style.borderColor = '#C4956A')}
+          onBlur={(e) => (e.target.style.borderColor = '#E0D0C0')}
+        />
+        {query && (
+          <button
+            type="button"
+            onClick={() => setQuery('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs"
+            style={{ color: '#9A7B60' }}
+          >
+            ✕
+          </button>
+        )}
+      </div>
 
-      {open && (
-        <div
-          className="absolute z-50 w-full mt-1 rounded-xl overflow-hidden"
-          style={{ border: '1px solid #E0D0C0', backgroundColor: '#FFFDFB', boxShadow: '0 8px 24px rgba(45,32,22,0.12)' }}
-        >
-          {/* Search */}
-          <div className="p-2" style={{ borderBottom: '1px solid #F0E8DC' }}>
-            <input
-              type="text"
-              autoFocus
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Caută țara..."
-              className="w-full rounded-lg px-3 py-2 text-sm outline-none"
-              style={{ border: '1px solid #E0D0C0', backgroundColor: '#F5EDE3', color: '#2D2016' }}
-            />
-          </div>
-          {/* List */}
-          <div className="overflow-y-auto" style={{ maxHeight: 220 }}>
-            {filtered.length === 0 ? (
-              <p className="px-3 py-3 text-xs text-center" style={{ color: '#9A7B60' }}>Nicio țară găsită.</p>
-            ) : (
-              filtered.map((c) => (
-                <button
-                  key={c.code}
-                  type="button"
-                  onClick={() => { onSelect(c.code); setOpen(false); setQuery('') }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left transition-colors hover:bg-opacity-60"
-                  style={{
-                    backgroundColor: selected === c.code ? '#FFF8F2' : 'transparent',
-                    color: '#2D2016',
-                  }}
-                >
-                  <span>{c.flag}</span>
-                  <span>{c.name}</span>
-                  {selected === c.code && (
-                    <span className="ml-auto text-xs" style={{ color: '#C4956A' }}>✓</span>
-                  )}
-                </button>
-              ))
-            )}
-          </div>
-        </div>
-      )}
+      {/* Inline scrollable list */}
+      <div
+        className="rounded-xl overflow-y-auto"
+        style={{ maxHeight: 200, border: '1px solid #EDE0D0', backgroundColor: '#FFFDFB' }}
+      >
+        {filtered.length === 0 ? (
+          <p className="px-3 py-3 text-xs text-center" style={{ color: '#9A7B60' }}>Nicio țară găsită.</p>
+        ) : (
+          filtered.map((c) => (
+            <button
+              key={c.code}
+              type="button"
+              onClick={() => { onSelect(c.code); setQuery('') }}
+              className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left"
+              style={{
+                backgroundColor: selected === c.code ? '#FFF8F2' : 'transparent',
+                color: '#2D2016',
+                borderBottom: '1px solid #F5EDE3',
+              }}
+            >
+              <span>{c.flag}</span>
+              <span className="flex-1">{c.name}</span>
+              {selected === c.code && (
+                <span className="text-xs font-semibold" style={{ color: '#C4956A' }}>✓</span>
+              )}
+            </button>
+          ))
+        )}
+      </div>
     </div>
   )
 }
