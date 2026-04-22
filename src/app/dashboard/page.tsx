@@ -1433,7 +1433,7 @@ function DonationsModal({ eventId, eventName, accessToken, onClose }: {
         </div>
 
         {/* Body */}
-        <div className="overflow-y-auto flex-1 px-6 py-4 space-y-2">
+        <div className="overflow-y-auto px-6 py-4 space-y-2" style={{ maxHeight: '420px' }}>
           {loading && (
             <p className="text-sm text-center py-8" style={{ color: '#9A7B60' }}>Se încarcă...</p>
           )}
