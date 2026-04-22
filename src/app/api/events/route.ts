@@ -1,8 +1,61 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createEvent, slugExists } from '@/lib/db/events'
 import { isValidEventType, getEventTypeConfig } from '@/config/event-types'
-import { supabase } from '@/lib/db/supabase'
+import { supabase, supabaseAdmin } from '@/lib/db/supabase'
 import { ApiError } from '@/types'
+
+// Returns the authenticated organiser's own events, with isBlocked included.
+// Uses supabaseAdmin server-side to read blocked_events (not exposed via RLS).
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader?.startsWith('Bearer ')) {
+    return NextResponse.json<ApiError>({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const token = authHeader.slice(7)
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+  if (authError || !user) {
+    return NextResponse.json<ApiError>({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { data: events, error } = await supabaseAdmin
+    .from('events')
+    .select('*')
+    .eq('organiser_id', user.id)
+    .neq('is_deleted', true)
+    .order('created_at', { ascending: false })
+
+  if (error) return NextResponse.json<ApiError>({ error: 'DB error' }, { status: 500 })
+
+  // Fetch blocked event IDs for this organiser's events in one query
+  const eventIds = (events ?? []).map((e) => e.id as string)
+  const blockedIds = new Set<string>()
+  if (eventIds.length > 0) {
+    const { data: blocked } = await supabaseAdmin
+      .from('blocked_events')
+      .select('event_id')
+      .in('event_id', eventIds)
+    for (const row of blocked ?? []) blockedIds.add(row.event_id as string)
+  }
+
+  const result = (events ?? []).map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    eventType: row.event_type,
+    name: row.name,
+    description: row.description,
+    coverImageUrl: row.cover_image_url,
+    goalAmount: row.goal_amount,
+    organiserId: row.organiser_id,
+    stripeConnectAccountId: row.stripe_connect_account_id,
+    connectOnboardingComplete: row.connect_onboarding_complete ?? false,
+    isActive: row.is_active,
+    isBlocked: blockedIds.has(row.id as string),
+    expiresAt: row.expires_at,
+    createdAt: row.created_at,
+  }))
+
+  return NextResponse.json({ events: result })
+}
 
 interface CreateEventBody {
   eventType: string

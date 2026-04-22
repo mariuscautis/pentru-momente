@@ -23,6 +23,7 @@ interface DashboardEvent extends Event {
   totalRaised: number
   payouts: Payout[]
   donors: DonorEntry[]
+  isBlocked: boolean
 }
 
 const EVENT_TYPE_LABELS: Record<string, { label: string; emoji: string }> = {
@@ -54,19 +55,25 @@ export default function DashboardPage() {
     setUserName(session.user.email?.split('@')[0] ?? 'tu')
     setAccessToken(session.access_token)
 
-    const { data: eventsData } = await supabase
-      .from('events')
-      .select('*')
-      .eq('organiser_id', session.user.id)
-      .neq('is_deleted', true)
-      .order('created_at', { ascending: false })
+    // Use the API route so isBlocked (from blocked_events) is included server-side
+    const eventsRes = await fetch('/api/events', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+    if (!eventsRes.ok) { setLoading(false); return }
+    const { events: eventsData } = await eventsRes.json() as { events: Array<{
+      id: string; slug: string; eventType: string; name: string;
+      description?: string; coverImageUrl?: string; goalAmount?: number;
+      organiserId: string; stripeConnectAccountId?: string;
+      connectOnboardingComplete: boolean; isActive: boolean; isBlocked: boolean;
+      expiresAt?: string; createdAt: string;
+    }> }
 
     if (!eventsData) { setLoading(false); return }
 
     const enriched: DashboardEvent[] = await Promise.all(
       eventsData.map(async (row) => {
-        const eventId = row.id as string
-        const eventName = row.name as string
+        const eventId = row.id
+        const eventName = row.name
         const [donationsRes, donorsRes, payoutsRes] = await Promise.all([
           supabase.from('donations').select('amount').eq('event_id', eventId).in('status', ['confirmed', 'pending']),
           supabase.from('donations').select('display_name, is_anonymous, amount, show_amount, created_at').eq('event_id', eventId).eq('status', 'confirmed').order('created_at', { ascending: false }),
@@ -85,18 +92,19 @@ export default function DashboardPage() {
         }))
         return {
           id: eventId,
-          slug: row.slug as string,
-          eventType: row.event_type as string,
+          slug: row.slug,
+          eventType: row.eventType,
           name: eventName,
-          description: row.description as string | undefined,
-          coverImageUrl: row.cover_image_url as string | undefined,
-          goalAmount: row.goal_amount as number | undefined,
-          organiserId: row.organiser_id as string,
-          stripeConnectAccountId: row.stripe_connect_account_id as string | undefined,
-          connectOnboardingComplete: (row.connect_onboarding_complete as boolean) ?? false,
-          isActive: row.is_active as boolean,
-          expiresAt: row.expires_at as string | undefined,
-          createdAt: row.created_at as string,
+          description: row.description,
+          coverImageUrl: row.coverImageUrl,
+          goalAmount: row.goalAmount,
+          organiserId: row.organiserId,
+          stripeConnectAccountId: row.stripeConnectAccountId,
+          connectOnboardingComplete: row.connectOnboardingComplete,
+          isActive: row.isActive,
+          isBlocked: row.isBlocked,
+          expiresAt: row.expiresAt,
+          createdAt: row.createdAt,
           totalRaised,
           payouts: payoutsRes,
           donors,
@@ -220,7 +228,7 @@ export default function DashboardPage() {
         {/* Stats row */}
         {events.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <StatCard label="Pagini active" value={String(events.filter(e => e.isActive).length)} />
+            <StatCard label="Pagini active" value={String(events.filter(e => e.isActive && !e.isBlocked).length)} />
             <StatCard label="Total strâns" value={`${totalAcrossAll} RON`} highlight />
             <StatCard
               label="Donatori"
@@ -552,14 +560,16 @@ function EventCard({
             <span
               className="text-xs px-2 py-0.5 rounded-full font-medium shrink-0"
               style={
-                isExpired
-                  ? { backgroundColor: '#FEF2F2', color: '#B91C1C' }
+                event.isBlocked
+                  ? { backgroundColor: '#FEF2F2', color: '#DC2626' }
+                  : isExpired
+                  ? { backgroundColor: '#FEF9C3', color: '#92400E' }
                   : event.isActive
                   ? { backgroundColor: '#F0FFF4', color: '#166534' }
                   : { backgroundColor: '#F5F5F5', color: '#6B7280' }
               }
             >
-              {isExpired ? 'Expirat' : event.isActive ? 'Activ' : 'Inactiv'}
+              {event.isBlocked ? 'Suspendat' : isExpired ? 'Expirat' : event.isActive ? 'Activ' : 'Inactiv'}
             </span>
           </div>
           <p className="text-xs mt-0.5" style={{ color: '#9A7B60' }}>
@@ -650,7 +660,7 @@ function EventCard({
             >
               Vezi ↗
             </Link>
-            {event.connectOnboardingComplete && !isExpired && (
+            {event.connectOnboardingComplete && !isExpired && !event.isBlocked && (
               <button
                 onClick={onToggleActive}
                 disabled={togglingActive}
@@ -664,6 +674,14 @@ function EventCard({
               >
                 {togglingActive ? '...' : event.isActive ? '⏸ Închide' : '▶ Deschide'}
               </button>
+            )}
+            {event.isBlocked && (
+              <span
+                className="text-xs px-3 py-1.5 rounded-lg font-medium"
+                style={{ border: '1px solid #FECACA', color: '#DC2626', backgroundColor: '#FEF2F2' }}
+              >
+                Pagina a fost suspendată. Contactează-ne pentru detalii.
+              </span>
             )}
             <button
               onClick={onDeleteRequest}
