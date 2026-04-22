@@ -2,7 +2,7 @@ import { EventTypeConfig } from '@/types'
 
 export const babyConfig: EventTypeConfig = {
   slug: 'bebe',
-  label: 'Bebe nou',
+  label: 'Nou-născut',
   palette: {
     primary: '#7EB8F7',
     accent: '#5AA0E8',
@@ -18,10 +18,10 @@ export const babyConfig: EventTypeConfig = {
   },
   suggestedItems: [
     { name: 'Căruț', defaultAmount: 500, emoji: '🍼' },
-    { name: 'Monitor bebe', defaultAmount: 300, emoji: '📡' },
+    { name: 'Monitor nou-născut', defaultAmount: 300, emoji: '📡' },
     { name: 'Scaun auto', defaultAmount: 400, emoji: '🚗' },
     { name: 'Hăinuțe & accesorii', defaultAmount: 100, emoji: '👕' },
-    { name: 'Fond general pentru bebe', defaultAmount: 150, emoji: '💛' },
+    { name: 'Fond general pentru nou-născut', defaultAmount: 150, emoji: '💛' },
   ],
   donationVisibilityDefault: 'visible',
   allowAnonymous: true,

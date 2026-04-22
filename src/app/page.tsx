@@ -68,7 +68,7 @@ const EVENT_TYPES = [
   },
   {
     slug: 'bebe',
-    label: 'Bebe nou',
+    label: 'Nou-născut',
     sub: 'Wishlist & fond',
     description: 'Listă de dorințe și fond general pentru familia cu un nou-născut fericit.',
     Icon: Baby,

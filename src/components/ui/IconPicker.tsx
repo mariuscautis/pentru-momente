@@ -217,7 +217,7 @@ export const ALL_ICONS: IconDef[] = [
   { id: 'camera', label: 'Cameră', svg: <Camera /> },
   { id: 'plane', label: 'Avion', svg: <Plane /> },
   { id: 'cake', label: 'Tort', svg: <Cake /> },
-  { id: 'baby', label: 'Bebe', svg: <Baby /> },
+  { id: 'baby', label: 'Nou-născut', svg: <Baby /> },
   { id: 'bottle', label: 'Biberon', svg: <Bottle /> },
   { id: 'stroller', label: 'Cărucior', svg: <Stroller /> },
   { id: 'car', label: 'Mașină', svg: <Car /> },
