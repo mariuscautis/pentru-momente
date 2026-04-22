@@ -361,33 +361,35 @@ function LivePreview({ config, name, description, goalAmount, items, coverPrevie
           <svg width="10" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="18" r="1" fill="currentColor"/></svg>
           Mobil
         </p>
-        {/* Phone shell */}
-        <div className="mx-auto" style={{ width: 210 }}>
+        {/* Phone shell — 20:9 ratio, width 220 → height 489 */}
+        <div className="mx-auto" style={{ width: 220 }}>
           <div
             style={{
-              border: '3px solid #1A1A1A', borderRadius: 28, overflow: 'hidden',
-              boxShadow: '0 12px 40px rgba(0,0,0,0.22), 0 0 0 1px rgba(255,255,255,0.06) inset',
+              border: '3px solid #1A1A1A', borderRadius: 32, overflow: 'hidden',
+              boxShadow: '0 16px 48px rgba(0,0,0,0.28), 0 0 0 1px rgba(255,255,255,0.06) inset',
               backgroundColor: '#1A1A1A',
+              display: 'flex', flexDirection: 'column',
+              height: Math.round(220 * 20 / 9), // ~489px
             }}
           >
-            {/* Notch / status bar */}
-            <div style={{ backgroundColor: '#1A1A1A', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 12px 4px' }}>
+            {/* Status bar */}
+            <div style={{ backgroundColor: '#1A1A1A', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 14px 5px' }}>
               <span style={{ fontSize: 7.5, color: 'rgba(255,255,255,0.75)', fontWeight: 600 }}>9:41</span>
-              {/* Notch pill */}
-              <div style={{ width: 40, height: 10, backgroundColor: '#0A0A0A', borderRadius: 6 }} />
+              {/* Dynamic island pill */}
+              <div style={{ width: 44, height: 11, backgroundColor: '#0A0A0A', borderRadius: 8 }} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                 <svg width="9" height="7" viewBox="0 0 12 9" fill="rgba(255,255,255,0.65)"><path d="M0 9h2V5H0v4zm3 0h2V3H3v6zm3 0h2V1H6v8zm3 0h2V0H9v9z"/></svg>
                 <svg width="9" height="7" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.65)" strokeWidth="2"><path d="M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/></svg>
                 <svg width="12" height="7" viewBox="0 0 24 12" fill="none"><rect x="0.5" y="0.5" width="20" height="11" rx="3.5" stroke="rgba(255,255,255,0.65)" strokeWidth="1.5"/><rect x="21" y="3.5" width="2.5" height="5" rx="1" fill="rgba(255,255,255,0.65)"/><rect x="2" y="2" width="15" height="8" rx="2" fill="rgba(255,255,255,0.65)"/></svg>
               </div>
             </div>
-            {/* Page content — scrollable */}
-            <div style={{ maxHeight: 480, overflowY: 'auto', overflowX: 'hidden' }}>
-              <PreviewContent {...sharedProps} scale={0.48} />
+            {/* Page content — fills remaining height, scrollable */}
+            <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+              <PreviewContent {...sharedProps} scale={0.49} />
             </div>
             {/* Home indicator */}
-            <div style={{ backgroundColor: config.palette.background, display: 'flex', justifyContent: 'center', padding: '6px 0 4px' }}>
-              <div style={{ width: 44, height: 3.5, backgroundColor: '#C0B4A8', borderRadius: 2 }} />
+            <div style={{ backgroundColor: config.palette.background, flexShrink: 0, display: 'flex', justifyContent: 'center', padding: '7px 0 5px' }}>
+              <div style={{ width: 48, height: 3.5, backgroundColor: '#C0B4A8', borderRadius: 2 }} />
             </div>
           </div>
         </div>
