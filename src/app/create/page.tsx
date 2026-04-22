@@ -65,7 +65,7 @@ const EVENT_TYPE_META: Record<string, {
   bebe: {
     Icon: Baby,
     description: 'Listă de dorințe și fond general pentru familia cu nou-născut',
-    namePlaceholder: 'ex: Micuțul Andrei',
+    namePlaceholder: 'ex: Andrei / Andreea',
     accentColor: '#7EB5A0',
   },
   sanatate: {
@@ -614,7 +614,7 @@ export default function CreateEventPage() {
                         </div>
                         {name && name2 && (
                           <p className="text-xs" style={{ color: 'var(--color-ink-muted)' }}>
-                            Va apărea ca: <span className="font-semibold" style={{ color: 'var(--color-ink)' }}>Nunta lui {name} și {name2}</span>
+                            Va apărea ca: <span className="font-semibold" style={{ color: 'var(--color-ink)' }}>Nunta {name} și {name2}</span>
                           </p>
                         )}
                       </div>

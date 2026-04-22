@@ -11,10 +11,10 @@ export const babyConfig: EventTypeConfig = {
   copy: {
     pageTitle: 'Bun venit, {name}!',
     donationVerb: 'Dăruiește',
-    thankYouMessage: 'Mulțumim pentru cadoul minunat! {name} va fi răsfățat datorită ție.',
-    emptyState: 'Fii primul care îi urează bun venit micuțului.',
+    thankYouMessage: 'Mulțumim pentru cadoul minunat! {name} va fi răsfățat/ă datorită ție.',
+    emptyState: 'Fii primul care îi urează bun venit bebelușului.',
     donationEmailSubject: 'Cadoul tău pentru {eventName} a ajuns! 🍼',
-    donationEmailIntro: 'Ce veste minunată! Cadoul tău a sosit și va aduce zâmbete în familia lui {eventName}. Mulțumim că îi ești alături micuțului în primele lui momente de viață.',
+    donationEmailIntro: 'Ce veste minunată! Cadoul tău a sosit și va aduce zâmbete în familia {eventName}. Mulțumim că îi ești alături bebelușului în primele momente de viață.',
   },
   suggestedItems: [
     { name: 'Căruț', defaultAmount: 500, emoji: '🍼' },
@@ -29,7 +29,7 @@ export const babyConfig: EventTypeConfig = {
   donorWallLabel: 'Cei care au dăruit',
   emailTemplateId: 'baby-donation-confirmation',
   milestoneMessages: {
-    25: 'Primele cadouri au sosit pentru cel mic!',
+    25: 'Primele cadouri au sosit pentru cel mic/cea mică!',
     50: 'Jumătate din lista de dorințe a fost îndeplinită.',
     100: 'Toate dorințele au fost îndeplinite. Mulțumim!',
   },

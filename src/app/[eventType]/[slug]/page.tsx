@@ -135,7 +135,7 @@ export default async function EventPublicPage({ params }: PageParams) {
         <p className="text-sm leading-relaxed" style={{ color: '#7A6652' }}>
           {isExpired
             ? `Pagina de donații pentru ${archivedEvent.name} a expirat și nu mai acceptă contribuții.`
-            : `Pagina de donații pentru ${archivedEvent.name} a fost închisă de organizator.`}
+            : `Pagina de donații pentru ${archivedEvent.name} a fost închisă de organizatorul paginii.`}
         </p>
         <Link
           href="/"
