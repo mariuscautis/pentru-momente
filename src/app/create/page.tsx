@@ -98,12 +98,12 @@ interface PreviewProps {
 interface PageBodyProps {
   primary: string; accent: string; bg: string; title: string
   description: string; goalAmount: string; visibleItems: ItemInput[]
-  coverPreviewUrl: string | null; donationVerb: string; s: number
+  coverPreviewUrl: string | null | undefined; donationVerb: string; s: number
 }
 
 function PreviewHero({ primary, accent, bg, coverPreviewUrl, s }: { primary: string; accent: string; bg: string; coverPreviewUrl: string | null; s: number }) {
-  const heroH = Math.round(90 * s)
-  const px = Math.round(14 * s)
+  const heroH = Math.round(160 * s)  // tall — matches real clamp(260px,42vh,500px) at scale
+  const px = Math.round(16 * s)
   const r = (n: number) => Math.round(n * s)
   return (
     <div style={{ position: 'relative', height: heroH, overflow: 'hidden', flexShrink: 0 }}>
@@ -111,14 +111,19 @@ function PreviewHero({ primary, accent, bg, coverPreviewUrl, s }: { primary: str
         // eslint-disable-next-line @next/next/no-img-element
         <img src={coverPreviewUrl} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
       ) : (
-        <svg viewBox="0 0 400 90" style={{ display: 'block', width: '100%', height: '100%' }} preserveAspectRatio="xMidYMid slice">
-          <rect width="400" height="90" fill={primary} />
-          <ellipse cx="320" cy="10" rx="130" ry="80" fill={accent} fillOpacity="0.32" />
-          <ellipse cx="50" cy="80" rx="110" ry="70" fill={accent} fillOpacity="0.20" />
+        /* Abstract blobs matching AbstractHero — bg-tinted, soft, no hard colour fill */
+        <svg viewBox="0 0 600 160" style={{ display: 'block', width: '100%', height: '100%' }} preserveAspectRatio="xMidYMid slice">
+          <rect width="600" height="160" fill={bg} />
+          <ellipse cx="480" cy="30"  rx="200" ry="140" fill={primary} fillOpacity="0.18" />
+          <ellipse cx="80"  cy="140" rx="180" ry="120" fill={accent}  fillOpacity="0.12" />
+          <ellipse cx="300" cy="80"  rx="140" ry="90"  fill={primary} fillOpacity="0.08" />
+          <ellipse cx="520" cy="150" rx="120" ry="80"  fill={accent}  fillOpacity="0.10" />
         </svg>
       )}
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '45%', background: `linear-gradient(to bottom, transparent, ${bg})` }} />
-      <div style={{ position: 'absolute', top: r(5), left: px, fontSize: r(7), fontWeight: 800, color: 'rgba(255,255,255,0.9)', textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>
+      {/* Gradient fade into page bg at bottom */}
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '55%', background: `linear-gradient(to bottom, transparent, ${bg})` }} />
+      {/* Logo top-left */}
+      <div style={{ position: 'absolute', top: r(6), left: px, fontSize: r(7.5), fontWeight: 800, color: 'rgba(255,255,255,0.92)', textShadow: '0 1px 4px rgba(0,0,0,0.35)', letterSpacing: '-0.01em' }}>
         pentru<span style={{ color: '#F5C07A' }}>momente</span>
       </div>
     </div>
@@ -126,33 +131,47 @@ function PreviewHero({ primary, accent, bg, coverPreviewUrl, s }: { primary: str
 }
 
 function PreviewPageBody({ primary, accent, bg, title, description, goalAmount, visibleItems, coverPreviewUrl, donationVerb, s }: PageBodyProps) {
-  const px = Math.round(14 * s)
+  const px = Math.round(16 * s)
   const r = (n: number) => Math.round(n * s)
 
   return (
     <div style={{ backgroundColor: bg, display: 'block', boxSizing: 'border-box', minHeight: '100%' }}>
-      {/* Hero — only rendered in mobile (desktop renders it separately above the columns) */}
-      <PreviewHero primary={primary} accent={accent} bg={bg} coverPreviewUrl={coverPreviewUrl} s={s} />
+      {/* Hero — rendered here for mobile; desktop passes coverPreviewUrl=null and renders hero separately */}
+      {coverPreviewUrl !== undefined && (
+        <PreviewHero primary={primary} accent={accent} bg={bg} coverPreviewUrl={coverPreviewUrl} s={s} />
+      )}
 
-      {/* Content */}
-      <div style={{ padding: `${r(6)}px ${px}px ${r(14)}px`, boxSizing: 'border-box' }}>
-        {/* Title */}
-        <div style={{ fontWeight: 700, fontSize: r(11), color: '#1C1209', lineHeight: 1.3, marginBottom: r(5) }}>{title}</div>
+      {/* Main content — negative top margin to overlap hero fade, matching real page */}
+      <div style={{ padding: `${r(4)}px ${px}px ${r(16)}px`, boxSizing: 'border-box' }}>
 
-        {/* Stat chips */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: r(4), marginBottom: r(7) }}>
-          {['♥ 0 RON strânși', ...(goalAmount ? ['↗ 0% din obiectiv'] : [])].map((t) => (
-            <span key={t} style={{ background: `${primary}1A`, color: primary, borderRadius: 999, padding: `${r(2)}px ${r(6)}px`, fontSize: r(8), fontWeight: 600 }}>{t}</span>
+        {/* Title — large bold, matches h1 text-3xl md:text-4xl */}
+        <div style={{ fontWeight: 700, fontSize: r(14), color: '#1C1209', lineHeight: 1.25, marginBottom: r(6) }}>{title}</div>
+
+        {/* Stat chips row — small pills with icon + text */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: r(5), marginBottom: r(8) }}>
+          {[
+            { icon: '♥', label: '0 RON', sub: 'strânși' },
+            ...( goalAmount ? [{ icon: '↗', label: '0%', sub: 'din obiectiv' }] : []),
+          ].map(({ icon, label, sub }) => (
+            <span key={sub} style={{ display: 'inline-flex', alignItems: 'center', gap: r(3), background: `${primary}18`, borderRadius: 999, padding: `${r(2)}px ${r(7)}px`, fontSize: r(8), color: primary, fontWeight: 600 }}>
+              <span style={{ fontSize: r(7) }}>{icon}</span>
+              <strong style={{ fontWeight: 700 }}>{label}</strong>
+              <span style={{ fontWeight: 400, opacity: 0.8 }}>{sub}</span>
+            </span>
           ))}
         </div>
 
-        {/* Goal bar */}
+        {/* Goal progress box — matching real GoalProgress component */}
         {goalAmount && (
-          <div style={{ marginBottom: r(7) }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: r(7.5), color: '#9A7B60', marginBottom: r(3) }}>
-              <span>0 RON strânși</span><span>din {goalAmount} RON</span>
+          <div style={{ backgroundColor: '#FFFDFB', border: '1px solid #EDE0D0', borderRadius: r(10), padding: `${r(8)}px ${r(10)}px`, marginBottom: r(10) }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: r(5) }}>
+              <div>
+                <span style={{ fontSize: r(12), fontWeight: 700, color: '#1C1209' }}>0 RON</span>
+                <span style={{ fontSize: r(7.5), color: '#9A7B60', marginLeft: r(4) }}>din {goalAmount} RON</span>
+              </div>
+              <span style={{ fontSize: r(9), fontWeight: 700, color: primary }}>0%</span>
             </div>
-            <div style={{ height: r(4), borderRadius: 999, backgroundColor: '#EDE0D0' }}>
+            <div style={{ height: r(5), borderRadius: 999, backgroundColor: '#EDE0D0', overflow: 'hidden' }}>
               <div style={{ width: '0%', height: '100%', backgroundColor: primary, borderRadius: 999 }} />
             </div>
           </div>
@@ -160,50 +179,58 @@ function PreviewPageBody({ primary, accent, bg, title, description, goalAmount, 
 
         {/* Description */}
         {description && (
-          <div style={{ fontSize: r(8.5), color: '#7A6652', lineHeight: 1.5, marginBottom: r(7), display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          <div style={{ fontSize: r(8.5), color: '#6B5744', lineHeight: 1.6, marginBottom: r(10), display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
             {description}
           </div>
         )}
 
-        {/* CTA */}
-        <div style={{ backgroundColor: primary, color: '#fff', fontWeight: 700, textAlign: 'center', borderRadius: r(10), padding: `${r(7)}px 0`, fontSize: r(9.5), marginBottom: r(8) }}>
+        {/* CTA button — full width amber */}
+        <div style={{ backgroundColor: primary, color: '#fff', fontWeight: 600, textAlign: 'center', borderRadius: r(12), padding: `${r(9)}px 0`, fontSize: r(10), marginBottom: r(6), boxShadow: `0 4px 16px ${primary}44` }}>
           {donationVerb}
         </div>
 
-        {/* Trust */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: r(12), marginBottom: r(10) }}>
+        {/* Trust strip */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: r(14), marginBottom: r(12) }}>
           {[{ icon: '🔒', t: 'Plată securizată SSL' }, { icon: '✓', t: 'Protejat prin Stripe' }].map(({ icon, t }) => (
-            <span key={t} style={{ display: 'flex', alignItems: 'center', gap: r(3), fontSize: r(7.5), color: '#9A7B60' }}><span>{icon}</span>{t}</span>
+            <span key={t} style={{ display: 'flex', alignItems: 'center', gap: r(3), fontSize: r(7.5), color: '#9A7B60' }}>{icon} {t}</span>
           ))}
         </div>
 
-        {/* Items */}
+        {/* Items — matching real ItemTracker cards */}
         {visibleItems.length > 0 && (
           <div>
-            <div style={{ fontSize: r(7), fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9A7B60', marginBottom: r(5) }}>Articole</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: r(4) }}>
-              {visibleItems.slice(0, 3).map((item, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: r(6), backgroundColor: '#FFFDFB', border: '1px solid #EDE0D0', borderRadius: r(9), padding: `${r(5)}px ${r(7)}px`, boxSizing: 'border-box' }}>
-                  {/* Icon bubble — warm bg, neutral letter or emoji, no colour fill */}
-                  <div style={{ width: r(26), height: r(26), borderRadius: r(6), backgroundColor: '#F5EDE3', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: r(item.iconId ? 13 : 9), color: '#7A6652', fontWeight: 700 }}>
-                    {item.iconId || item.name.charAt(0)}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                    <div style={{ fontSize: r(8.5), fontWeight: 600, color: '#1C1209', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
-                    {!item.isCustomAmount && (
-                      <div style={{ marginTop: r(2), height: r(3), borderRadius: 999, backgroundColor: '#F0E8DC' }}>
-                        <div style={{ width: '0%', height: '100%', backgroundColor: primary, borderRadius: 999 }} />
-                      </div>
-                    )}
-                    <div style={{ fontSize: r(7.5), color: '#9A7B60', marginTop: r(1) }}>{item.isCustomAmount ? 'Alege suma' : `0 din ${item.targetAmount} Lei`}</div>
-                  </div>
-                  <div style={{ backgroundColor: primary, color: '#fff', borderRadius: r(6), padding: `${r(3)}px ${r(7)}px`, fontSize: r(7.5), fontWeight: 700, flexShrink: 0 }}>
-                    {donationVerb}
+            <div style={{ fontSize: r(7.5), fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9A7B60', marginBottom: r(6) }}>Articole</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: r(5) }}>
+              {visibleItems.slice(0, 4).map((item, i) => (
+                <div key={i} style={{ backgroundColor: '#FFFDFB', border: '1.5px solid #EDE0D0', borderRadius: r(12), overflow: 'hidden' }}>
+                  {/* Main row */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: r(8), padding: `${r(8)}px ${r(10)}px`, boxSizing: 'border-box' }}>
+                    {/* Icon bubble — warm cream bg, emoji or initial, matching real ItemCard */}
+                    <div style={{ width: r(32), height: r(32), borderRadius: r(8), backgroundColor: '#F5EDE3', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: r(item.iconId ? 14 : 10), color: '#7A6652', fontWeight: 700 }}>
+                      {item.iconId || item.name.charAt(0)}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: r(9), fontWeight: 600, color: '#1C1209', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
+                      {!item.isCustomAmount ? (
+                        <div style={{ marginTop: r(3) }}>
+                          <div style={{ height: r(3), borderRadius: 999, backgroundColor: '#F0E8DC', overflow: 'hidden', marginBottom: r(2) }}>
+                            <div style={{ width: '0%', height: '100%', backgroundColor: primary }} />
+                          </div>
+                          <div style={{ fontSize: r(7.5), color: '#9A7B60' }}>0 din {item.targetAmount} Lei</div>
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: r(7.5), color: '#9A7B60', marginTop: r(2) }}>Alege suma</div>
+                      )}
+                    </div>
+                    {/* Action button */}
+                    <div style={{ backgroundColor: primary, color: '#fff', borderRadius: r(8), padding: `${r(4)}px ${r(9)}px`, fontSize: r(8), fontWeight: 600, flexShrink: 0, display: 'flex', alignItems: 'center', gap: r(3) }}>
+                      + {donationVerb}
+                    </div>
                   </div>
                 </div>
               ))}
-              {visibleItems.length > 3 && (
-                <div style={{ textAlign: 'center', fontSize: r(7.5), color: '#B09070' }}>+ {visibleItems.length - 3} mai multe</div>
+              {visibleItems.length > 4 && (
+                <div style={{ textAlign: 'center', fontSize: r(8), color: '#B09070' }}>+ {visibleItems.length - 4} mai multe</div>
               )}
             </div>
           </div>
@@ -215,22 +242,35 @@ function PreviewPageBody({ primary, accent, bg, title, description, goalAmount, 
 
 function PreviewDonorSidebar({ primary, s }: { primary: string; s: number }) {
   const r = (n: number) => Math.round(n * s)
-  // Fixed pixel width at scale 1 = 160px, mirrors real sidebar proportion
+  const donors = [
+    { initials: 'MC', name: 'Marius C.', amount: '150 RON' },
+    { initials: 'AC', name: 'Alina C.',  amount: '50 RON'  },
+  ]
   return (
-    <div style={{ width: r(140), flexShrink: 0, borderLeft: '1px solid #EDE0D0', backgroundColor: '#FFFDFB', padding: `${r(10)}px ${r(8)}px` }}>
-      <div style={{ fontSize: r(6.5), fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9A7B60', marginBottom: r(8), paddingBottom: r(6), borderBottom: '1px solid #F0E8DC' }}>Donatori</div>
-      {[{ w: 38, a: '150 RON' }, { w: 50, a: '75 RON' }, { w: 42, a: '200 RON' }].map(({ w, a }, i) => (
-        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: r(5), marginBottom: r(8), paddingBottom: r(8), borderBottom: i < 2 ? '1px solid #F5EDE3' : 'none' }}>
-          {/* Avatar circle — neutral warm grey, initial letter */}
-          <div style={{ width: r(18), height: r(18), borderRadius: '50%', backgroundColor: '#EDE0D0', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: r(7), fontWeight: 700, color: '#9A7B60' }}>
-            {['M', 'A', 'I'][i]}
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ width: r(w), height: r(4.5), backgroundColor: '#E8DDD0', borderRadius: r(3), marginBottom: r(3) }} />
-            <div style={{ fontSize: r(7), color: primary, fontWeight: 600 }}>{a}</div>
-          </div>
+    // Matches real sidebar: rounded card, border, white bg
+    <div style={{ width: r(220), flexShrink: 0, padding: `${r(10)}px ${r(8)}px` }}>
+      <div style={{ border: '1px solid #EDE0D0', borderRadius: r(12), backgroundColor: '#FFFDFB', overflow: 'hidden' }}>
+        {/* Header row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: `${r(8)}px ${r(10)}px`, borderBottom: '1px solid #F0E8DC' }}>
+          <span style={{ fontSize: r(7), fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9A7B60' }}>Cei care au dăruit</span>
+          <span style={{ backgroundColor: '#F5EDE3', color: '#9A6B45', borderRadius: 999, padding: `${r(1)}px ${r(5)}px`, fontSize: r(7), fontWeight: 700 }}>{donors.length}</span>
         </div>
-      ))}
+        {/* Donor rows */}
+        {donors.map(({ initials, name, amount }, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: r(7), padding: `${r(8)}px ${r(10)}px`, borderBottom: i < donors.length - 1 ? '1px solid #F5EDE3' : 'none' }}>
+            {/* Avatar circle with initials */}
+            <div style={{ width: r(22), height: r(22), borderRadius: '50%', backgroundColor: `${primary}22`, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: r(7), fontWeight: 700, color: primary }}>
+              {initials}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: r(8), fontWeight: 600, color: '#1C1209' }}>{name}</div>
+              <div style={{ fontSize: r(7), color: '#9A7B60' }}>acum</div>
+            </div>
+            {/* Amount right-aligned */}
+            <div style={{ fontSize: r(8), fontWeight: 700, color: '#1C1209', flexShrink: 0 }}>{amount}</div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -286,16 +326,16 @@ function LivePreview({ config, name, description, goalAmount, items, coverPrevie
             </div>
           </div>
           {/* Page content */}
-          <div style={{ backgroundColor: bg, maxHeight: 320, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            {/* Hero — full width */}
+          <div style={{ backgroundColor: bg, maxHeight: 380, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            {/* Hero — full width above both columns */}
             <PreviewHero primary={primary} accent={accent} bg={bg} coverPreviewUrl={coverPreviewUrl} s={0.54} />
-            {/* Two columns below hero */}
+            {/* Two columns — no hero inside PageBody (pass undefined to skip it) */}
             <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
               <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
                 <PreviewPageBody
                   primary={primary} accent={accent} bg={bg} title={title}
                   description={description} goalAmount={goalAmount}
-                  visibleItems={visibleItems} coverPreviewUrl={null}
+                  visibleItems={visibleItems} coverPreviewUrl={undefined}
                   donationVerb={config.copy.donationVerb} s={0.54}
                 />
               </div>
