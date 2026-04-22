@@ -103,93 +103,141 @@ function LivePreview({ config, name, description, goalAmount, items, coverPrevie
     .replace('{name2}', displayName.split(' & ')[1] ?? '')
 
   const visibleItems = items.filter((i) => i.name.trim())
+  const primary = config.palette.primary
+  const bg = config.palette.background
 
   return (
     <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-md)' }}>
+
       {/* Mock browser bar */}
       <div
-        className="flex items-center gap-2 px-3 py-2 border-b"
-        style={{ backgroundColor: 'var(--color-forest)', borderColor: 'rgba(255,255,255,0.08)' }}
+        className="flex items-center gap-2 px-3 py-2"
+        style={{ backgroundColor: '#1E2A20', borderBottom: '1px solid rgba(255,255,255,0.07)' }}
       >
-        <div className="flex gap-1.5">
-          <div className="h-2 w-2 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }} />
-          <div className="h-2 w-2 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }} />
-          <div className="h-2 w-2 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }} />
+        <div className="flex gap-1">
+          <div className="h-2 w-2 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.14)' }} />
+          <div className="h-2 w-2 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.14)' }} />
+          <div className="h-2 w-2 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.14)' }} />
         </div>
         <div
-          className="flex-1 rounded px-2 py-0.5 text-xs truncate"
-          style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.40)' }}
+          className="flex-1 rounded px-2 py-0.5 text-[10px] truncate"
+          style={{ backgroundColor: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.35)' }}
         >
           pentrumomente.ro/{config.slug}/…
         </div>
       </div>
 
-      {/* Cover image hero */}
-      {coverPreviewUrl && (
-        <div className="relative w-full" style={{ height: 100 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
+      {/* Hero */}
+      <div className="relative" style={{ height: 80, backgroundColor: primary, overflow: 'hidden' }}>
+        {coverPreviewUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img src={coverPreviewUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
-          <div
-            className="absolute inset-0"
-            style={{ background: `linear-gradient(to bottom, transparent 30%, ${config.palette.background} 100%)` }}
-          />
+        ) : (
+          /* Abstract SVG blobs — mimics real AbstractHero */
+          <svg viewBox="0 0 340 80" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice">
+            <rect width="340" height="80" fill={primary} />
+            <ellipse cx="280" cy="10" rx="90" ry="60" fill={config.palette.accent} fillOpacity="0.28" />
+            <ellipse cx="60" cy="70" rx="80" ry="50" fill={config.palette.accent} fillOpacity="0.18" />
+            <ellipse cx="170" cy="40" rx="60" ry="36" fill="rgba(255,255,255,0.07)" />
+          </svg>
+        )}
+        {/* Gradient fade to bg */}
+        <div
+          className="absolute inset-0"
+          style={{ background: `linear-gradient(to bottom, transparent 20%, ${bg} 100%)` }}
+        />
+        {/* Logo */}
+        <div className="absolute top-2 left-3 text-[9px] font-extrabold tracking-tight" style={{ color: 'rgba(255,255,255,0.85)', textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>
+          pentru<span style={{ color: '#F5C07A' }}>momente</span>
         </div>
-      )}
+      </div>
 
       {/* Page content */}
-      <div className="p-5 space-y-3" style={{ backgroundColor: config.palette.background, paddingTop: coverPreviewUrl ? 8 : undefined }}>
-        <h3 className="font-bold text-sm leading-snug" style={{ color: '#2D2016' }}>{title}</h3>
+      <div className="px-4 pb-4 space-y-3" style={{ backgroundColor: bg, marginTop: -12 }}>
 
+        {/* Title */}
+        <h3 className="font-bold text-[13px] leading-snug" style={{ color: '#1C1209' }}>{title}</h3>
+
+        {/* Stat chips */}
+        <div className="flex flex-wrap gap-1.5">
+          <span
+            className="inline-flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5"
+            style={{ backgroundColor: `${primary}18`, color: primary }}
+          >
+            ♥ 0 RON strânși
+          </span>
+          {goalAmount && (
+            <span
+              className="inline-flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5"
+              style={{ backgroundColor: `${primary}18`, color: primary }}
+            >
+              ↗ 0% din obiectiv
+            </span>
+          )}
+        </div>
+
+        {/* Goal progress bar */}
+        {goalAmount && (
+          <div>
+            <div className="flex justify-between text-[10px] mb-1" style={{ color: '#9A7B60' }}>
+              <span>0 RON</span>
+              <span>din {goalAmount} RON</span>
+            </div>
+            <div className="h-1.5 rounded-full" style={{ backgroundColor: '#E0D4C8' }}>
+              <div className="h-1.5 w-0 rounded-full" style={{ backgroundColor: primary }} />
+            </div>
+          </div>
+        )}
+
+        {/* Description */}
         {description && (
-          <p className="text-xs leading-relaxed line-clamp-2" style={{ color: '#7A6652' }}>
+          <p className="text-[10px] leading-relaxed line-clamp-2" style={{ color: '#7A6652' }}>
             {description}
           </p>
         )}
 
-        {goalAmount && (
-          <div>
-            <div className="flex justify-between text-xs mb-1" style={{ color: '#9A7B60' }}>
-              <span>0 RON strânși</span>
-              <span>din {goalAmount} RON</span>
-            </div>
-            <div className="h-1.5 rounded-full" style={{ backgroundColor: '#E0D4C8' }}>
-              <div className="h-1.5 w-0 rounded-full" style={{ backgroundColor: config.palette.primary }} />
-            </div>
-          </div>
-        )}
-
-        {visibleItems.length > 0 && (
-          <div className="space-y-1.5">
-            {visibleItems.slice(0, 3).map((item, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between rounded-lg px-2.5 py-1.5"
-                style={{ backgroundColor: 'rgba(255,255,255,0.6)', border: '1px solid rgba(0,0,0,0.06)' }}
-              >
-                <span className="text-xs font-medium" style={{ color: '#2D2016' }}>
-                  {item.name}
-                </span>
-                <span className="text-xs" style={{ color: '#9A7B60' }}>
-                  {item.isCustomAmount ? 'Sumă liberă' : `${item.targetAmount} Lei`}
-                </span>
-              </div>
-            ))}
-            {visibleItems.length > 3 && (
-              <p className="text-center text-xs" style={{ color: '#B09070' }}>
-                + {visibleItems.length - 3} articole
-              </p>
-            )}
-          </div>
-        )}
-
+        {/* Donate CTA */}
         <button
-          className="w-full rounded-lg py-2 text-xs font-semibold text-white mt-1"
-          style={{ backgroundColor: config.palette.primary }}
+          className="w-full rounded-xl py-2 text-[11px] font-semibold text-white"
+          style={{ backgroundColor: primary }}
           tabIndex={-1}
           aria-hidden="true"
         >
           {config.copy.donationVerb}
         </button>
+
+        {/* Items */}
+        {visibleItems.length > 0 && (
+          <div className="space-y-1.5 pt-1">
+            <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: '#9A7B60' }}>Articole</p>
+            {visibleItems.slice(0, 3).map((item, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between rounded-lg px-2.5 py-1.5"
+                style={{ backgroundColor: 'rgba(255,255,255,0.65)', border: '1px solid rgba(0,0,0,0.06)' }}
+              >
+                <span className="text-[10px] font-medium truncate" style={{ color: '#2D2016' }}>
+                  {item.iconId && <span className="mr-1">{item.iconId}</span>}{item.name}
+                </span>
+                <span className="text-[10px] shrink-0 ml-2" style={{ color: '#9A7B60' }}>
+                  {item.isCustomAmount ? 'Sumă liberă' : `${item.targetAmount} Lei`}
+                </span>
+              </div>
+            ))}
+            {visibleItems.length > 3 && (
+              <p className="text-center text-[10px]" style={{ color: '#B09070' }}>
+                + {visibleItems.length - 3} mai multe
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Trust row */}
+        <div className="flex items-center justify-center gap-3 pt-1">
+          {['🔒 Plată securizată', '✓ 100% familiei'].map((t) => (
+            <span key={t} className="text-[9px]" style={{ color: '#B09070' }}>{t}</span>
+          ))}
+        </div>
       </div>
     </div>
   )
