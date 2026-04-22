@@ -1927,9 +1927,9 @@ function EventsTab() {
     const isExpired = !!e.expiresAt && new Date(e.expiresAt) < new Date()
     const matchStatus =
       statusFilter === 'all' ? true :
-      statusFilter === 'active' ? (e.isActive && !e.isBlocked && !isExpired) :
+      statusFilter === 'active' ? (e.isActive && !e.isDeleted && !e.isBlocked && !isExpired) :
       statusFilter === 'inactive' ? (!e.isActive && !e.isDeleted && !isExpired) :
-      statusFilter === 'deleted' ? (e.isDeleted && !e.isActive) :
+      statusFilter === 'deleted' ? e.isDeleted :
       statusFilter === 'expired' ? isExpired : true
     return matchSearch && matchFrom && matchTo && matchStatus
   })
@@ -2612,11 +2612,11 @@ function EmptyState({ message }: { message: string }) {
 
 function EventStatusBadge({ event }: { event: AdminEvent }) {
   const isExpired = !!event.expiresAt && new Date(event.expiresAt) < new Date()
-  // isActive takes highest priority (except blocked) — a reactivated page is active even if is_deleted flag is stale
-  if (event.isBlocked)               return <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: c.dangerBg, color: c.danger }}>Blocat</span>
-  if (event.isActive && !isExpired)  return <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: c.successBg, color: c.success }}>Activ</span>
+  // Deleted takes priority over everything — a deleted event is never shown as active
   if (event.isDeleted)               return <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: '#FFF7ED', color: '#C2410C' }}>Șters</span>
+  if (event.isBlocked)               return <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: c.dangerBg, color: c.danger }}>Blocat</span>
   if (isExpired)                     return <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: c.warningBg, color: c.warning }}>Expirat</span>
+  if (event.isActive)                return <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: c.successBg, color: c.success }}>Activ</span>
   return <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: '#F1F5F9', color: '#64748B' }}>Inactiv</span>
 }
 
