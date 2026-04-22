@@ -670,7 +670,7 @@ function EventCard({
               className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
               style={{ border: '1px solid #FECACA', color: '#DC2626' }}
             >
-              🗑
+              Șterge
             </button>
           </div>
 
