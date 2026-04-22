@@ -162,7 +162,7 @@ export default function TarifePage() {
             <p className="text-xs" style={{ color: 'var(--color-ink-muted)' }}>
               🇪🇺 Card european = UE, SEE &nbsp;·&nbsp; 🌍 Card non-european = Marea Britanie, SUA, Canada, și altele.
               Suma plătită de donator nu se modifică — comisionul mai mare pentru carduri non-UE acoperă exclusiv
-              costul suplimentar de procesare Stripe și un 1% pentru platformă.
+              costurile suplimentare de procesare și menținerea platformei.
             </p>
           </div>
 
