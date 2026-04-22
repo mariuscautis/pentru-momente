@@ -19,11 +19,11 @@ function rowToDonation(row: Record<string, unknown>): Donation {
 }
 
 export async function getDonationsForEvent(eventId: string): Promise<Donation[]> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('donations')
     .select('*')
     .eq('event_id', eventId)
-    .in('status', ['confirmed', 'pending'])
+    .eq('status', 'confirmed')
     .order('created_at', { ascending: false })
 
   if (error || !data) return []
@@ -108,11 +108,11 @@ export async function getDonationsByPaymentIntent(
 }
 
 export async function getTotalRaisedForEvent(eventId: string): Promise<number> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('donations')
     .select('amount')
     .eq('event_id', eventId)
-    .in('status', ['confirmed', 'pending'])
+    .eq('status', 'confirmed')
 
   if (error || !data) return 0
   return data.reduce((sum, row) => sum + (row.amount as number), 0)
