@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createEvent, slugExists } from '@/lib/db/events'
 import { isValidEventType, getEventTypeConfig } from '@/config/event-types'
-import { supabase, supabaseAdmin } from '@/lib/db/supabase'
-import { sendNewEventAdminNotification } from '@/lib/email/brevo'
+import { supabase } from '@/lib/db/supabase'
 import { ApiError } from '@/types'
 
 interface CreateEventBody {
@@ -92,18 +91,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     isActive: false, // becomes true after Stripe onboarding completes via webhook
     items,
   })
-
-  // Notify admin of new page creation — fire-and-forget
-  try {
-    const { data: userData } = await supabaseAdmin.auth.admin.getUserById(user.id)
-    const organiserEmail = userData?.user?.email ?? user.email ?? ''
-    const organiserName = (userData?.user?.user_metadata?.full_name as string | undefined)
-      ?? (userData?.user?.user_metadata?.name as string | undefined)
-      ?? organiserEmail
-    await sendNewEventAdminNotification(organiserEmail, organiserName, event.name, event.eventType, event.slug)
-  } catch (err) {
-    console.error('[events] failed to send admin notification:', err)
-  }
 
   return NextResponse.json({ event }, { status: 201 })
 }

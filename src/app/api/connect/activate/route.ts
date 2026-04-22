@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { supabase, supabaseAdmin } from '@/lib/db/supabase'
-import { sendPageActivatedEmail } from '@/lib/email/brevo'
+import { sendPageActivatedEmail, sendNewEventAdminNotification } from '@/lib/email/brevo'
 import { getEventTypeConfig } from '@/config/event-types'
 import { ApiError } from '@/types'
 
@@ -42,14 +42,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json<ApiError>({ error: 'Forbidden' }, { status: 403 })
   }
 
-  // Already active — nothing to do
-  if (eventRow.connect_onboarding_complete) {
-    return NextResponse.json({ isActive: true })
-  }
-
   const accountId = eventRow.stripe_connect_account_id as string | null
   if (!accountId) {
     return NextResponse.json({ isActive: false })
+  }
+
+  // Already fully activated on a previous call — just confirm to the client
+  if (eventRow.connect_onboarding_complete) {
+    return NextResponse.json({ isActive: true })
   }
 
   // Check directly with Stripe
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         .update({ connect_onboarding_complete: true, is_active: true })
         .eq('id', eventRow.id as string)
 
-      // Send activation email to organiser — fire-and-forget
+      // Send both emails on first-time activation — fire-and-forget
       try {
         const { data: userData } = await supabaseAdmin.auth.admin.getUserById(user.id)
         const organiserEmail = userData?.user?.email ?? user.email ?? ''
@@ -71,16 +71,26 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           ?? (userData?.user?.user_metadata?.name as string | undefined)
           ?? organiserEmail
         const config = getEventTypeConfig(eventRow.event_type as string)
-        await sendPageActivatedEmail(
-          organiserEmail,
-          organiserName,
-          eventRow.name as string,
-          eventRow.event_type as string,
-          eventRow.slug as string,
-          config.palette.primary
-        )
+
+        await Promise.all([
+          sendPageActivatedEmail(
+            organiserEmail,
+            organiserName,
+            eventRow.name as string,
+            eventRow.event_type as string,
+            eventRow.slug as string,
+            config.palette.primary
+          ),
+          sendNewEventAdminNotification(
+            organiserEmail,
+            organiserName,
+            eventRow.name as string,
+            eventRow.event_type as string,
+            eventRow.slug as string
+          ),
+        ])
       } catch (err) {
-        console.error('[connect/activate] failed to send activation email:', err)
+        console.error('[connect/activate] failed to send activation emails:', err)
       }
 
       return NextResponse.json({ isActive: true })
