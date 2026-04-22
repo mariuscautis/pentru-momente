@@ -231,13 +231,13 @@ export default function SuperAdminPage() {
         </button>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1">
         {sidebarOpen && (
           <div className="fixed inset-0 z-20 md:hidden" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onClick={() => setSidebarOpen(false)} />
         )}
         <aside
           className={`w-56 shrink-0 flex flex-col py-5 px-3 z-30 fixed md:static inset-y-0 left-0 transition-transform md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
-          style={{ backgroundColor: c.sidebar, borderRight: `1px solid rgba(255,255,255,0.06)`, top: '56px', height: 'calc(100vh - 56px)' }}
+          style={{ backgroundColor: c.sidebar, borderRight: `1px solid rgba(255,255,255,0.06)`, top: '56px', minHeight: 'calc(100vh - 56px)' }}
         >
           <nav className="space-y-0.5">
             {navItems.map((item) => (
@@ -264,7 +264,7 @@ export default function SuperAdminPage() {
           </nav>
         </aside>
 
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 min-w-0">
           <div className="px-4 md:px-8 py-8">
             {tab === 'seo'           && <SeoTab />}
             {tab === 'blog'          && <BlogTab />}
