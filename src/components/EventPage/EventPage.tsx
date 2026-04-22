@@ -25,12 +25,17 @@ export function EventPage({ event, items, donations, config, totalRaised }: Even
   const [copied, setCopied] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
 
+  // Derive totalRaised from confirmed donations directly so it's always
+  // consistent with the donor list and not dependent on a separate DB query.
+  const confirmedDonations = donations.filter((d) => d.status === 'confirmed')
+  const derivedTotalRaised = confirmedDonations.reduce((sum, d) => sum + d.amount, 0) || totalRaised
+
   const goalPercent = event.goalAmount
-    ? Math.min(100, Math.round((totalRaised / event.goalAmount) * 100))
+    ? Math.min(100, Math.round((derivedTotalRaised / event.goalAmount) * 100))
     : null
 
   const cartTotal = cart.reduce((sum, i) => sum + i.amount, 0)
-  const donorCount = donations.filter((d) => d.status === 'confirmed').length
+  const donorCount = confirmedDonations.length
 
   const pageTitle = config.copy.pageTitle
     .replace('{name}', event.name)
@@ -134,7 +139,7 @@ export function EventPage({ event, items, donations, config, totalRaised }: Even
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-3">
                 <StatChip
                   icon={<Heart size={13} strokeWidth={2} />}
-                  value={`${totalRaised.toLocaleString('ro-RO')} RON`}
+                  value={`${derivedTotalRaised.toLocaleString('ro-RO')} RON`}
                   label="strânși"
                   color={config.palette.primary}
                 />
@@ -160,7 +165,7 @@ export function EventPage({ event, items, donations, config, totalRaised }: Even
             {/* Goal progress */}
             {event.goalAmount !== undefined && goalPercent !== null && (
               <GoalProgress
-                totalRaised={totalRaised}
+                totalRaised={derivedTotalRaised}
                 goalAmount={event.goalAmount}
                 goalPercent={goalPercent}
                 primary={config.palette.primary}
