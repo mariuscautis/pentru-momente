@@ -30,6 +30,7 @@ export interface DonationState {
   isAnonymous: boolean
   showAmount: boolean
   cardRegion: 'eu' | 'non-eu' | null
+  cardCountry: string | null   // ISO 3166-1 alpha-2 country code selected by donor
   clientSecret?: string
   paymentIntentId?: string
 }
@@ -59,6 +60,7 @@ export function DonationFlow({ event, items, config, initialCart, onClose, onDon
     tipAmount: 20,
     stripeFee: 0,
     cardRegion: null,
+    cardCountry: null,
     displayName: '',
     donorEmail: '',
     message: '',

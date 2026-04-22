@@ -161,7 +161,7 @@ export function StepCardRegion({ state, setState, onBack, onNext }: StepCardRegi
 
   function selectRegion(region: 'eu' | 'non-eu', countryCode: string) {
     setSelectedCountry(countryCode)
-    setState((prev) => ({ ...prev, cardRegion: region }))
+    setState((prev) => ({ ...prev, cardRegion: region, cardCountry: countryCode }))
   }
 
   function handleNext() {

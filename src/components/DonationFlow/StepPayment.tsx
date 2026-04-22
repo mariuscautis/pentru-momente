@@ -146,9 +146,20 @@ function CheckoutForm({ config, state, onBack, onSuccess }: CheckoutFormProps) {
     setSubmitting(true)
     setError(null)
 
+    // Pass the country the donor declared in the card region step so Stripe
+    // accepts the suppressed billing_details.address.country field.
+    const country = state.cardCountry === 'OTHER' ? 'US' : (state.cardCountry ?? 'RO')
+
     const { error: stripeError } = await stripe.confirmPayment({
       elements,
       redirect: 'if_required',
+      confirmParams: {
+        payment_method_data: {
+          billing_details: {
+            address: { country },
+          },
+        },
+      },
     })
 
     if (stripeError) {
