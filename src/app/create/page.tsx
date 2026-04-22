@@ -93,195 +93,13 @@ interface PreviewProps {
   coverPreviewUrl: string | null
 }
 
-/** Shared inner content for both mobile and desktop previews */
-function PreviewContent({
-  config,
-  title,
-  description,
-  goalAmount,
-  visibleItems,
-  coverPreviewUrl,
-  scale,
-}: {
-  config: EventTypeConfig
-  title: string
-  description: string
-  goalAmount: string
-  visibleItems: ItemInput[]
-  coverPreviewUrl: string | null
-  scale: number
-}) {
-  const primary = config.palette.primary
-  const accent = config.palette.accent
-  const bg = config.palette.background
-  const heroH = Math.round(100 * scale)
-  const px = Math.round(16 * scale)
-  const itemIconSize = Math.round(28 * scale)
-  const fontSize = (base: number) => Math.round(base * scale)
-
-  return (
-    <div style={{ backgroundColor: bg, fontSize: fontSize(11), lineHeight: 1.4 }}>
-      {/* Hero */}
-      <div className="relative overflow-hidden" style={{ height: heroH }}>
-        {coverPreviewUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={coverPreviewUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
-        ) : (
-          <svg viewBox="0 0 400 100" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice">
-            <rect width="400" height="100" fill={primary} />
-            <ellipse cx="320" cy="15" rx="120" ry="85" fill={accent} fillOpacity="0.30" />
-            <ellipse cx="60" cy="85" rx="100" ry="70" fill={accent} fillOpacity="0.18" />
-            <ellipse cx="200" cy="50" rx="70" ry="45" fill="rgba(255,255,255,0.06)" />
-          </svg>
-        )}
-        {/* Logo */}
-        <div
-          className="absolute font-extrabold tracking-tight"
-          style={{ top: Math.round(6 * scale), left: px, fontSize: fontSize(8), color: 'rgba(255,255,255,0.88)', textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
-        >
-          pentru<span style={{ color: '#F5C07A' }}>momente</span>
-        </div>
-        {/* Bottom fade into page bg */}
-        <div className="absolute bottom-0 left-0 right-0" style={{ height: '40%', background: `linear-gradient(to bottom, transparent, ${bg})` }} />
-      </div>
-
-      {/* Content */}
-      <div style={{ padding: `${Math.round(8 * scale)}px ${px}px ${Math.round(12 * scale)}px` }}>
-        {/* Title */}
-        <h3
-          className="font-bold leading-snug"
-          style={{ color: '#1C1209', fontSize: fontSize(12), marginBottom: Math.round(5 * scale) }}
-        >
-          {title}
-        </h3>
-
-        {/* Stat chips */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: Math.round(4 * scale), marginBottom: Math.round(6 * scale) }}>
-          {[
-            '♥ 0 RON strânși',
-            ...(goalAmount ? ['↗ 0% din obiectiv'] : []),
-          ].map((t) => (
-            <span
-              key={t}
-              style={{
-                display: 'inline-flex', alignItems: 'center',
-                background: `${primary}18`, color: primary,
-                borderRadius: 999, padding: `${Math.round(2 * scale)}px ${Math.round(6 * scale)}px`,
-                fontSize: fontSize(9), fontWeight: 600,
-              }}
-            >
-              {t}
-            </span>
-          ))}
-        </div>
-
-        {/* Goal progress */}
-        {goalAmount && (
-          <div style={{ marginBottom: Math.round(6 * scale) }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: fontSize(8), color: '#9A7B60', marginBottom: Math.round(3 * scale) }}>
-              <span>0 RON strânși</span>
-              <span>din {goalAmount} RON</span>
-            </div>
-            <div style={{ height: Math.round(4 * scale), borderRadius: 999, backgroundColor: '#EDE0D0', overflow: 'hidden' }}>
-              <div style={{ width: '0%', height: '100%', backgroundColor: primary }} />
-            </div>
-          </div>
-        )}
-
-        {/* Description */}
-        {description && (
-          <p style={{ fontSize: fontSize(9), color: '#7A6652', lineHeight: 1.5, marginBottom: Math.round(6 * scale), display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-            {description}
-          </p>
-        )}
-
-        {/* Donate CTA */}
-        <div
-          style={{
-            width: '100%', borderRadius: Math.round(10 * scale), backgroundColor: primary,
-            color: '#fff', fontWeight: 700, textAlign: 'center',
-            padding: `${Math.round(7 * scale)}px 0`,
-            fontSize: fontSize(10), marginBottom: Math.round(8 * scale),
-          }}
-        >
-          {config.copy.donationVerb}
-        </div>
-
-        {/* Trust strip */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: Math.round(10 * scale), marginBottom: Math.round(8 * scale) }}>
-          {[
-            { icon: '🔒', label: 'Plată securizată SSL' },
-            { icon: '✓', label: 'Protejat prin Stripe' },
-          ].map(({ icon, label }) => (
-            <span key={label} style={{ display: 'flex', alignItems: 'center', gap: Math.round(3 * scale), fontSize: fontSize(8), color: '#9A7B60' }}>
-              <span>{icon}</span>{label}
-            </span>
-          ))}
-        </div>
-
-        {/* Items */}
-        {visibleItems.length > 0 && (
-          <div>
-            <p style={{ fontSize: fontSize(8), fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9A7B60', marginBottom: Math.round(5 * scale) }}>
-              Articole
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: Math.round(4 * scale) }}>
-              {visibleItems.slice(0, 3).map((item, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: Math.round(6 * scale),
-                    backgroundColor: '#FFFDFB', border: '1px solid #EDE0D0',
-                    borderRadius: Math.round(10 * scale), padding: `${Math.round(5 * scale)}px ${Math.round(8 * scale)}px`,
-                  }}
-                >
-                  {/* Icon bubble */}
-                  <div style={{
-                    width: itemIconSize, height: itemIconSize, borderRadius: Math.round(6 * scale),
-                    backgroundColor: '#F5EDE3', flexShrink: 0,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: fontSize(11), color: primary, fontWeight: 700,
-                  }}>
-                    {item.iconId
-                      ? <span style={{ fontSize: Math.round(13 * scale) }}>{item.iconId}</span>
-                      : <span style={{ fontSize: fontSize(9), color: primary }}>{item.name.charAt(0)}</span>
-                    }
-                  </div>
-                  {/* Name + bar */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: fontSize(9), fontWeight: 600, color: '#1C1209', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {item.name}
-                    </div>
-                    {!item.isCustomAmount && (
-                      <div style={{ marginTop: Math.round(2 * scale), height: Math.round(3 * scale), borderRadius: 999, backgroundColor: '#F0E8DC', overflow: 'hidden' }}>
-                        <div style={{ width: '0%', height: '100%', backgroundColor: primary }} />
-                      </div>
-                    )}
-                    <div style={{ fontSize: fontSize(8), color: '#9A7B60', marginTop: Math.round(1 * scale) }}>
-                      {item.isCustomAmount ? 'Alege suma' : `0 din ${item.targetAmount} Lei`}
-                    </div>
-                  </div>
-                  {/* Button */}
-                  <div style={{
-                    backgroundColor: primary, color: '#fff',
-                    borderRadius: Math.round(7 * scale), padding: `${Math.round(3 * scale)}px ${Math.round(7 * scale)}px`,
-                    fontSize: fontSize(8), fontWeight: 700, flexShrink: 0,
-                  }}>
-                    {config.copy.donationVerb}
-                  </div>
-                </div>
-              ))}
-              {visibleItems.length > 3 && (
-                <p style={{ textAlign: 'center', fontSize: fontSize(8), color: '#B09070' }}>
-                  + {visibleItems.length - 3} mai multe
-                </p>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  )
+// Friendly slug labels for URL bar display
+const SLUG_LABELS: Record<string, string> = {
+  inmormantare: 'inmormantare',
+  nunta: 'nunta',
+  bebe: 'nou-nascut',
+  sanatate: 'sanatate',
+  altele: 'altele',
 }
 
 function LivePreview({ config, name, description, goalAmount, items, coverPreviewUrl }: PreviewProps) {
@@ -295,101 +113,226 @@ function LivePreview({ config, name, description, goalAmount, items, coverPrevie
 
   const visibleItems = items.filter((i) => i.name.trim())
   const primary = config.palette.primary
+  const accent = config.palette.accent
   const bg = config.palette.background
+  const urlSlug = SLUG_LABELS[config.slug] ?? config.slug
+  const slugPart = displayName ? `/${displayName.toLowerCase().replace(/\s+/g, '-').slice(0, 18)}` : '/…'
+  const previewUrl = `pentrumomente.ro/${urlSlug}${slugPart}`
 
-  const browserBar = (url: string) => (
-    <div
-      style={{
-        display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px',
-        backgroundColor: '#1E2A20', borderBottom: '1px solid rgba(255,255,255,0.07)',
-      }}
-    >
-      <div style={{ display: 'flex', gap: 4 }}>
-        {['rgba(255,255,255,0.18)', 'rgba(255,255,255,0.18)', 'rgba(255,255,255,0.18)'].map((c, i) => (
-          <div key={i} style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: c }} />
+  // ── Shared page body renderer ────────────────────────────────────────────────
+  // `s` = scale multiplier so the same markup works at different sizes
+  const PageBody = ({ s }: { s: number }) => {
+    const heroH = Math.round(90 * s)
+    const px = Math.round(14 * s)
+    const r = (n: number) => Math.round(n * s)
+    const fs = (n: number) => r(n)
+
+    return (
+      <div style={{ backgroundColor: bg }}>
+        {/* Hero */}
+        <div style={{ position: 'relative', height: heroH, overflow: 'hidden' }}>
+          {coverPreviewUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={coverPreviewUrl} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            <svg viewBox="0 0 400 90" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} preserveAspectRatio="xMidYMid slice">
+              <rect width="400" height="90" fill={primary} />
+              <ellipse cx="320" cy="10" rx="130" ry="80" fill={accent} fillOpacity="0.32" />
+              <ellipse cx="50" cy="80" rx="110" ry="70" fill={accent} fillOpacity="0.20" />
+            </svg>
+          )}
+          {/* Fade to bg */}
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '45%', background: `linear-gradient(to bottom, transparent, ${bg})` }} />
+          {/* Logo */}
+          <div style={{ position: 'absolute', top: r(5), left: px, fontSize: fs(7), fontWeight: 800, color: 'rgba(255,255,255,0.9)', textShadow: '0 1px 3px rgba(0,0,0,0.3)', letterSpacing: '-0.01em' }}>
+            pentru<span style={{ color: '#F5C07A' }}>momente</span>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div style={{ padding: `${r(6)}px ${px}px ${r(14)}px` }}>
+          {/* Title */}
+          <div style={{ fontWeight: 700, fontSize: fs(11), color: '#1C1209', lineHeight: 1.3, marginBottom: r(5) }}>{title}</div>
+
+          {/* Stat chips */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: r(4), marginBottom: r(7) }}>
+            {['♥ 0 RON strânși', ...(goalAmount ? ['↗ 0% din obiectiv'] : [])].map((t) => (
+              <span key={t} style={{ background: `${primary}1A`, color: primary, borderRadius: 999, padding: `${r(2)}px ${r(6)}px`, fontSize: fs(8), fontWeight: 600 }}>{t}</span>
+            ))}
+          </div>
+
+          {/* Goal bar */}
+          {goalAmount && (
+            <div style={{ marginBottom: r(7) }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: fs(7.5), color: '#9A7B60', marginBottom: r(3) }}>
+                <span>0 RON strânși</span><span>din {goalAmount} RON</span>
+              </div>
+              <div style={{ height: r(4), borderRadius: 999, backgroundColor: '#EDE0D0' }}>
+                <div style={{ width: '0%', height: '100%', backgroundColor: primary, borderRadius: 999 }} />
+              </div>
+            </div>
+          )}
+
+          {/* Description */}
+          {description && (
+            <div style={{ fontSize: fs(8.5), color: '#7A6652', lineHeight: 1.5, marginBottom: r(7), display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+              {description}
+            </div>
+          )}
+
+          {/* CTA button */}
+          <div style={{ backgroundColor: primary, color: '#fff', fontWeight: 700, textAlign: 'center', borderRadius: r(10), padding: `${r(7)}px 0`, fontSize: fs(9.5), marginBottom: r(8) }}>
+            {config.copy.donationVerb}
+          </div>
+
+          {/* Trust strip */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: r(12), marginBottom: r(10) }}>
+            {[{ icon: '🔒', t: 'Plată securizată SSL' }, { icon: '✓', t: 'Protejat prin Stripe' }].map(({ icon, t }) => (
+              <span key={t} style={{ display: 'flex', alignItems: 'center', gap: r(3), fontSize: fs(7.5), color: '#9A7B60' }}><span>{icon}</span>{t}</span>
+            ))}
+          </div>
+
+          {/* Items */}
+          {visibleItems.length > 0 && (
+            <div>
+              <div style={{ fontSize: fs(7), fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9A7B60', marginBottom: r(5) }}>Articole</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: r(4) }}>
+                {visibleItems.slice(0, 3).map((item, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: r(6), backgroundColor: '#FFFDFB', border: '1px solid #EDE0D0', borderRadius: r(9), padding: `${r(5)}px ${r(7)}px` }}>
+                    <div style={{ width: r(26), height: r(26), borderRadius: r(6), backgroundColor: '#F5EDE3', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: r(13), color: primary }}>
+                      {item.iconId ? item.iconId : <span style={{ fontSize: fs(9), fontWeight: 700 }}>{item.name.charAt(0)}</span>}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: fs(8.5), fontWeight: 600, color: '#1C1209', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
+                      {!item.isCustomAmount && (
+                        <div style={{ marginTop: r(2), height: r(3), borderRadius: 999, backgroundColor: '#F0E8DC' }}>
+                          <div style={{ width: '0%', height: '100%', backgroundColor: primary, borderRadius: 999 }} />
+                        </div>
+                      )}
+                      <div style={{ fontSize: fs(7.5), color: '#9A7B60', marginTop: r(1) }}>{item.isCustomAmount ? 'Alege suma' : `0 din ${item.targetAmount} Lei`}</div>
+                    </div>
+                    <div style={{ backgroundColor: primary, color: '#fff', borderRadius: r(6), padding: `${r(3)}px ${r(7)}px`, fontSize: fs(7.5), fontWeight: 700, flexShrink: 0 }}>
+                      {config.copy.donationVerb}
+                    </div>
+                  </div>
+                ))}
+                {visibleItems.length > 3 && (
+                  <div style={{ textAlign: 'center', fontSize: fs(7.5), color: '#B09070' }}>+ {visibleItems.length - 3} mai multe</div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // ── Donor wall sidebar (desktop only) ────────────────────────────────────────
+  const DonorSidebar = ({ s }: { s: number }) => {
+    const r = (n: number) => Math.round(n * s)
+    return (
+      <div style={{ width: r(160), flexShrink: 0, borderLeft: '1px solid #EDE0D0', backgroundColor: '#FFFDFB', padding: `${r(12)}px ${r(10)}px` }}>
+        <div style={{ fontSize: r(7), fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9A7B60', marginBottom: r(10) }}>Donatori</div>
+        {[52, 44, 60, 38].map((w, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: r(6), marginBottom: r(9) }}>
+            <div style={{ width: r(20), height: r(20), borderRadius: '50%', backgroundColor: `${primary}22`, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: r(8), height: r(8), borderRadius: '50%', backgroundColor: primary, opacity: 0.55 }} />
+            </div>
+            <div>
+              <div style={{ width: r(w * 0.6), height: r(5), backgroundColor: '#EDE0D0', borderRadius: r(3), marginBottom: r(3) }} />
+              <div style={{ width: r(w * 0.4), height: r(4), backgroundColor: '#F5EDE3', borderRadius: r(3) }} />
+            </div>
+          </div>
         ))}
       </div>
-      <div style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 4, padding: '2px 8px', fontSize: 9, color: 'rgba(255,255,255,0.38)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {url}
-      </div>
-    </div>
-  )
-
-  const sharedProps = { config, title, description, goalAmount, visibleItems, coverPreviewUrl }
+    )
+  }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
 
-      {/* ── Desktop mockup ── */}
+      {/* ── Desktop: monitor frame ── */}
       <div>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] mb-2 flex items-center gap-1.5" style={{ color: 'var(--color-ink-faint)' }}>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] mb-2.5 flex items-center gap-1.5" style={{ color: 'var(--color-ink-faint)' }}>
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><polyline points="8 21 12 17 16 21"/></svg>
           Desktop
         </p>
-        <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-sm)' }}>
-          {browserBar(`pentrumomente.ro/${config.slug}/…`)}
-          {/* Two-column layout mimicking the real desktop grid */}
-          <div style={{ display: 'flex', backgroundColor: bg, gap: 0 }}>
-            {/* Left: main content */}
-            <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-              <PreviewContent {...sharedProps} scale={0.52} />
+        {/* Monitor outer shell */}
+        <div style={{ backgroundColor: '#2A2A2A', borderRadius: 10, padding: '7px 7px 0', boxShadow: '0 8px 32px rgba(0,0,0,0.22)' }}>
+          {/* Screen bezel */}
+          <div style={{ backgroundColor: '#1A1A1A', borderRadius: 6, overflow: 'hidden' }}>
+            {/* Browser chrome */}
+            <div style={{ backgroundColor: '#2D2D2D', padding: '5px 8px', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ display: 'flex', gap: 4 }}>
+                {['#FF5F57', '#FEBC2E', '#28C840'].map((c) => (
+                  <div key={c} style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: c }} />
+                ))}
+              </div>
+              {/* Tab */}
+              <div style={{ backgroundColor: '#3A3A3A', borderRadius: '4px 4px 0 0', padding: '2px 10px', fontSize: 8, color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <div style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: primary, opacity: 0.8 }} />
+                pentrumomente.ro
+              </div>
             </div>
-            {/* Right: donor wall sidebar */}
-            <div style={{ width: 90, flexShrink: 0, borderLeft: '1px solid #EDE0D0', backgroundColor: '#FFFDFB', padding: '10px 8px' }}>
-              <p style={{ fontSize: 7, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9A7B60', marginBottom: 8 }}>
-                Donatori
-              </p>
-              {[1, 2, 3].map((i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 7 }}>
-                  <div style={{ width: 18, height: 18, borderRadius: '50%', backgroundColor: `${primary}20`, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: primary, opacity: 0.6 }} />
-                  </div>
-                  <div>
-                    <div style={{ width: 36 + i * 6, height: 5, backgroundColor: '#EDE0D0', borderRadius: 3, marginBottom: 3 }} />
-                    <div style={{ width: 24, height: 4, backgroundColor: '#F5EDE3', borderRadius: 3 }} />
-                  </div>
-                </div>
-              ))}
+            {/* Address bar */}
+            <div style={{ backgroundColor: '#252525', padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              <div style={{ flex: 1, backgroundColor: '#1A1A1A', borderRadius: 4, padding: '2px 8px', fontSize: 8, color: 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                {previewUrl}
+              </div>
+            </div>
+            {/* Page — two column */}
+            <div style={{ display: 'flex', backgroundColor: bg, maxHeight: 320, overflow: 'hidden' }}>
+              <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                <PageBody s={0.54} />
+              </div>
+              <DonorSidebar s={0.54} />
             </div>
           </div>
+          {/* Monitor stand */}
+          <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 6, paddingBottom: 8 }}>
+            <div style={{ width: 40, height: 8, backgroundColor: '#222', borderRadius: '0 0 4px 4px' }} />
+          </div>
         </div>
+        <div style={{ height: 6, backgroundColor: '#3A3A3A', borderRadius: '0 0 6px 6px', width: '60%', margin: '0 auto', boxShadow: '0 4px 8px rgba(0,0,0,0.15)' }} />
       </div>
 
-      {/* ── Mobile mockup ── */}
+      {/* ── Mobile: 20:9 phone ── */}
       <div>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] mb-2 flex items-center gap-1.5" style={{ color: 'var(--color-ink-faint)' }}>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] mb-2.5 flex items-center gap-1.5" style={{ color: 'var(--color-ink-faint)' }}>
           <svg width="10" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="18" r="1" fill="currentColor"/></svg>
           Mobil
         </p>
-        {/* Phone shell — 20:9 ratio, width 220 → height 489 */}
         <div className="mx-auto" style={{ width: 220 }}>
-          <div
-            style={{
-              border: '3px solid #1A1A1A', borderRadius: 32, overflow: 'hidden',
-              boxShadow: '0 16px 48px rgba(0,0,0,0.28), 0 0 0 1px rgba(255,255,255,0.06) inset',
-              backgroundColor: '#1A1A1A',
-              display: 'flex', flexDirection: 'column',
-              height: Math.round(220 * 20 / 9), // ~489px
-            }}
-          >
-            {/* Status bar */}
-            <div style={{ backgroundColor: '#1A1A1A', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 14px 5px' }}>
-              <span style={{ fontSize: 7.5, color: 'rgba(255,255,255,0.75)', fontWeight: 600 }}>9:41</span>
-              {/* Dynamic island pill */}
-              <div style={{ width: 44, height: 11, backgroundColor: '#0A0A0A', borderRadius: 8 }} />
-              <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                <svg width="9" height="7" viewBox="0 0 12 9" fill="rgba(255,255,255,0.65)"><path d="M0 9h2V5H0v4zm3 0h2V3H3v6zm3 0h2V1H6v8zm3 0h2V0H9v9z"/></svg>
-                <svg width="9" height="7" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.65)" strokeWidth="2"><path d="M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/></svg>
-                <svg width="12" height="7" viewBox="0 0 24 12" fill="none"><rect x="0.5" y="0.5" width="20" height="11" rx="3.5" stroke="rgba(255,255,255,0.65)" strokeWidth="1.5"/><rect x="21" y="3.5" width="2.5" height="5" rx="1" fill="rgba(255,255,255,0.65)"/><rect x="2" y="2" width="15" height="8" rx="2" fill="rgba(255,255,255,0.65)"/></svg>
+          {/* Outer phone shell */}
+          <div style={{ backgroundColor: '#1A1A1A', borderRadius: 36, padding: '4px', boxShadow: '0 16px 50px rgba(0,0,0,0.30), 0 0 0 1px rgba(255,255,255,0.07)' }}>
+            {/* Side buttons */}
+            <div style={{ position: 'relative' }}>
+              <div style={{ position: 'absolute', left: -6, top: 60, width: 4, height: 28, backgroundColor: '#333', borderRadius: '2px 0 0 2px' }} />
+              <div style={{ position: 'absolute', left: -6, top: 96, width: 4, height: 20, backgroundColor: '#333', borderRadius: '2px 0 0 2px' }} />
+              <div style={{ position: 'absolute', right: -6, top: 80, width: 4, height: 32, backgroundColor: '#333', borderRadius: '0 2px 2px 0' }} />
+              {/* Inner screen */}
+              <div style={{ backgroundColor: '#0A0A0A', borderRadius: 32, overflow: 'hidden', display: 'flex', flexDirection: 'column', height: Math.round(220 * 20 / 9) }}>
+                {/* Status bar */}
+                <div style={{ backgroundColor: '#0A0A0A', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 16px 4px' }}>
+                  <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.8)', fontWeight: 600 }}>9:41</span>
+                  <div style={{ width: 50, height: 12, backgroundColor: '#1A1A1A', borderRadius: 8 }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <svg width="9" height="7" viewBox="0 0 12 9" fill="rgba(255,255,255,0.7)"><path d="M0 9h2V5H0v4zm3 0h2V3H3v6zm3 0h2V1H6v8zm3 0h2V0H9v9z"/></svg>
+                    <svg width="9" height="7" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2"><path d="M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/></svg>
+                    <svg width="13" height="7" viewBox="0 0 24 12" fill="none"><rect x="0.5" y="0.5" width="20" height="11" rx="3.5" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5"/><rect x="21" y="3.5" width="2.5" height="5" rx="1" fill="rgba(255,255,255,0.7)"/><rect x="2" y="2" width="15" height="8" rx="2" fill="rgba(255,255,255,0.7)"/></svg>
+                  </div>
+                </div>
+                {/* Scrollable page content — full width, no sidebar */}
+                <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+                  <PageBody s={0.72} />
+                </div>
+                {/* Home indicator */}
+                <div style={{ backgroundColor: bg, flexShrink: 0, display: 'flex', justifyContent: 'center', padding: '6px 0 5px' }}>
+                  <div style={{ width: 52, height: 3.5, backgroundColor: '#B0A89E', borderRadius: 2 }} />
+                </div>
               </div>
-            </div>
-            {/* Page content — fills remaining height, scrollable */}
-            <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
-              <PreviewContent {...sharedProps} scale={0.49} />
-            </div>
-            {/* Home indicator */}
-            <div style={{ backgroundColor: config.palette.background, flexShrink: 0, display: 'flex', justifyContent: 'center', padding: '7px 0 5px' }}>
-              <div style={{ width: 48, height: 3.5, backgroundColor: '#C0B4A8', borderRadius: 2 }} />
             </div>
           </div>
         </div>
