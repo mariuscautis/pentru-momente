@@ -466,6 +466,7 @@ export default function CreateEventPage() {
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null)
   const [expiresAt, setExpiresAt] = useState('')
   const [accountType, setAccountType] = useState<'individual' | 'company'>('individual')
+  const [organiserCountry, setOrganiserCountry] = useState('RO')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
@@ -486,6 +487,7 @@ export default function CreateEventPage() {
         goalAmount: string
         expiresAt: string
         accountType: 'individual' | 'company'
+        organiserCountry: string
         items: ItemInput[]
       }
       const config = getAllEventTypes().find(c => c.slug === draft.selectedConfigSlug)
@@ -500,6 +502,7 @@ export default function CreateEventPage() {
         setGoalAmount(draft.goalAmount)
         setExpiresAt(draft.expiresAt)
         setAccountType(draft.accountType)
+        setOrganiserCountry(draft.organiserCountry ?? 'RO')
         setItems(draft.items)
       }
     } catch {
@@ -521,6 +524,7 @@ export default function CreateEventPage() {
         goalAmount,
         expiresAt,
         accountType,
+        organiserCountry,
         items,
       }))
     }
@@ -610,6 +614,7 @@ export default function CreateEventPage() {
         eventId: data.event!.id,
         eventSlug: data.event!.slug,
         accountType,
+        country: organiserCountry,
       }),
     })
 
@@ -1159,6 +1164,45 @@ export default function CreateEventPage() {
                     </div>
                   </div>
 
+                  {/* Country of bank account */}
+                  <div>
+                    <FieldLabel label="Țara contului bancar" hint="Selectează țara IBAN-ului în care vrei să primești donațiile." />
+                    <select
+                      value={organiserCountry}
+                      onChange={(e) => setOrganiserCountry(e.target.value)}
+                      style={{
+                        border: '1px solid var(--color-border)',
+                        color: 'var(--color-ink)',
+                        backgroundColor: 'var(--color-bg)',
+                        borderRadius: '0.75rem',
+                        padding: '0.75rem 1rem',
+                        fontSize: '0.875rem',
+                        width: '100%',
+                        outline: 'none',
+                      }}
+                    >
+                      <option value="RO">🇷🇴 România — RON</option>
+                      <option value="GB">🇬🇧 United Kingdom — GBP</option>
+                      <option value="DE">🇩🇪 Germania — EUR</option>
+                      <option value="FR">🇫🇷 Franța — EUR</option>
+                      <option value="IT">🇮🇹 Italia — EUR</option>
+                      <option value="ES">🇪🇸 Spania — EUR</option>
+                      <option value="AT">🇦🇹 Austria — EUR</option>
+                      <option value="BE">🇧🇪 Belgia — EUR</option>
+                      <option value="NL">🇳🇱 Olanda — EUR</option>
+                      <option value="SE">🇸🇪 Suedia — SEK</option>
+                      <option value="NO">🇳🇴 Norvegia — NOK</option>
+                      <option value="DK">🇩🇰 Danemarca — DKK</option>
+                      <option value="CH">🇨🇭 Elveția — CHF</option>
+                      <option value="PL">🇵🇱 Polonia — PLN</option>
+                      <option value="CZ">🇨🇿 Cehia — CZK</option>
+                      <option value="HU">🇭🇺 Ungaria — HUF</option>
+                      <option value="US">🇺🇸 SUA — USD</option>
+                      <option value="CA">🇨🇦 Canada — CAD</option>
+                      <option value="AU">🇦🇺 Australia — AUD</option>
+                    </select>
+                  </div>
+
                   {/* How it works */}
                   <div
                     className="rounded-2xl overflow-hidden"
@@ -1215,6 +1259,7 @@ export default function CreateEventPage() {
                         ['Articole', `${items.filter((i) => i.name).length}`],
                         ['URL', `/${selectedConfig.slug}/${slug || autoSlug(combinedName)}`],
                         ['Cont Stripe', accountType === 'individual' ? 'Persoană fizică' : 'Persoană juridică'],
+                        ['Țara cont bancar', organiserCountry],
                       ] as [string, string][]
                     ).map(([label, value]) => (
                       <div key={label} className="flex justify-between gap-4 text-sm">
