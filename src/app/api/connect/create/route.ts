@@ -16,9 +16,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json<ApiError>({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  let body: { eventId: string; eventSlug: string; accountType?: 'individual' | 'company' }
+  let body: { eventId: string; eventSlug: string; accountType?: 'individual' | 'company'; country?: string }
   try {
-    body = (await req.json()) as { eventId: string; eventSlug: string; accountType?: 'individual' | 'company' }
+    body = (await req.json()) as { eventId: string; eventSlug: string; accountType?: 'individual' | 'company'; country?: string }
   } catch {
     return NextResponse.json<ApiError>({ error: 'Invalid request body' }, { status: 400 })
   }
@@ -43,7 +43,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     // Create Express account only if one doesn't exist yet
     if (!accountId) {
-      const account = await createConnectAccount(user.email ?? '', body.accountType ?? 'individual')
+      const account = await createConnectAccount(
+        user.email ?? '',
+        body.accountType ?? 'individual',
+        body.country ?? 'RO'  // country determines payout currency — RO → RON, GB → GBP, etc.
+      )
       accountId = account.id
 
       await supabaseAdmin

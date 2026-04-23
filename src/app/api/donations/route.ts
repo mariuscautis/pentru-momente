@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { calculateCommission } from '@/lib/payments/stripe'
+import { calculateFees } from '@/lib/payments/stripe'
 import { createPaymentIntent } from '@/lib/connect/createPaymentIntent'
 import { createDonation } from '@/lib/db/donations'
 import { getEventBySlug } from '@/lib/db/events'
@@ -25,8 +25,8 @@ interface CreateDonationBody {
   amount: number
   // Optional donor tip on top of the donation (0 if declined)
   tipAmount?: number
-  // Card region declared by donor — determines commission rate
-  cardRegion?: 'eu' | 'non-eu'
+  // ISO 3166-1 alpha-2 card country — used to determine Stripe processing rate.
+  // Populated by Stripe.js after payment method creation; optional (falls back to organiser country).
   cardCountry?: string
   displayName?: string
   donorEmail?: string
@@ -76,11 +76,13 @@ async function handlePost(req: NextRequest): Promise<NextResponse> {
     )
   }
 
-  // Verify the Connect account actually has transfers enabled before charging.
-  // charges_enabled is false until Stripe completes identity/capability verification.
+  // Retrieve the Connect account to check charges_enabled and resolve the organiser's
+  // default currency. The payment intent is always created in the organiser's currency
+  // so funds arrive without conversion. Donors with foreign cards pay Stripe's conversion.
+  let connectAccount: Stripe.Account
   try {
-    const account = await getStripe().accounts.retrieve(event.stripeConnectAccountId)
-    if (!account.charges_enabled) {
+    connectAccount = await getStripe().accounts.retrieve(event.stripeConnectAccountId)
+    if (!connectAccount.charges_enabled) {
       return NextResponse.json<ApiError>(
         { error: 'Contul organizatorului nu este încă verificat de Stripe. Reîncearcă în câteva minute.' },
         { status: 400 }
@@ -93,20 +95,24 @@ async function handlePost(req: NextRequest): Promise<NextResponse> {
     )
   }
 
-  const tipRon = body.tipAmount ?? 0
-  // Commission rate depends on card region declared by donor
-  const cardCountry = body.cardRegion === 'non-eu' ? 'US' : 'RO'
-  const commissionRon = calculateCommission(body.amount, cardCountry)
+  // Use the organiser's default currency (set by their country at onboarding).
+  // Falls back to 'ron' for safety.
+  const currency = (connectAccount.default_currency ?? 'ron').toLowerCase()
 
-  // Donor pays: donation + tip only.
-  // Platform application_fee = commission + tip → routes to platform account.
-  // Organiser receives: donation − commission.
+  const tipAmount = body.tipAmount ?? 0
+  // Card country: use what the donor declared, fall back to organiser country.
+  const cardCountry = body.cardCountry ?? connectAccount.country ?? 'RO'
+
+  // Calculate application_fee_amount: Stripe processing fee + 1% platform fee + tip.
+  // All deducted from the organiser's share — donor pays exactly their stated amount.
+  const fees = calculateFees(body.amount, tipAmount, cardCountry, currency)
+
   let paymentIntent
   try {
     paymentIntent = await createPaymentIntent({
-      amount: Math.round(body.amount * 100),             // RON → bani
-      tipAmount: Math.round(tipRon * 100),               // RON → bani
-      commissionAmount: Math.round(commissionRon * 100), // RON → bani
+      amount: Math.round(body.amount * (currency === 'huf' ? 1 : 100)),
+      applicationFee: fees.applicationFee,
+      currency,
       connectAccountId: event.stripeConnectAccountId,
       eventId: event.id,
       itemId: selectedItems.length === 1 ? selectedItems[0].itemId : undefined,
@@ -121,8 +127,8 @@ async function handlePost(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json<ApiError>({ error: message }, { status: 500 })
   }
 
-  // Store commission + tip together in tip_amount so superadmin "Comision" column reflects total platform revenue.
-  const totalPlatformRevenue = commissionRon + tipRon
+  // Total platform revenue = Stripe fee (recovered) + 1% platform fee + tip
+  const totalPlatformRevenue = fees.applicationFee / (currency === 'huf' ? 1 : 100)
 
   if (selectedItems.length > 0) {
     for (const [i, selected] of selectedItems.entries()) {
@@ -157,7 +163,9 @@ async function handlePost(req: NextRequest): Promise<NextResponse> {
   return NextResponse.json({
     clientSecret: paymentIntent.client_secret,
     paymentIntentId: paymentIntent.id,
-    commissionAmount: commissionRon,
-    tipAmount: tipRon,
+    currency,
+    platformFee: fees.platformFee / (currency === 'huf' ? 1 : 100),
+    stripeFee: fees.stripeFeeParts / (currency === 'huf' ? 1 : 100),
+    tipAmount,
   })
 }

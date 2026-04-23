@@ -5,9 +5,16 @@ function getStripe() {
 }
 
 export interface CreatePaymentIntentParams {
-  amount: number             // donation amount in RON bani (RON × 100)
-  tipAmount: number          // optional platform tip in RON bani (chosen by donor)
-  commissionAmount: number   // mandatory platform commission in RON bani (deducted from what organiser receives)
+  // Donation amount in the currency's smallest unit (e.g. bani for RON, cents for EUR)
+  amount: number
+  // application_fee_amount in smallest unit: covers Stripe fee + 1% platform fee + donor tip.
+  // Pre-calculated by calculateFees() in src/lib/payments/stripe.ts.
+  applicationFee: number
+  // ISO 4217 currency code in lowercase (e.g. 'ron', 'eur', 'gbp').
+  // Determined by the organiser's Connect account default currency.
+  // Donor pays in this currency; if their card is in a different currency,
+  // Stripe converts at their expense (no conversion cost to organiser or platform).
+  currency: string
   connectAccountId: string   // organiser's Stripe Express account ID
   eventId: string
   itemId?: string
@@ -23,16 +30,19 @@ export async function createPaymentIntent(
 ): Promise<Stripe.PaymentIntent> {
   const stripe = getStripe()
 
-  // Donor pays: donation + tip (commission is not added on top — it is deducted from organiser's share)
-  const totalAmount = params.amount + params.tipAmount
-  // Platform captures: commission (deducted from organiser) + tip (added by donor)
-  // Organiser receives: donation − commission
-  const applicationFee = params.commissionAmount + params.tipAmount
-
+  // Destination charge:
+  //   - Donor is charged `amount` in `currency`.
+  //   - `application_fee_amount` is captured by the platform (Peachfuzz Media).
+  //   - Remaining funds transfer to organiser's Express account automatically.
+  //
+  // on_behalf_of is set so Stripe treats the charge as originating from the
+  // connected account's country — ensures correct statement descriptor and
+  // regulatory treatment for Romanian organisers.
   return stripe.paymentIntents.create({
-    amount: totalAmount,
-    currency: 'ron',
-    application_fee_amount: applicationFee,
+    amount: params.amount,
+    currency: params.currency,
+    application_fee_amount: params.applicationFee,
+    on_behalf_of: params.connectAccountId,
     transfer_data: {
       destination: params.connectAccountId,
     },
@@ -41,8 +51,8 @@ export async function createPaymentIntent(
       eventId: params.eventId,
       itemId: params.itemId ?? '',
       donationAmount: String(params.amount),
-      tipAmount: String(params.tipAmount),
-      commissionAmount: String(params.commissionAmount),
+      applicationFee: String(params.applicationFee),
+      currency: params.currency,
       displayName: params.displayName ?? '',
       donorEmail: params.donorEmail ?? '',
       message: params.message ?? '',

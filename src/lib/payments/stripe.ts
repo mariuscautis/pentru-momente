@@ -31,22 +31,91 @@ export function isEuCard(countryCode: string): boolean {
   return EU_COUNTRY_CODES.has(countryCode.toUpperCase())
 }
 
+// Stripe processing rates by card origin.
+// These are the rates Stripe charges the platform on destination charges.
+// source: https://stripe.com/en-ro/pricing
+const STRIPE_RATE_EU     = 0.015  // 1.5%  + fixed fee (EU/EEA cards)
+const STRIPE_RATE_NON_EU = 0.0325 // 3.25% + fixed fee (non-EU cards)
+const PLATFORM_FEE_RATE  = 0.01   // 1% platform fee (Peachfuzz Media)
+
 /**
- * Calculate the mandatory platform commission charged on every donation.
+ * Calculate the application_fee_amount (in smallest currency unit) to capture on a donation.
  *
- * EU cards:     Stripe fee ≈ 1.5% + 0.25€ (≈1.25 RON) → commission 2.5% + 1.25 RON
- *               leaves ~1% for the platform after covering Stripe.
+ * Fee model:
+ *   - Donor pays exactly `donationAmount` (no surcharge).
+ *   - Organiser absorbs: Stripe processing fee + 1% platform fee.
+ *   - Optional donor tip is added on top of the application fee — also goes to the platform.
  *
- * Non-EU cards: Stripe fee ≈ 3.25% + 0.25€ (≈1.25 RON) → commission 4.25% + 1.25 RON
- *               leaves ~1% for the platform after covering Stripe.
+ * application_fee = (donation × (stripe_rate + platform_rate)) + stripe_fixed_fee + tip
+ * Organiser nets  = donation - (donation × (stripe_rate + platform_rate)) - stripe_fixed_fee
  *
- * Rounded to nearest 0.01 RON.
- * Captured via application_fee_amount — organiser receives donation minus commission.
+ * @param donationAmount  Donation amount in the currency's major unit (e.g. RON, EUR, GBP)
+ * @param tipAmount       Optional donor tip in the same major unit (default 0)
+ * @param cardCountry     ISO 3166-1 alpha-2 card-issuing country (determines Stripe rate)
+ * @param currency        ISO 4217 currency code — used to look up the correct fixed fee
+ * @returns               Object with fee components, all in smallest currency unit (bani/cents/pence)
  */
+export function calculateFees(
+  donationAmount: number,
+  tipAmount: number = 0,
+  cardCountry: string = 'RO',
+  currency: string = 'ron'
+): {
+  stripeFeeParts: number  // Stripe processing fee in smallest unit
+  platformFee: number     // 1% platform fee in smallest unit
+  tipSmallestUnit: number // tip in smallest unit
+  applicationFee: number  // total application_fee_amount = stripeFeeParts + platformFee + tip
+} {
+  const isEU = isEuCard(cardCountry)
+  const stripeRate = isEU ? STRIPE_RATE_EU : STRIPE_RATE_NON_EU
+  const stripeFixed = getStripeFixedFee(currency)
+  const multiplier = getCurrencyMultiplier(currency)
+
+  const stripeFeeParts = Math.round((donationAmount * stripeRate + stripeFixed) * multiplier)
+  const platformFee    = Math.round(donationAmount * PLATFORM_FEE_RATE * multiplier)
+  const tipSmallestUnit = Math.round(tipAmount * multiplier)
+  const applicationFee  = stripeFeeParts + platformFee + tipSmallestUnit
+
+  return { stripeFeeParts, platformFee, tipSmallestUnit, applicationFee }
+}
+
+/**
+ * Stripe's fixed fee per successful charge, in major currency units.
+ * Source: Stripe pricing pages per currency.
+ */
+function getStripeFixedFee(currency: string): number {
+  switch (currency.toLowerCase()) {
+    case 'ron': return 1.25   // ≈ 0.25 EUR in RON
+    case 'eur': return 0.25
+    case 'gbp': return 0.20
+    case 'usd': return 0.30
+    case 'chf': return 0.30
+    case 'sek': return 1.80
+    case 'dkk': return 1.80
+    case 'nok': return 2.00
+    case 'pln': return 1.00
+    case 'czk': return 6.50
+    case 'huf': return 85.00
+    default:    return 0.25   // fallback to EUR-equivalent
+  }
+}
+
+/**
+ * Number of smallest units per major unit for a given currency.
+ * All currencies here use 100 (cents/bani/pence etc.) — no zero-decimal currencies in scope.
+ */
+function getCurrencyMultiplier(currency: string): number {
+  switch (currency.toLowerCase()) {
+    case 'huf': return 1  // HUF is a zero-decimal currency in Stripe
+    default:    return 100
+  }
+}
+
+// Legacy wrapper kept for any callers that haven't migrated yet.
+// Returns the total application fee in major currency units (RON).
 export function calculateCommission(donationRon: number, cardCountry = 'RO'): number {
-  const rate = isEuCard(cardCountry) ? 0.025 : 0.0425
-  const raw = donationRon * rate + 1.25
-  return Math.round(raw * 100) / 100
+  const { stripeFeeParts, platformFee } = calculateFees(donationRon, 0, cardCountry, 'ron')
+  return (stripeFeeParts + platformFee) / 100
 }
 
 export function constructWebhookEvent(
