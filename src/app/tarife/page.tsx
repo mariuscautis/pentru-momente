@@ -4,6 +4,8 @@ import { Nav } from '@/components/Nav'
 import { Check, ArrowRight, Shield, Heart, Zap, Lock } from 'lucide-react'
 import { buildMetadata } from '@/lib/seo'
 
+export const dynamic = 'force-dynamic'
+
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata('tarife', {
     title: 'Tarife & comisioane · pentrumomente.ro',

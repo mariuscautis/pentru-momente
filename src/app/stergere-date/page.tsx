@@ -3,6 +3,8 @@ import Link from 'next/link'
 import { Nav } from '@/components/Nav'
 import { buildMetadata } from '@/lib/seo'
 
+export const dynamic = 'force-dynamic'
+
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata('stergere-date', {
     title: 'Ștergere Date Utilizator · pentrumomente.ro',
