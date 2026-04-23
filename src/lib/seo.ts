@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { getSeoOverride } from '@/lib/db/admin'
 
-const DEFAULT_OG_IMAGE = { url: '/og-image.svg', width: 1200, height: 630, alt: 'pentrumomente.ro' }
+const DEFAULT_OG_IMAGE = { url: '/og-image.png', width: 1200, height: 630, alt: 'pentrumomente.ro' }
 
 /**
  * Merges a DB SEO override on top of page-level defaults.

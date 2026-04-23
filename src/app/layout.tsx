@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     siteName: "pentrumomente.ro",
     images: [
       {
-        url: "/og-image.svg",
+        url: "/og-image.png",
         width: 1200,
         height: 630,
         alt: "pentrumomente.ro",
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Strânge fonduri pentru momentele care contează — pentrumomente.ro",
     description: "Creează o pagină de donații pentru un eveniment de viață în 3 minute.",
-    images: ["/og-image.svg"],
+    images: ["/og-image.png"],
   },
 };
 
