@@ -2,26 +2,16 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import { Nav } from '@/components/Nav'
 import { supabaseAdmin } from '@/lib/db/supabase'
+import { buildMetadata } from '@/lib/seo'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = {
-  title: 'Politica de Cookies · pentrumomente.ro',
-  description: 'Informații despre modul în care pentrumomente.ro utilizează cookie-urile și tehnologiile similare.',
-  openGraph: {
+export async function generateMetadata(): Promise<Metadata> {
+  return buildMetadata('politica-cookies', {
     title: 'Politica de Cookies · pentrumomente.ro',
     description: 'Informații despre modul în care pentrumomente.ro utilizează cookie-urile și tehnologiile similare.',
-    siteName: 'pentrumomente.ro',
-    locale: 'ro_RO',
-    type: 'website',
-    images: [{ url: '/og-image.svg', width: 1200, height: 630, alt: 'pentrumomente.ro' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Politica de Cookies · pentrumomente.ro',
-    description: 'Informații despre modul în care pentrumomente.ro utilizează cookie-urile și tehnologiile similare.',
-    images: ['/og-image.svg'],
-  },
+    openGraph: { siteName: 'pentrumomente.ro', locale: 'ro_RO', type: 'website' },
+  })
 }
 
 async function getCookiesContent(): Promise<string> {

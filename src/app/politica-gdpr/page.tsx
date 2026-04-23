@@ -2,26 +2,16 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import { Nav } from '@/components/Nav'
 import { supabaseAdmin } from '@/lib/db/supabase'
+import { buildMetadata } from '@/lib/seo'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = {
-  title: 'Politica GDPR · pentrumomente.ro',
-  description: 'Politica de confidențialitate și protecția datelor cu caracter personal conform Regulamentului GDPR pe platforma pentrumomente.ro.',
-  openGraph: {
+export async function generateMetadata(): Promise<Metadata> {
+  return buildMetadata('politica-gdpr', {
     title: 'Politica GDPR · pentrumomente.ro',
-    description: 'Politica de confidențialitate și protecția datelor cu caracter personal conform Regulamentului GDPR.',
-    siteName: 'pentrumomente.ro',
-    locale: 'ro_RO',
-    type: 'website',
-    images: [{ url: '/og-image.svg', width: 1200, height: 630, alt: 'pentrumomente.ro' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Politica GDPR · pentrumomente.ro',
-    description: 'Politica de confidențialitate și protecția datelor cu caracter personal conform Regulamentului GDPR.',
-    images: ['/og-image.svg'],
-  },
+    description: 'Politica de confidențialitate și protecția datelor cu caracter personal conform Regulamentului GDPR pe platforma pentrumomente.ro.',
+    openGraph: { siteName: 'pentrumomente.ro', locale: 'ro_RO', type: 'website' },
+  })
 }
 
 async function getGdprContent(): Promise<string> {

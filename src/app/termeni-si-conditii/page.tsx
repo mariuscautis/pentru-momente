@@ -2,26 +2,16 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import { Nav } from '@/components/Nav'
 import { supabaseAdmin } from '@/lib/db/supabase'
+import { buildMetadata } from '@/lib/seo'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = {
-  title: 'Termeni și Condiții · pentrumomente.ro',
-  description: 'Termenii și condițiile de utilizare a platformei pentrumomente.ro.',
-  openGraph: {
+export async function generateMetadata(): Promise<Metadata> {
+  return buildMetadata('termeni-si-conditii', {
     title: 'Termeni și Condiții · pentrumomente.ro',
     description: 'Termenii și condițiile de utilizare a platformei pentrumomente.ro.',
-    siteName: 'pentrumomente.ro',
-    locale: 'ro_RO',
-    type: 'website',
-    images: [{ url: '/og-image.svg', width: 1200, height: 630, alt: 'pentrumomente.ro' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Termeni și Condiții · pentrumomente.ro',
-    description: 'Termenii și condițiile de utilizare a platformei pentrumomente.ro.',
-    images: ['/og-image.svg'],
-  },
+    openGraph: { siteName: 'pentrumomente.ro', locale: 'ro_RO', type: 'website' },
+  })
 }
 
 async function getTermsContent(): Promise<string> {

@@ -1,24 +1,14 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
 import { Nav } from '@/components/Nav'
+import { buildMetadata } from '@/lib/seo'
 
-export const metadata: Metadata = {
-  title: 'Ștergere Date Utilizator · pentrumomente.ro',
-  description: 'Cum poți solicita ștergerea datelor tale personale de pe platforma pentrumomente.ro, conform dreptului de a fi uitat (GDPR Art. 17).',
-  openGraph: {
+export async function generateMetadata(): Promise<Metadata> {
+  return buildMetadata('stergere-date', {
     title: 'Ștergere Date Utilizator · pentrumomente.ro',
-    description: 'Cum poți solicita ștergerea datelor tale personale de pe platforma pentrumomente.ro, conform GDPR Art. 17.',
-    siteName: 'pentrumomente.ro',
-    locale: 'ro_RO',
-    type: 'website',
-    images: [{ url: '/og-image.svg', width: 1200, height: 630, alt: 'pentrumomente.ro' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Ștergere Date Utilizator · pentrumomente.ro',
-    description: 'Cum poți solicita ștergerea datelor tale personale de pe platforma pentrumomente.ro, conform GDPR Art. 17.',
-    images: ['/og-image.svg'],
-  },
+    description: 'Cum poți solicita ștergerea datelor tale personale de pe platforma pentrumomente.ro, conform dreptului de a fi uitat (GDPR Art. 17).',
+    openGraph: { siteName: 'pentrumomente.ro', locale: 'ro_RO', type: 'website' },
+  })
 }
 
 const sections = [

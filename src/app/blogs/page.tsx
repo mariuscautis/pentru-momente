@@ -3,26 +3,20 @@ import Link from 'next/link'
 import { Nav } from '@/components/Nav'
 import { getAllBlogPosts } from '@/lib/db/admin'
 import { ArrowRight, Calendar, Clock } from 'lucide-react'
+import { buildMetadata } from '@/lib/seo'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = {
-  title: 'Blog · pentrumomente.ro',
-  description: 'Articole, ghiduri și povești de pe platforma pentrumomente.ro.',
-  openGraph: {
+export async function generateMetadata(): Promise<Metadata> {
+  return buildMetadata('blogs', {
     title: 'Blog · pentrumomente.ro',
     description: 'Articole, ghiduri și povești de pe platforma pentrumomente.ro.',
-    siteName: 'pentrumomente.ro',
-    type: 'website',
-    locale: 'ro_RO',
-    images: [{ url: '/og-image.svg', width: 1200, height: 630, alt: 'pentrumomente.ro' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Blog · pentrumomente.ro',
-    description: 'Articole, ghiduri și povești de pe platforma pentrumomente.ro.',
-    images: ['/og-image.svg'],
-  },
+    openGraph: {
+      siteName: 'pentrumomente.ro',
+      type: 'website',
+      locale: 'ro_RO',
+    },
+  })
 }
 
 function readingTime(text: string): number {

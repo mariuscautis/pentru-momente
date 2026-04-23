@@ -2,24 +2,14 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import { Nav } from '@/components/Nav'
 import { Check, ArrowRight } from 'lucide-react'
+import { buildMetadata } from '@/lib/seo'
 
-export const metadata: Metadata = {
-  title: 'Despre noi · pentrumomente.ro',
-  description: 'Suntem o platformă românească dedicată momentelor de viață care contează. Aflați povestea noastră și misiunea care ne ghidează.',
-  openGraph: {
+export async function generateMetadata(): Promise<Metadata> {
+  return buildMetadata('despre-noi', {
     title: 'Despre noi · pentrumomente.ro',
-    description: 'O platformă construită pentru momentele care contează cu adevărat.',
-    siteName: 'pentrumomente.ro',
-    locale: 'ro_RO',
-    type: 'website',
-    images: [{ url: '/og-image.svg', width: 1200, height: 630, alt: 'pentrumomente.ro' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Despre noi · pentrumomente.ro',
-    description: 'O platformă construită pentru momentele care contează cu adevărat.',
-    images: ['/og-image.svg'],
-  },
+    description: 'Suntem o platformă românească dedicată momentelor de viață care contează. Aflați povestea noastră și misiunea care ne ghidează.',
+    openGraph: { siteName: 'pentrumomente.ro', locale: 'ro_RO', type: 'website' },
+  })
 }
 
 export default function DespreNoiPage() {
