@@ -1003,15 +1003,175 @@ function TicheteTab({ onUnreadChange }: { onUnreadChange: (n: number) => void })
 
 // ─── SEO Tab ──────────────────────────────────────────────────────────────────
 
+// ─── Static page definitions for SEO management ──────────────────────────────
+
+const STATIC_PAGES: { key: string; label: string; path: string }[] = [
+  { key: 'home',                   label: 'Homepage',               path: '/' },
+  { key: 'create',                 label: 'Creează pagină',         path: '/create' },
+  { key: 'blogs',                  label: 'Blog (listă)',           path: '/blogs' },
+  { key: 'despre-noi',             label: 'Despre noi',            path: '/despre-noi' },
+  { key: 'termeni-si-conditii',    label: 'Termeni și Condiții',   path: '/termeni-si-conditii' },
+  { key: 'tarife',                 label: 'Tarife',                path: '/tarife' },
+  { key: 'politica-cookies',       label: 'Politica Cookies',      path: '/politica-cookies' },
+  { key: 'politica-gdpr',          label: 'Politica GDPR',         path: '/politica-gdpr' },
+  { key: 'stergere-date',          label: 'Ștergere Date',         path: '/stergere-date' },
+]
+
+// ─── Per-row accordion for a single static page ───────────────────────────────
+
+function SeoPageRow({ page, override, onSaved }: {
+  page: { key: string; label: string; path: string }
+  override: SeoOverride | null
+  onSaved: () => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [title, setTitle] = useState(override?.seoTitle ?? '')
+  const [desc, setDesc] = useState(override?.metaDescription ?? '')
+  const [img, setImg] = useState(override?.socialImageUrl ?? '')
+  const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  // Sync when override changes (e.g. after a save in a sibling row)
+  useEffect(() => {
+    setTitle(override?.seoTitle ?? '')
+    setDesc(override?.metaDescription ?? '')
+    setImg(override?.socialImageUrl ?? '')
+  }, [override])
+
+  const hasOverride = !!(override?.seoTitle || override?.metaDescription || override?.socialImageUrl)
+
+  async function save() {
+    setSaving(true); setMsg(null)
+    const res = await apiFetch('/api/admin/seo', {
+      method: 'POST',
+      body: JSON.stringify({ pageKey: page.key, seoTitle: title, metaDescription: desc, socialImageUrl: img }),
+    })
+    if (res.ok) { setMsg({ text: 'Salvat.', ok: true }); onSaved() }
+    else setMsg({ text: 'Eroare la salvare.', ok: false })
+    setSaving(false)
+  }
+
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true); setMsg(null)
+    try {
+      const url = await uploadImage(file, 'seo')
+      setImg(url)
+    } catch {
+      setMsg({ text: 'Eroare la upload imagine.', ok: false })
+    }
+    setUploading(false)
+    if (fileRef.current) fileRef.current.value = ''
+  }
+
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ backgroundColor: c.surface, border: `1px solid ${open ? c.accent : c.border}`, transition: 'border-color 0.15s' }}>
+      {/* Row header — always visible */}
+      <button
+        onClick={() => { setOpen(o => !o); setMsg(null) }}
+        className="w-full flex items-center gap-3 px-4 py-3.5 text-left"
+        style={{ backgroundColor: open ? `${c.accent}08` : 'transparent' }}
+      >
+        <span className="text-base leading-none" style={{ color: c.textSoft }}>{open ? '▾' : '▸'}</span>
+        <span className="flex-1 text-sm font-medium" style={{ color: c.text }}>{page.label}</span>
+        <span className="text-xs font-mono mr-2" style={{ color: c.textSoft }}>{page.path}</span>
+        {hasOverride && (
+          <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: c.successBg, color: c.success }}>Configurat</span>
+        )}
+        {!hasOverride && (
+          <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: c.surfaceHover, color: c.textSoft }}>Implicit</span>
+        )}
+      </button>
+
+      {/* Expandable form */}
+      {open && (
+        <div className="px-4 pb-5 pt-1 border-t" style={{ borderColor: `${c.accent}20` }}>
+          <div className="space-y-4 mt-3">
+            {/* SEO Title */}
+            <div>
+              <div className="flex items-baseline justify-between mb-1.5">
+                <label className="text-xs font-medium" style={{ color: c.textMid }}>SEO Title</label>
+                <span className="text-xs" style={{ color: title.length > 60 ? c.danger : c.textSoft }}>{title.length}/60</span>
+              </div>
+              <input
+                type="text" value={title} onChange={(e) => setTitle(e.target.value)}
+                placeholder="Titlul afișat în rezultatele Google"
+                className="w-full rounded-lg px-3 py-2.5 text-sm outline-none"
+                style={{ backgroundColor: '#FAFBFF', border: `1px solid ${c.border}`, color: c.text }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = c.accent; e.currentTarget.style.boxShadow = `0 0 0 3px ${c.accent}18` }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = c.border; e.currentTarget.style.boxShadow = 'none' }}
+              />
+            </div>
+
+            {/* Meta Description */}
+            <div>
+              <div className="flex items-baseline justify-between mb-1.5">
+                <label className="text-xs font-medium" style={{ color: c.textMid }}>Meta Description</label>
+                <span className="text-xs" style={{ color: desc.length > 160 ? c.danger : c.textSoft }}>{desc.length}/160</span>
+              </div>
+              <textarea
+                value={desc} onChange={(e) => setDesc(e.target.value)}
+                placeholder="Descriere scurtă afișată sub titlu în Google"
+                rows={3}
+                className="w-full rounded-lg px-3 py-2.5 text-sm outline-none resize-none"
+                style={{ backgroundColor: '#FAFBFF', border: `1px solid ${c.border}`, color: c.text }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = c.accent; e.currentTarget.style.boxShadow = `0 0 0 3px ${c.accent}18` }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = c.border; e.currentTarget.style.boxShadow = 'none' }}
+              />
+            </div>
+
+            {/* OG / Featured image */}
+            <div>
+              <label className="text-xs font-medium block mb-1.5" style={{ color: c.textMid }}>Imagine partajare (OG Image)</label>
+              <p className="text-xs mb-2" style={{ color: c.textSoft }}>Apare când pagina e distribuită pe WhatsApp, Facebook etc. Format recomandat: 1200×630px.</p>
+              <div className="flex gap-2">
+                <input
+                  type="text" value={img} onChange={(e) => setImg(e.target.value)}
+                  placeholder="URL imagine (1200×630px) sau încarcă mai jos"
+                  className="flex-1 rounded-lg px-3 py-2.5 text-sm outline-none"
+                  style={{ backgroundColor: '#FAFBFF', border: `1px solid ${c.border}`, color: c.text }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = c.accent; e.currentTarget.style.boxShadow = `0 0 0 3px ${c.accent}18` }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = c.border; e.currentTarget.style.boxShadow = 'none' }}
+                />
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  disabled={uploading}
+                  className="shrink-0 rounded-lg px-3 py-2 text-xs font-medium"
+                  style={{ backgroundColor: c.badge, color: c.accent, border: `1px solid ${c.border}`, opacity: uploading ? 0.6 : 1 }}
+                >
+                  {uploading ? 'Se încarcă...' : 'Încarcă'}
+                </button>
+                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+              </div>
+              {img && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={img} alt="OG preview" className="mt-3 rounded-lg object-cover w-full"
+                  style={{ maxHeight: 180, border: `1px solid ${c.border}` }}
+                  onError={(e) => { e.currentTarget.style.display = 'none' }}
+                />
+              )}
+            </div>
+          </div>
+
+          {msg && <div className="mt-3"><Msg ok={msg.ok} text={msg.text} /></div>}
+
+          <div className="flex gap-2 mt-4">
+            <Btn onClick={save} loading={saving}>Salvează</Btn>
+            <Btn onClick={() => setOpen(false)} variant="ghost">Închide</Btn>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── SEO Tab ──────────────────────────────────────────────────────────────────
+
 function SeoTab() {
   const [overrides, setOverrides] = useState<SeoOverride[]>([])
-  const [editing, setEditing] = useState<SeoOverride | null>(null)
-  const [newKey, setNewKey] = useState('')
-  const [newTitle, setNewTitle] = useState('')
-  const [newDesc, setNewDesc] = useState('')
-  const [newSocialImg, setNewSocialImg] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null)
 
   const load = useCallback(async () => {
     const res = await apiFetch('/api/admin/seo')
@@ -1023,68 +1183,21 @@ function SeoTab() {
 
   useEffect(() => { load() }, [load])
 
-  function startEdit(o: SeoOverride) {
-    setEditing(o); setNewKey(o.pageKey); setNewTitle(o.seoTitle ?? '')
-    setNewDesc(o.metaDescription ?? ''); setNewSocialImg(o.socialImageUrl ?? ''); setMsg(null)
-  }
-  function startNew() {
-    setEditing(null); setNewKey(''); setNewTitle(''); setNewDesc(''); setNewSocialImg(''); setMsg(null)
-  }
-
-  async function save() {
-    setSaving(true); setMsg(null)
-    const res = await apiFetch('/api/admin/seo', {
-      method: 'POST',
-      body: JSON.stringify({ pageKey: newKey, seoTitle: newTitle, metaDescription: newDesc, socialImageUrl: newSocialImg }),
-    })
-    if (res.ok) { setMsg({ text: 'Salvat cu succes.', ok: true }); setEditing(null); startNew(); load() }
-    else setMsg({ text: 'Eroare la salvare.', ok: false })
-    setSaving(false)
-  }
+  const overrideMap = Object.fromEntries(overrides.map(o => [o.pageKey, o]))
 
   return (
-    <div className="max-w-3xl space-y-8">
-      <PageHeader title="SEO" description="Configurează titlul, meta description și imaginea de share social." />
-      <Card>
-        <h2 className="text-sm font-semibold mb-5" style={{ color: c.text }}>
-          {editing ? `Editează: ${editing.pageKey}` : 'Adaugă / actualizează pagină'}
-        </h2>
-        <div className="space-y-4">
-          <Field label="Page key" value={newKey} onChange={setNewKey} placeholder="ex: home" disabled={!!editing} hint="Identificator unic — poate fi un path URL" />
-          <Field label="SEO Title" value={newTitle} onChange={setNewTitle} placeholder="Titlul paginii" hint={`${newTitle.length}/60`} hintColor={newTitle.length > 60 ? c.danger : c.textSoft} />
-          <Field label="Meta Description" value={newDesc} onChange={setNewDesc} placeholder="Descriere scurtă" hint={`${newDesc.length}/160`} hintColor={newDesc.length > 160 ? c.danger : c.textSoft} />
-          <Field label="Social Share Image URL" value={newSocialImg} onChange={setNewSocialImg} placeholder="https://... (1200×630px)" hint="Imaginea afișată la share Facebook/WhatsApp" />
-          {newSocialImg && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={newSocialImg} alt="preview" className="rounded-lg object-cover" style={{ maxHeight: 160, border: `1px solid ${c.border}` }} onError={(e) => { e.currentTarget.style.display = 'none' }} />
-          )}
-        </div>
-        {msg && <Msg ok={msg.ok} text={msg.text} />}
-        <div className="flex gap-2 mt-5">
-          <Btn onClick={save} loading={saving}>Salvează</Btn>
-          {editing && <Btn onClick={startNew} variant="ghost">Anulează</Btn>}
-        </div>
-      </Card>
-
-      {overrides.length > 0 && (
-        <div>
-          <SectionLabel>Pagini configurate ({overrides.length})</SectionLabel>
-          <div className="space-y-2 mt-3">
-            {overrides.map((o) => (
-              <div key={o.id} className="flex items-start justify-between rounded-xl px-4 py-3" style={{ backgroundColor: c.surface, border: `1px solid ${c.border}` }}>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium" style={{ color: c.text }}>{o.pageKey}</p>
-                    {o.socialImageUrl && <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ backgroundColor: c.badge, color: c.badgeText }}>OG image</span>}
-                  </div>
-                  <p className="text-xs mt-0.5 truncate" style={{ color: c.textSoft }}>{o.seoTitle || '—'}</p>
-                </div>
-                <button onClick={() => startEdit(o)} className="text-xs font-medium shrink-0 ml-4 px-2 py-1 rounded" style={{ color: c.accent, backgroundColor: c.badge }}>Editează</button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+    <div className="max-w-3xl space-y-6">
+      <PageHeader title="SEO" description="Configurează titlul, meta description și imaginea de share pentru fiecare pagină statică. Click pe o pagină pentru a o edita." />
+      <div className="space-y-2">
+        {STATIC_PAGES.map((page) => (
+          <SeoPageRow
+            key={page.key}
+            page={page}
+            override={overrideMap[page.key] ?? null}
+            onSaved={load}
+          />
+        ))}
+      </div>
     </div>
   )
 }
