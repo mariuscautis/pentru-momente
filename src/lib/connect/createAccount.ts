@@ -18,12 +18,20 @@ export async function createConnectAccount(
 ): Promise<Stripe.Account> {
   const stripe = getStripe()
 
+  // For individual organisers (the vast majority), pre-set business_type to
+  // 'individual' so Stripe skips the business-type question and goes straight
+  // to personal identity fields (name, DOB, address, IBAN).
+  // For company accounts, leave Stripe to collect business details.
+  const isIndividual = _businessType !== 'company'
+
   const account = await stripe.accounts.create({
     type: 'express',
     country: country.toUpperCase(),
     email: organiserEmail,
-    // business_profile.url is required; product_description helps Stripe's
-    // risk review understand what the platform does.
+    ...(isIndividual ? {
+      business_type: 'individual',
+      individual: { email: organiserEmail },
+    } : {}),
     business_profile: {
       url: process.env.NEXT_PUBLIC_APP_URL,
       product_description: 'Platformă de strângere de fonduri pentru momente de viață',
