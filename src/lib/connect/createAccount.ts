@@ -31,11 +31,13 @@ export async function createConnectAccount(
     ...(isIndividual ? {
       business_type: 'individual',
       individual: { email: organiserEmail },
-    } : {}),
-    business_profile: {
-      url: process.env.NEXT_PUBLIC_APP_URL,
-      product_description: 'Platformă de strângere de fonduri pentru momente de viață',
-    },
+    } : {
+      // For company accounts, provide business profile so Stripe has context.
+      business_profile: {
+        url: process.env.NEXT_PUBLIC_APP_URL,
+        product_description: 'Platformă de strângere de fonduri pentru momente de viață',
+      },
+    }),
     capabilities: {
       card_payments: { requested: true },
       transfers: { requested: true },
