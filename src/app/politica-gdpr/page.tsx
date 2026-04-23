@@ -10,9 +10,17 @@ export const metadata: Metadata = {
   description: 'Politica de confidențialitate și protecția datelor cu caracter personal conform Regulamentului GDPR pe platforma pentrumomente.ro.',
   openGraph: {
     title: 'Politica GDPR · pentrumomente.ro',
+    description: 'Politica de confidențialitate și protecția datelor cu caracter personal conform Regulamentului GDPR.',
     siteName: 'pentrumomente.ro',
     locale: 'ro_RO',
     type: 'website',
+    images: [{ url: '/og-image.svg', width: 1200, height: 630, alt: 'pentrumomente.ro' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Politica GDPR · pentrumomente.ro',
+    description: 'Politica de confidențialitate și protecția datelor cu caracter personal conform Regulamentului GDPR.',
+    images: ['/og-image.svg'],
   },
 }
 

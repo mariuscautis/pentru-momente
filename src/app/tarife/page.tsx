@@ -12,6 +12,13 @@ export const metadata: Metadata = {
     siteName: 'pentrumomente.ro',
     locale: 'ro_RO',
     type: 'website',
+    images: [{ url: '/og-image.svg', width: 1200, height: 630, alt: 'pentrumomente.ro' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Tarife & comisioane · pentrumomente.ro',
+    description: 'Transparență completă despre comisioanele aplicate pe platformă.',
+    images: ['/og-image.svg'],
   },
 }
 

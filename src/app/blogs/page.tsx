@@ -15,6 +15,13 @@ export const metadata: Metadata = {
     siteName: 'pentrumomente.ro',
     type: 'website',
     locale: 'ro_RO',
+    images: [{ url: '/og-image.svg', width: 1200, height: 630, alt: 'pentrumomente.ro' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Blog · pentrumomente.ro',
+    description: 'Articole, ghiduri și povești de pe platforma pentrumomente.ro.',
+    images: ['/og-image.svg'],
   },
 }
 
