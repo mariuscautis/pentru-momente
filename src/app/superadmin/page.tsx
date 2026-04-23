@@ -1010,6 +1010,7 @@ const STATIC_PAGES: { key: string; label: string; path: string }[] = [
   { key: 'create',                 label: 'Creează pagină',         path: '/create' },
   { key: 'blogs',                  label: 'Blog (listă)',           path: '/blogs' },
   { key: 'despre-noi',             label: 'Despre noi',            path: '/despre-noi' },
+  { key: 'contact',                label: 'Contact',               path: '/contact' },
   { key: 'termeni-si-conditii',    label: 'Termeni și Condiții',   path: '/termeni-si-conditii' },
   { key: 'tarife',                 label: 'Tarife',                path: '/tarife' },
   { key: 'politica-cookies',       label: 'Politica Cookies',      path: '/politica-cookies' },
