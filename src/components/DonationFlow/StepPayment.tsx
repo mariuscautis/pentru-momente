@@ -136,6 +136,7 @@ function CheckoutForm({ config, state, onBack, onSuccess }: CheckoutFormProps) {
   const elements = useElements()
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [elementReady, setElementReady] = useState(false)
 
   const donationAmount = totalDonationAmount(state)
   const grandTotal = donationAmount + state.tipAmount
@@ -144,6 +145,7 @@ function CheckoutForm({ config, state, onBack, onSuccess }: CheckoutFormProps) {
     e.preventDefault()
     if (!stripe || !elements) return
 
+    if (!elementReady) return
     setSubmitting(true)
     setError(null)
 
@@ -198,7 +200,10 @@ function CheckoutForm({ config, state, onBack, onSuccess }: CheckoutFormProps) {
         </p>
       </div>
 
-      <PaymentElement options={{ fields: { billingDetails: { address: { country: 'never' } } } }} />
+      <PaymentElement
+        options={{ fields: { billingDetails: { address: { country: 'never' } } } }}
+        onReady={() => setElementReady(true)}
+      />
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
@@ -209,7 +214,7 @@ function CheckoutForm({ config, state, onBack, onSuccess }: CheckoutFormProps) {
         <Button
           type="submit"
           loading={submitting}
-          disabled={!stripe || !elements}
+          disabled={!stripe || !elements || !elementReady}
           className="flex-grow"
           style={{ backgroundColor: config.palette.primary }}
         >
