@@ -77,11 +77,12 @@ export default function DashboardPage() {
         const eventName = row.name
         const [donationsRes, donorsRes, payoutsRes] = await Promise.all([
           supabase.from('donations').select('amount').eq('event_id', eventId).in('status', ['confirmed', 'pending']),
-          supabase.from('donations').select('display_name, is_anonymous, amount, show_amount, created_at').eq('event_id', eventId).eq('status', 'confirmed').order('created_at', { ascending: false }),
+          supabase.from('donations').select('display_name, is_anonymous, amount, tip_amount, show_amount, created_at').eq('event_id', eventId).eq('status', 'confirmed').order('created_at', { ascending: false }),
           fetch(`/api/payouts?eventId=${eventId}`, { headers: { Authorization: `Bearer ${session.access_token}` } })
             .then((r) => r.json()).then((d) => (d.payouts ?? []) as Payout[]).catch(() => [] as Payout[]),
         ])
-        const totalRaised = (donationsRes.data ?? []).reduce((sum, d) => sum + (d.amount as number), 0)
+        // totalRaised = what the organiser actually receives = donation minus platform fees
+        const totalRaised = (donationsRes.data ?? []).reduce((sum, d) => sum + (d.amount as number) - ((d as unknown as { tip_amount: number }).tip_amount ?? 0), 0)
         const donors: DonorEntry[] = (donorsRes.data ?? []).map((d) => ({
           displayName: d.display_name as string | null,
           isAnonymous: (d.is_anonymous as boolean) ?? false,
@@ -1367,6 +1368,7 @@ function DonorsModal({ events, onClose }: { events: DashboardEvent[]; onClose: (
 interface DonationRow {
   id: string
   amount: number
+  tipAmount: number
   displayName: string | null
   isAnonymous: boolean
   message: string | null
@@ -1410,7 +1412,7 @@ function DonationsModal({ eventId, eventName, accessToken, onClose }: {
     load()
   }, [eventId, accessToken])
 
-  const total = donations.reduce((s, d) => s + d.amount, 0)
+  const total = donations.reduce((s, d) => s + d.amount - (d.tipAmount ?? 0), 0)
 
   return (
     <div
@@ -1480,7 +1482,7 @@ function DonationsModal({ eventId, eventName, accessToken, onClose }: {
             style={{ borderTop: '1px solid #EDE0D0' }}
           >
             <span className="text-sm font-medium" style={{ color: '#7A6652' }}>
-              {donations.length} donație{donations.length !== 1 ? 'i' : ''}
+              {donations.length} {donations.length === 1 ? 'donație' : 'donații'}
             </span>
             <span className="text-base font-bold" style={{ color: '#2D2016' }}>
               Total: {total.toLocaleString('ro-RO')} Lei
