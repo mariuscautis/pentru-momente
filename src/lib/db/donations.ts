@@ -7,7 +7,8 @@ function rowToDonation(row: Record<string, unknown>): Donation {
     eventId: row.event_id as string,
     itemId: row.item_id as string | undefined,
     amount: row.amount as number,
-    tipAmount: row.tip_amount as number,
+    tipAmount: (row.tip_amount as number) ?? 0,
+    platformFee: (row.platform_fee as number) ?? 0,
     displayName: row.display_name as string | undefined,
     message: row.message as string | undefined,
     isAnonymous: row.is_anonymous as boolean,
@@ -56,7 +57,8 @@ export async function createDonation(
       event_id: input.eventId,
       item_id: input.itemId ?? null,
       amount: input.amount,
-      tip_amount: input.tipAmount,
+      tip_amount: input.tipAmount,      // donor tip only
+      platform_fee: input.platformFee ?? 0,  // Stripe fee + 1% commission
       display_name: input.displayName ?? null,
       message: input.message ?? null,
       is_anonymous: input.isAnonymous,

@@ -33,7 +33,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   const { data: donations, error } = await supabaseAdmin
     .from('donations')
-    .select('id, amount, tip_amount, display_name, is_anonymous, message, card_country, created_at')
+    .select('id, amount, platform_fee, display_name, is_anonymous, message, card_country, created_at')
     .eq('event_id', eventId)
     .eq('status', 'confirmed')
     .order('created_at', { ascending: false })
@@ -43,7 +43,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const result = (donations ?? []).map((row) => ({
     id: row.id as string,
     amount: row.amount as number,
-    tipAmount: (row.tip_amount as number) ?? 0,
+    platformFee: (row.platform_fee as number) ?? 0,
     displayName: row.display_name as string | null,
     isAnonymous: row.is_anonymous as boolean,
     message: row.message as string | null,

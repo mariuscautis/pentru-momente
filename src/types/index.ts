@@ -64,7 +64,8 @@ export interface Donation {
   eventId: string
   itemId?: string // null = general fund donation
   amount: number
-  tipAmount: number // platform tip, 0 if declined
+  tipAmount: number    // donor tip only (chosen by donor at checkout)
+  platformFee?: number // Stripe processing fee + 1% platform commission
   displayName?: string // null if anonymous
   message?: string
   isAnonymous: boolean

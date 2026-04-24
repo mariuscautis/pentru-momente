@@ -77,12 +77,12 @@ export default function DashboardPage() {
         const eventName = row.name
         const [donationsRes, donorsRes, payoutsRes] = await Promise.all([
           supabase.from('donations').select('amount').eq('event_id', eventId).in('status', ['confirmed', 'pending']),
-          supabase.from('donations').select('display_name, is_anonymous, amount, tip_amount, show_amount, created_at').eq('event_id', eventId).eq('status', 'confirmed').order('created_at', { ascending: false }),
+          supabase.from('donations').select('display_name, is_anonymous, amount, platform_fee, show_amount, created_at').eq('event_id', eventId).eq('status', 'confirmed').order('created_at', { ascending: false }),
           fetch(`/api/payouts?eventId=${eventId}`, { headers: { Authorization: `Bearer ${session.access_token}` } })
             .then((r) => r.json()).then((d) => (d.payouts ?? []) as Payout[]).catch(() => [] as Payout[]),
         ])
         // totalRaised = what the organiser actually receives = donation minus platform fees
-        const totalRaised = (donationsRes.data ?? []).reduce((sum, d) => sum + (d.amount as number) - ((d as unknown as { tip_amount: number }).tip_amount ?? 0), 0)
+        const totalRaised = (donationsRes.data ?? []).reduce((sum, d) => sum + (d.amount as number) - ((d as unknown as { platform_fee: number }).platform_fee ?? 0), 0)
         const donors: DonorEntry[] = (donorsRes.data ?? []).map((d) => ({
           displayName: d.display_name as string | null,
           isAnonymous: (d.is_anonymous as boolean) ?? false,
@@ -1368,7 +1368,7 @@ function DonorsModal({ events, onClose }: { events: DashboardEvent[]; onClose: (
 interface DonationRow {
   id: string
   amount: number
-  tipAmount: number
+  platformFee: number
   displayName: string | null
   isAnonymous: boolean
   message: string | null
@@ -1412,7 +1412,7 @@ function DonationsModal({ eventId, eventName, accessToken, onClose }: {
     load()
   }, [eventId, accessToken])
 
-  const total = donations.reduce((s, d) => s + d.amount - (d.tipAmount ?? 0), 0)
+  const total = donations.reduce((s, d) => s + d.amount - (d.platformFee ?? 0), 0)
 
   return (
     <div
@@ -1470,6 +1470,11 @@ function DonationsModal({ eventId, eventName, accessToken, onClose }: {
               </div>
               <span className="text-sm font-bold shrink-0" style={{ color: '#C4956A' }}>
                 {d.amount.toLocaleString('ro-RO')} Lei
+                {d.platformFee > 0 && (
+                  <span className="block text-xs font-normal" style={{ color: '#9A7B60' }}>
+                    după comision: {(d.amount - d.platformFee).toLocaleString('ro-RO')} Lei
+                  </span>
+                )}
               </span>
             </div>
           ))}

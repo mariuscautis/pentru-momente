@@ -127,8 +127,9 @@ async function handlePost(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json<ApiError>({ error: message }, { status: 500 })
   }
 
-  // Total platform revenue = Stripe fee (recovered) + 1% platform fee + tip
-  const totalPlatformRevenue = fees.applicationFee / (currency === 'huf' ? 1 : 100)
+  const multiplier = currency === 'huf' ? 1 : 100
+  const donorTip = tipAmount                                          // donor tip in major unit
+  const platformFeeAmount = (fees.stripeFeeParts + fees.platformFee) / multiplier  // Stripe fee + 1%
 
   if (selectedItems.length > 0) {
     for (const [i, selected] of selectedItems.entries()) {
@@ -136,7 +137,8 @@ async function handlePost(req: NextRequest): Promise<NextResponse> {
         eventId: event.id,
         itemId: selected.itemId,
         amount: selected.amount,
-        tipAmount: i === 0 ? totalPlatformRevenue : 0,
+        tipAmount: i === 0 ? donorTip : 0,
+        platformFee: i === 0 ? platformFeeAmount : 0,
         cardCountry: body.cardCountry,
         displayName: body.displayName,
         message: body.message,
@@ -150,7 +152,8 @@ async function handlePost(req: NextRequest): Promise<NextResponse> {
       eventId: event.id,
       itemId: undefined,
       amount: body.amount,
-      tipAmount: totalPlatformRevenue,
+      tipAmount: donorTip,
+      platformFee: platformFeeAmount,
       cardCountry: body.cardCountry,
       displayName: body.displayName,
       message: body.message,
