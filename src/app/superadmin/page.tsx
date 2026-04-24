@@ -52,7 +52,8 @@ type Tab = 'seo' | 'blog' | 'terms' | 'cookies' | 'gdpr' | 'menu' | 'events' | '
 interface AdminDonation {
   id: string
   amount: number
-  tipAmount: number
+  tipAmount: number      // donor tip only
+  platformFee: number   // Stripe fee + 1% commission
   displayName: string | null
   message: string | null
   isAnonymous: boolean
@@ -2418,11 +2419,12 @@ function DonationsModal({ eventId, eventName, onClose }: {
 
   function exportCSV() {
     const rows = [
-      ['Data', 'Nume', 'Suma (RON)', 'Comision (RON)', 'Mesaj', 'Anonim', 'Status'],
+      ['Data', 'Nume', 'Suma (RON)', 'Comision (RON)', 'Tip donor (RON)', 'Mesaj', 'Anonim', 'Status'],
       ...donations.map(d => [
         new Date(d.createdAt).toLocaleString('ro-RO'),
         d.isAnonymous ? 'Anonim' : (d.displayName ?? '—'),
         d.amount.toFixed(2),
+        d.platformFee.toFixed(2),
         d.tipAmount.toFixed(2),
         d.message ?? '',
         d.isAnonymous ? 'Da' : 'Nu',
@@ -2441,11 +2443,12 @@ function DonationsModal({ eventId, eventName, onClose }: {
 
   function exportExcel() {
     // Build a minimal XLSX-compatible XML workbook (SpreadsheetML) — no library needed
-    const headers = ['Data', 'Nume', 'Suma (RON)', 'Comision (RON)', 'Mesaj', 'Anonim', 'Status']
+    const headers = ['Data', 'Nume', 'Suma (RON)', 'Comision (RON)', 'Tip donor (RON)', 'Mesaj', 'Anonim', 'Status']
     const rows = donations.map(d => [
       new Date(d.createdAt).toLocaleString('ro-RO'),
       d.isAnonymous ? 'Anonim' : (d.displayName ?? '—'),
       d.amount.toFixed(2),
+      d.platformFee.toFixed(2),
       d.tipAmount.toFixed(2),
       d.message ?? '',
       d.isAnonymous ? 'Da' : 'Nu',
@@ -2472,8 +2475,10 @@ function DonationsModal({ eventId, eventName, onClose }: {
     URL.revokeObjectURL(url)
   }
 
-  const total = donations.filter(d => d.status === 'confirmed').reduce((s, d) => s + d.amount, 0)
-  const totalTips = donations.filter(d => d.status === 'confirmed').reduce((s, d) => s + d.tipAmount, 0)
+  const confirmed = donations.filter(d => d.status === 'confirmed')
+  const total = confirmed.reduce((s, d) => s + d.amount, 0)
+  const totalTips = confirmed.reduce((s, d) => s + d.tipAmount, 0)
+  const totalPlatformFee = confirmed.reduce((s, d) => s + d.platformFee, 0)
 
   return (
     <div
@@ -2498,7 +2503,8 @@ function DonationsModal({ eventId, eventName, onClose }: {
               {donations.length} {donations.length === 1 ? 'donație' : 'donații'}
               {donations.length > 0 && (
                 <> · Total confirmat: <span style={{ color: c.success, fontWeight: 600 }}>{total.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} RON</span>
-                  {' '}· Comision: <span style={{ color: c.warning, fontWeight: 600 }}>{totalTips.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} RON</span>
+                  {' '}· Comision: <span style={{ color: c.warning, fontWeight: 600 }}>{totalPlatformFee.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} RON</span>
+                  {' '}· Tip: <span style={{ color: c.warning, fontWeight: 600 }}>{totalTips.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} RON</span>
                 </>
               )}
             </p>
@@ -2561,7 +2567,7 @@ function DonationsModal({ eventId, eventName, onClose }: {
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr style={{ backgroundColor: c.bg, borderBottom: `1px solid ${c.border}` }}>
-                  {['Data', 'Donator', 'Sumă', 'Comision', 'Status', 'Mesaj'].map(h => (
+                  {['Data', 'Donator', 'Sumă', 'Comision', 'Tip donor', 'Status', 'Mesaj'].map(h => (
                     <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold" style={{ color: c.textSoft }}>{h}</th>
                   ))}
                 </tr>
@@ -2586,6 +2592,9 @@ function DonationsModal({ eventId, eventName, onClose }: {
                     </td>
                     <td className="px-4 py-2.5 font-semibold tabular-nums" style={{ color: c.success }}>
                       {d.amount.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} RON
+                    </td>
+                    <td className="px-4 py-2.5 tabular-nums text-xs" style={{ color: d.platformFee > 0 ? c.warning : c.textSoft }}>
+                      {d.platformFee > 0 ? `${d.platformFee.toFixed(2)} RON` : '—'}
                     </td>
                     <td className="px-4 py-2.5 tabular-nums text-xs" style={{ color: d.tipAmount > 0 ? c.warning : c.textSoft }}>
                       {d.tipAmount > 0 ? `${d.tipAmount.toFixed(2)} RON` : '—'}
