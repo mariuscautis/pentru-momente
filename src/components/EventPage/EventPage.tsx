@@ -87,7 +87,7 @@ export function EventPage({ event, items, donations, config, totalRaised }: Even
     <div className="min-h-screen" style={{ backgroundColor: config.palette.background }}>
 
       {/* ── Hero: cover image if set, abstract SVG otherwise ── */}
-      <div className="relative w-full" style={{ height: event.coverImageUrl && event.coverHeroHeight ? `${event.coverHeroHeight}px` : 'clamp(260px, 42vh, 500px)' }}>
+      <div className="relative w-full" style={{ height: event.coverImageUrl && event.coverHeroHeight ? `${event.coverHeroHeight}px` : '25vh' }}>
         {/* Logo — aligned to the same max-w-6xl container as main content */}
         <div className="absolute top-4 left-0 right-0 z-10 mx-auto max-w-6xl px-4">
           <a
