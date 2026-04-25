@@ -49,48 +49,56 @@ const STEP_LABELS: Record<CreateStep, string> = {
 const EVENT_TYPE_META: Record<string, {
   Icon: React.ComponentType<{ size?: number; strokeWidth?: number; style?: React.CSSProperties; className?: string }>
   description: string
+  nameLabel: string
   namePlaceholder: string
   accentColor: string
 }> = {
   inmormantare: {
     Icon: Flame,
     description: 'Coroane, lumânări și contribuții pentru familia îndoliată',
+    nameLabel: 'Numele persoanei',
     namePlaceholder: 'ex: Ion Popescu',
     accentColor: '#8B9EB5',
   },
   nunta: {
     Icon: Gem,
     description: 'Fond lună de miere, cadouri și experiențe pentru miri',
+    nameLabel: 'Numele mirilor',
     namePlaceholder: 'ex: Ana & Mihai',
     accentColor: '#C4956A',
   },
   bebe: {
     Icon: Baby,
     description: 'Listă de dorințe și fond general pentru familia cu nou-născut',
+    nameLabel: 'Numele bebelușului',
     namePlaceholder: 'ex: Andrei / Andreea',
     accentColor: '#7EB5A0',
   },
   sanatate: {
     Icon: HeartPulse,
     description: 'Tratamente, operații sau recuperare pentru o persoană sau animal',
+    nameLabel: 'Numele persoanei',
     namePlaceholder: 'ex: Maria Ionescu',
     accentColor: '#B57E7E',
   },
   caritate: {
     Icon: HandHeart,
     description: 'Susține o organizație caritabilă sau o cauză umanitară',
+    nameLabel: 'Numele organizației',
     namePlaceholder: 'ex: Asociația Speranța',
     accentColor: '#3B82F6',
   },
   animale: {
     Icon: PawPrint,
     description: 'Tratamente veterinare, adăposturi și îngrijire pentru animale',
+    nameLabel: 'Numele animalului',
     namePlaceholder: 'ex: Rex / Pisica Mia',
     accentColor: '#F59E0B',
   },
   altele: {
     Icon: Sparkles,
     description: 'Orice altă cauză sau eveniment important pentru tine',
+    nameLabel: 'Nume / titlu',
     namePlaceholder: 'ex: Proiectul meu',
     accentColor: '#D4882A',
   },
@@ -839,7 +847,7 @@ export default function CreateEventPage() {
                       </div>
                     ) : (
                       <Input
-                        label="Numele persoanei"
+                        label={EVENT_TYPE_META[selectedConfig.slug]?.nameLabel ?? 'Nume'}
                         placeholder={EVENT_TYPE_META[selectedConfig.slug]?.namePlaceholder ?? 'Nume'}
                         value={name}
                         onChange={(e) => {
