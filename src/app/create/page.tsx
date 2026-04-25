@@ -114,6 +114,7 @@ interface PreviewProps {
   items: ItemInput[]
   coverPreviewUrl: string | null
   heroHeight: number
+  photoFiles: Array<{ previewUrl: string; caption: string }>
 }
 
 // ── Preview sub-components (top-level so React doesn't remount them) ───────────
@@ -310,7 +311,7 @@ const SLUG_LABELS: Record<string, string> = {
   altele: 'altele',
 }
 
-function LivePreview({ config, name, description, goalAmount, items, coverPreviewUrl, heroHeight }: PreviewProps) {
+function LivePreview({ config, name, description, goalAmount, items, coverPreviewUrl, heroHeight, photoFiles }: PreviewProps) {
   if (!config) return null
 
   const displayName = name || 'Numele persoanei'
@@ -365,7 +366,13 @@ function LivePreview({ config, name, description, goalAmount, items, coverPrevie
                   donationVerb={config.copy.donationVerb} s={0.54} heroHeight={heroHeight}
                 />
               </div>
-              <PreviewDonorSidebar primary={primary} s={0.54} />
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <PreviewDonorSidebar primary={primary} s={0.54} />
+                {/* Photo strip below donor sidebar */}
+                {photoFiles.length > 0 && (
+                  <PreviewPhotoStrip photos={photoFiles} bg={bg} primary={primary} s={0.54} />
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -404,6 +411,9 @@ function LivePreview({ config, name, description, goalAmount, items, coverPrevie
                     visibleItems={visibleItems} coverPreviewUrl={coverPreviewUrl}
                     donationVerb={config.copy.donationVerb} s={0.72} heroHeight={heroHeight}
                   />
+                  {photoFiles.length > 0 && (
+                    <PreviewPhotoStrip photos={photoFiles} bg={bg} primary={primary} s={0.72} />
+                  )}
                 </div>
               </div>
               {/* Home indicator */}
@@ -415,6 +425,70 @@ function LivePreview({ config, name, description, goalAmount, items, coverPrevie
         </div>
       </div>
 
+    </div>
+  )
+}
+
+// ── Preview photo strip ───────────────────────────────────────────────────────
+
+const PREVIEW_ROTATIONS = [-2.5, 1.8, -1.4, 2.2, -0.9, 3.0]
+
+function PreviewPhotoStrip({ photos, bg, primary, s }: {
+  photos: Array<{ previewUrl: string; caption: string }>
+  bg: string
+  primary: string
+  s: number
+}) {
+  const r = (n: number) => Math.round(n * s)
+  const cardW = r(72)
+  const imgH = r(52)
+  const pad = r(4)
+
+  return (
+    <div style={{ backgroundColor: bg, padding: `${r(8)}px ${r(12)}px ${r(10)}px` }}>
+      <p style={{ fontSize: r(7), fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9A7B60', marginBottom: r(6) }}>
+        Galerie foto
+      </p>
+      <div style={{ display: 'flex', gap: r(6), overflowX: 'hidden' }}>
+        {photos.slice(0, 4).map((photo, i) => (
+          <div
+            key={i}
+            style={{
+              flexShrink: 0,
+              width: cardW,
+              backgroundColor: '#FFFEFB',
+              padding: pad,
+              paddingBottom: r(10),
+              borderRadius: 2,
+              transform: `rotate(${PREVIEW_ROTATIONS[i % PREVIEW_ROTATIONS.length]}deg)`,
+              boxShadow: '0 1px 4px rgba(28,18,9,0.12)',
+              border: '1px solid rgba(212,196,176,0.5)',
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={photo.previewUrl} alt="" style={{ width: '100%', height: imgH, objectFit: 'cover', borderRadius: 1, display: 'block' }} />
+            {photo.caption && (
+              <p style={{
+                marginTop: r(4),
+                fontSize: r(6),
+                color: primary,
+                fontStyle: 'italic',
+                textAlign: 'center',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}>
+                {photo.caption}
+              </p>
+            )}
+          </div>
+        ))}
+        {photos.length > 4 && (
+          <div style={{ flexShrink: 0, width: cardW, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: r(7), color: '#9A7B60' }}>+{photos.length - 4}</span>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -1454,6 +1528,7 @@ export default function CreateEventPage() {
                 items={items}
                 coverPreviewUrl={coverPreviewUrl}
                 heroHeight={heroHeight}
+                photoFiles={photoFiles}
               />
               <p className="text-[10px] text-center mt-3" style={{ color: 'var(--color-ink-faint)' }}>
                 Se actualizează pe măsură ce completezi
