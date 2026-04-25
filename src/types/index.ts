@@ -38,6 +38,7 @@ export interface Event {
   name: string // person/couple name
   description?: string
   coverImageUrl?: string
+  coverHeroHeight?: number       // hero height in px (160–500), default 320
   goalAmount?: number // optional, some events have no hard goal
   organiserId: string
   stripeConnectAccountId?: string       // set after Stripe Express onboarding starts

@@ -113,6 +113,7 @@ interface PreviewProps {
   goalAmount: string
   items: ItemInput[]
   coverPreviewUrl: string | null
+  heroHeight: number
 }
 
 // ── Preview sub-components (top-level so React doesn't remount them) ───────────
@@ -120,11 +121,11 @@ interface PreviewProps {
 interface PageBodyProps {
   primary: string; accent: string; bg: string; title: string
   description: string; goalAmount: string; visibleItems: ItemInput[]
-  coverPreviewUrl: string | null | undefined; donationVerb: string; s: number
+  coverPreviewUrl: string | null | undefined; donationVerb: string; s: number; heroHeight: number
 }
 
-function PreviewHero({ primary, accent, bg, coverPreviewUrl, s }: { primary: string; accent: string; bg: string; coverPreviewUrl: string | null; s: number }) {
-  const heroH = Math.round(160 * s)  // tall — matches real clamp(260px,42vh,500px) at scale
+function PreviewHero({ primary, accent, bg, coverPreviewUrl, s, heroHeight }: { primary: string; accent: string; bg: string; coverPreviewUrl: string | null; s: number; heroHeight: number }) {
+  const heroH = Math.round(heroHeight * s)
   const px = Math.round(16 * s)
   const r = (n: number) => Math.round(n * s)
   return (
@@ -152,7 +153,7 @@ function PreviewHero({ primary, accent, bg, coverPreviewUrl, s }: { primary: str
   )
 }
 
-function PreviewPageBody({ primary, accent, bg, title, description, goalAmount, visibleItems, coverPreviewUrl, donationVerb, s }: PageBodyProps) {
+function PreviewPageBody({ primary, accent, bg, title, description, goalAmount, visibleItems, coverPreviewUrl, donationVerb, s, heroHeight }: PageBodyProps) {
   const px = Math.round(16 * s)
   const r = (n: number) => Math.round(n * s)
 
@@ -160,7 +161,7 @@ function PreviewPageBody({ primary, accent, bg, title, description, goalAmount, 
     <div style={{ backgroundColor: bg, display: 'block', boxSizing: 'border-box', minHeight: '100%' }}>
       {/* Hero — rendered here for mobile; desktop passes coverPreviewUrl=null and renders hero separately */}
       {coverPreviewUrl !== undefined && (
-        <PreviewHero primary={primary} accent={accent} bg={bg} coverPreviewUrl={coverPreviewUrl} s={s} />
+        <PreviewHero primary={primary} accent={accent} bg={bg} coverPreviewUrl={coverPreviewUrl} s={s} heroHeight={heroHeight} />
       )}
 
       {/* Main content — negative top margin to overlap hero fade, matching real page */}
@@ -308,7 +309,7 @@ const SLUG_LABELS: Record<string, string> = {
   altele: 'altele',
 }
 
-function LivePreview({ config, name, description, goalAmount, items, coverPreviewUrl }: PreviewProps) {
+function LivePreview({ config, name, description, goalAmount, items, coverPreviewUrl, heroHeight }: PreviewProps) {
   if (!config) return null
 
   const displayName = name || 'Numele persoanei'
@@ -352,7 +353,7 @@ function LivePreview({ config, name, description, goalAmount, items, coverPrevie
           {/* Page content */}
           <div style={{ backgroundColor: bg, maxHeight: 380, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             {/* Hero — full width above both columns */}
-            <PreviewHero primary={primary} accent={accent} bg={bg} coverPreviewUrl={coverPreviewUrl} s={0.54} />
+            <PreviewHero primary={primary} accent={accent} bg={bg} coverPreviewUrl={coverPreviewUrl} s={0.54} heroHeight={heroHeight} />
             {/* Two columns — no hero inside PageBody (pass undefined to skip it) */}
             <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
               <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
@@ -360,7 +361,7 @@ function LivePreview({ config, name, description, goalAmount, items, coverPrevie
                   primary={primary} accent={accent} bg={bg} title={title}
                   description={description} goalAmount={goalAmount}
                   visibleItems={visibleItems} coverPreviewUrl={undefined}
-                  donationVerb={config.copy.donationVerb} s={0.54}
+                  donationVerb={config.copy.donationVerb} s={0.54} heroHeight={heroHeight}
                 />
               </div>
               <PreviewDonorSidebar primary={primary} s={0.54} />
@@ -400,7 +401,7 @@ function LivePreview({ config, name, description, goalAmount, items, coverPrevie
                     primary={primary} accent={accent} bg={bg} title={title}
                     description={description} goalAmount={goalAmount}
                     visibleItems={visibleItems} coverPreviewUrl={coverPreviewUrl}
-                    donationVerb={config.copy.donationVerb} s={0.72}
+                    donationVerb={config.copy.donationVerb} s={0.72} heroHeight={heroHeight}
                   />
                 </div>
               </div>
@@ -488,6 +489,7 @@ export default function CreateEventPage() {
   const [items, setItems] = useState<ItemInput[]>([])
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null)
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null)
+  const [heroHeight, setHeroHeight] = useState(320)
   const [expiresAt, setExpiresAt] = useState('')
   const [accountType, setAccountType] = useState<'individual' | 'company'>('individual')
   const [organiserCountry, setOrganiserCountry] = useState('RO')
@@ -602,6 +604,7 @@ export default function CreateEventPage() {
         description: description || undefined,
         goalAmount: goalAmount ? parseFloat(goalAmount) : undefined,
         expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
+        coverHeroHeight: coverPreviewUrl ? heroHeight : undefined,
         items: items.map((i) => ({
           name: i.name,
           targetAmount: i.isCustomAmount ? 0 : (parseFloat(i.targetAmount) || 0),
@@ -902,20 +905,51 @@ export default function CreateEventPage() {
                         }}
                       />
                       {coverPreviewUrl ? (
-                        <div className="relative rounded-2xl overflow-hidden" style={{ height: 160 }}>
-                          <Image src={coverPreviewUrl} alt="Copertă" fill className="object-cover" unoptimized />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setCoverImageFile(null)
-                              setCoverPreviewUrl(null)
-                              if (coverInputRef.current) coverInputRef.current.value = ''
-                            }}
-                            className="absolute top-2 right-2 rounded-full px-3 py-1 text-xs font-semibold"
-                            style={{ backgroundColor: 'rgba(30,58,47,0.75)', color: '#fff' }}
-                          >
-                            Elimină
-                          </button>
+                        <div className="space-y-3">
+                          <div className="relative rounded-2xl overflow-hidden" style={{ height: 160 }}>
+                            <Image src={coverPreviewUrl} alt="Copertă" fill className="object-cover" unoptimized />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCoverImageFile(null)
+                                setCoverPreviewUrl(null)
+                                setHeroHeight(320)
+                                if (coverInputRef.current) coverInputRef.current.value = ''
+                              }}
+                              className="absolute top-2 right-2 rounded-full px-3 py-1 text-xs font-semibold"
+                              style={{ backgroundColor: 'rgba(30,58,47,0.75)', color: '#fff' }}
+                            >
+                              Elimină
+                            </button>
+                          </div>
+                          {/* Hero height slider */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <label className="text-xs font-medium" style={{ color: 'var(--color-ink-muted)' }}>
+                                Înălțimea imaginii — {heroHeight}px
+                              </label>
+                              <span className="text-xs" style={{ color: 'var(--color-ink-faint)' }}>
+                                {heroHeight <= 220 ? 'Compact' : heroHeight <= 360 ? 'Normal' : 'Panoramic'}
+                              </span>
+                            </div>
+                            <input
+                              type="range"
+                              min={160}
+                              max={500}
+                              step={20}
+                              value={heroHeight}
+                              onChange={(e) => setHeroHeight(Number(e.target.value))}
+                              className="w-full accent-amber-500"
+                              style={{ cursor: 'pointer' }}
+                            />
+                            <div className="flex justify-between text-xs" style={{ color: 'var(--color-ink-faint)' }}>
+                              <span>160px</span>
+                              <span>500px</span>
+                            </div>
+                            <p className="text-xs" style={{ color: 'var(--color-ink-faint)' }}>
+                              Pentru rezultate optime, folosește o imagine landscape (orizontală).
+                            </p>
+                          </div>
                         </div>
                       ) : (
                         <button
@@ -1333,6 +1367,7 @@ export default function CreateEventPage() {
                 goalAmount={goalAmount}
                 items={items}
                 coverPreviewUrl={coverPreviewUrl}
+                heroHeight={heroHeight}
               />
               <p className="text-[10px] text-center mt-3" style={{ color: 'var(--color-ink-faint)' }}>
                 Se actualizează pe măsură ce completezi

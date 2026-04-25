@@ -14,7 +14,7 @@ export async function GET(
 
   const { data, error } = await supabaseAdmin
     .from('donations')
-    .select('id, amount, tip_amount, display_name, message, is_anonymous, show_amount, status, created_at, item_id')
+    .select('id, amount, tip_amount, platform_fee, display_name, message, is_anonymous, show_amount, status, created_at, item_id')
     .eq('event_id', eventId)
     .order('created_at', { ascending: false })
 
@@ -24,6 +24,7 @@ export async function GET(
     id: d.id,
     amount: d.amount,
     tipAmount: d.tip_amount ?? 0,
+    platformFee: d.platform_fee ?? 0,
     displayName: d.display_name ?? null,
     message: d.message ?? null,
     isAnonymous: d.is_anonymous ?? false,

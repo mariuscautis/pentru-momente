@@ -64,6 +64,7 @@ interface CreateEventBody {
   description?: string
   goalAmount?: number
   expiresAt?: string
+  coverHeroHeight?: number
   items: Array<{ name: string; targetAmount: number; emoji?: string }>
 }
 
@@ -138,6 +139,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     description: body.description?.trim(),
     goalAmount: body.goalAmount,
     expiresAt: body.expiresAt,
+    coverHeroHeight: body.coverHeroHeight,
     organiserId: user.id,
     stripeConnectAccountId: undefined,
     connectOnboardingComplete: false,
