@@ -1998,6 +1998,7 @@ function EventsTab() {
   const [dateTo, setDateTo] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'deleted' | 'expired'>('all')
   const [blockingId, setBlockingId] = useState<string | null>(null)
+  const [deletingEvent, setDeletingEvent] = useState<AdminEvent | null>(null)
   const [reason, setReason] = useState('')
   const [saving, setSaving] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
@@ -2032,6 +2033,13 @@ function EventsTab() {
     setSaving(true)
     await apiFetch('/api/admin/events', { method: 'POST', body: JSON.stringify({ eventId: blockingId, action: 'block', reason }) })
     setSaving(false); setBlockingId(null); setReason(''); load()
+  }
+
+  async function confirmDelete() {
+    if (!deletingEvent) return
+    setSaving(true)
+    await apiFetch('/api/admin/events', { method: 'POST', body: JSON.stringify({ eventId: deletingEvent.id, action: 'delete' }) })
+    setSaving(false); setDeletingEvent(null); load()
   }
 
   const filtered = events.filter((e) => {
@@ -2172,6 +2180,22 @@ function EventsTab() {
         </div>
       )}
 
+      {/* Delete confirmation modal */}
+      {deletingEvent && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 px-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="w-full max-w-sm rounded-2xl p-6 space-y-4 shadow-xl" style={{ backgroundColor: c.surface, border: `1px solid ${c.border}` }}>
+            <h2 className="font-semibold" style={{ color: c.text }}>Șterge pagina</h2>
+            <p className="text-sm" style={{ color: c.textMid }}>
+              Ești sigur că vrei să ștergi pagina <strong>{deletingEvent.name}</strong>? Această acțiune va dezactiva pagina și o va marca ca ștearsă. Donațiile existente nu sunt afectate.
+            </p>
+            <div className="flex gap-2">
+              <Btn onClick={confirmDelete} loading={saving} variant="danger">Șterge</Btn>
+              <Btn onClick={() => setDeletingEvent(null)} variant="ghost">Anulează</Btn>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Event list — unified expandable cards (desktop + mobile) */}
       {filtered.length === 0 ? (
         <EmptyState message="Nicio pagină găsită." />
@@ -2253,17 +2277,30 @@ function EventsTab() {
                     </div>
                   </div>
 
-                  {/* Block/unblock button */}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); toggleBlock(event) }}
-                    disabled={saving}
-                    className="shrink-0 text-xs px-3 py-1.5 rounded-lg font-medium"
-                    style={event.isBlocked
-                      ? { color: c.success, backgroundColor: c.successBg, border: `1px solid ${c.success}30` }
-                      : { color: c.danger, backgroundColor: c.dangerBg, border: `1px solid ${c.danger}30` }}
-                  >
-                    {event.isBlocked ? 'Deblochează' : 'Blochează'}
-                  </button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {/* Block/unblock button */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleBlock(event) }}
+                      disabled={saving}
+                      className="text-xs px-3 py-1.5 rounded-lg font-medium"
+                      style={event.isBlocked
+                        ? { color: c.success, backgroundColor: c.successBg, border: `1px solid ${c.success}30` }
+                        : { color: c.danger, backgroundColor: c.dangerBg, border: `1px solid ${c.danger}30` }}
+                    >
+                      {event.isBlocked ? 'Deblochează' : 'Blochează'}
+                    </button>
+                    {/* Delete button — only show if not already deleted */}
+                    {!event.isDeleted && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setDeletingEvent(event) }}
+                        disabled={saving}
+                        className="text-xs px-3 py-1.5 rounded-lg font-medium"
+                        style={{ color: '#92400E', backgroundColor: '#FFF7ED', border: '1px solid #FDE68A' }}
+                      >
+                        Șterge
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* ── Expandable detail panel ── */}

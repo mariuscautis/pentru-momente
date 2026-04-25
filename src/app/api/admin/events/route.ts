@@ -86,10 +86,20 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const adminEmail = await verifyAdminRequest(req)
   if (!adminEmail) return NextResponse.json<ApiError>({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = await req.json() as { eventId: string; action: 'block' | 'unblock'; reason?: string }
+  const body = await req.json() as { eventId: string; action: 'block' | 'unblock' | 'delete'; reason?: string }
 
   if (!body.eventId || !body.action) {
     return NextResponse.json<ApiError>({ error: 'eventId and action are required' }, { status: 400 })
+  }
+
+  // Handle delete separately — soft-delete by setting is_deleted = true
+  if (body.action === 'delete') {
+    const { error: delError } = await supabaseAdmin
+      .from('events')
+      .update({ is_deleted: true, is_active: false })
+      .eq('id', body.eventId)
+    if (delError) return NextResponse.json<ApiError>({ error: 'DB error' }, { status: 500 })
+    return NextResponse.json({ ok: true })
   }
 
   // Fetch event + organiser details for the notification email
