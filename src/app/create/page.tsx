@@ -125,8 +125,8 @@ interface PageBodyProps {
 }
 
 function PreviewHero({ primary, accent, bg, coverPreviewUrl, s, heroHeight }: { primary: string; accent: string; bg: string; coverPreviewUrl: string | null; s: number; heroHeight: number }) {
-  // No image → fixed 25vh equivalent (use 90px as the real-world base for preview scaling)
-  const heroH = coverPreviewUrl ? Math.round(heroHeight * s) : Math.round(90 * s)
+  // No image → fixed 25vh equivalent (~200px on a typical screen)
+  const heroH = coverPreviewUrl ? Math.round(heroHeight * s) : Math.round(200 * s)
   const px = Math.round(16 * s)
   const r = (n: number) => Math.round(n * s)
   return (
