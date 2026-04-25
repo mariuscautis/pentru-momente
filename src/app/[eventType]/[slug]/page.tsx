@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { getEventTypeConfig, isValidEventType } from '@/config/event-types'
 import { getEventBySlug, getEventItems } from '@/lib/db/events'
 import { getDonationsForEvent, getTotalRaisedForEvent } from '@/lib/db/donations'
+import { getEventPhotos } from '@/lib/db/photos'
 import { EventPage } from '@/components/EventPage/EventPage'
 import { Event } from '@/types'
 import Link from 'next/link'
@@ -68,10 +69,11 @@ export default async function EventPublicPage({ params }: PageParams) {
 
   // Active event — render normally
   if (event) {
-    const [items, donations, totalRaised] = await Promise.all([
+    const [items, donations, totalRaised, photos] = await Promise.all([
       getEventItems(event.id),
       getDonationsForEvent(event.id),
       getTotalRaisedForEvent(event.id),
+      getEventPhotos(event.id),
     ])
     return (
       <EventPage
@@ -80,6 +82,7 @@ export default async function EventPublicPage({ params }: PageParams) {
         donations={donations}
         config={config}
         totalRaised={totalRaised}
+        photos={photos}
       />
     )
   }

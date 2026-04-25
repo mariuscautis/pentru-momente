@@ -491,12 +491,14 @@ export default function CreateEventPage() {
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null)
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null)
   const [heroHeight, setHeroHeight] = useState(320)
+  const [photoFiles, setPhotoFiles] = useState<Array<{ file: File; previewUrl: string; caption: string }>>([])
   const [expiresAt, setExpiresAt] = useState('')
   const [accountType, setAccountType] = useState<'individual' | 'company'>('individual')
   const [organiserCountry, setOrganiserCountry] = useState('RO')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
+  const photoInputRef = useRef<HTMLInputElement>(null)
 
   // Restore draft from sessionStorage on mount (after login redirect)
   useEffect(() => {
@@ -630,6 +632,19 @@ export default function CreateEventPage() {
         headers: { Authorization: `Bearer ${session.access_token}` },
         body: formData,
       })
+    }
+
+    if (photoFiles.length > 0 && data.event?.id) {
+      for (const photo of photoFiles) {
+        const formData = new FormData()
+        formData.append('file', photo.file)
+        if (photo.caption.trim()) formData.append('caption', photo.caption.trim())
+        await fetch(`/api/events/${data.event.id}/photos`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          body: formData,
+        })
+      }
     }
 
     const connectRes = await fetch('/api/connect/create', {
@@ -971,6 +986,76 @@ export default function CreateEventPage() {
                         >
                           <ImagePlus size={20} strokeWidth={1.5} />
                           <span className="font-medium" style={{ color: 'var(--color-ink-muted)' }}>Adaugă o fotografie</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Gallery photos */}
+                    <div>
+                      <FieldLabel label="Galerie foto (opțional)" hint="Adaugă fotografii cu legendă. Apar pe pagina ta ca o galerie polaroid." />
+                      <input
+                        ref={photoInputRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files ?? [])
+                          const remaining = 20 - photoFiles.length
+                          files.slice(0, remaining).forEach((file) => {
+                            const previewUrl = URL.createObjectURL(file)
+                            setPhotoFiles((prev) => [...prev, { file, previewUrl, caption: '' }])
+                          })
+                          if (photoInputRef.current) photoInputRef.current.value = ''
+                        }}
+                      />
+
+                      {photoFiles.length > 0 && (
+                        <div className="grid grid-cols-2 gap-2 mb-2">
+                          {photoFiles.map((photo, idx) => (
+                            <div
+                              key={idx}
+                              className="rounded-xl overflow-hidden"
+                              style={{ border: '1px solid var(--color-border)', backgroundColor: '#FFFDFB' }}
+                            >
+                              <div className="relative w-full" style={{ height: 80 }}>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={photo.previewUrl} alt="" className="w-full h-full object-cover" />
+                                <button
+                                  type="button"
+                                  onClick={() => setPhotoFiles((prev) => prev.filter((_, i) => i !== idx))}
+                                  className="absolute top-1 right-1 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold"
+                                  style={{ backgroundColor: 'rgba(30,18,9,0.65)', color: '#fff' }}
+                                >×</button>
+                              </div>
+                              <div className="px-2 py-1.5">
+                                <input
+                                  type="text"
+                                  value={photo.caption}
+                                  onChange={(e) => setPhotoFiles((prev) => prev.map((p, i) => i === idx ? { ...p, caption: e.target.value } : p))}
+                                  placeholder="Legendă (opțional)..."
+                                  className="w-full text-xs outline-none bg-transparent"
+                                  style={{ color: 'var(--color-ink-muted)', borderBottom: '1px solid var(--color-border)' }}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {photoFiles.length < 20 && (
+                        <button
+                          type="button"
+                          onClick={() => photoInputRef.current?.click()}
+                          className="w-full rounded-2xl py-4 text-sm transition-all flex flex-col items-center gap-1.5"
+                          style={{ border: '1.5px dashed var(--color-border)', color: 'var(--color-ink-faint)' }}
+                          onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-amber)'; e.currentTarget.style.color = 'var(--color-amber)' }}
+                          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-ink-faint)' }}
+                        >
+                          <ImagePlus size={18} strokeWidth={1.5} />
+                          <span className="font-medium" style={{ color: 'var(--color-ink-muted)' }}>
+                            {photoFiles.length === 0 ? 'Adaugă fotografii' : '+ Mai adaugă'}
+                          </span>
                         </button>
                       )}
                     </div>

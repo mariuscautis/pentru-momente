@@ -9,6 +9,7 @@ import { ItemTracker } from '@/components/ItemTracker/ItemTracker'
 import { DonorWall } from '@/components/DonorWall/DonorWall'
 import { DonationFlow, SelectedItem } from '@/components/DonationFlow/DonationFlow'
 import { ReportModal } from '@/components/ReportModal/ReportModal'
+import { PhotoSlider, EventPhoto } from '@/components/PhotoSlider/PhotoSlider'
 
 interface EventPageProps {
   event: Event
@@ -16,9 +17,10 @@ interface EventPageProps {
   donations: Donation[]
   config: EventTypeConfig
   totalRaised: number
+  photos?: EventPhoto[]
 }
 
-export function EventPage({ event, items, donations, config, totalRaised }: EventPageProps) {
+export function EventPage({ event, items, donations, config, totalRaised, photos = [] }: EventPageProps) {
   const router = useRouter()
   const [cart, setCart] = useState<SelectedItem[]>([])
   const [checkoutOpen, setCheckoutOpen] = useState(false)
@@ -255,6 +257,16 @@ export function EventPage({ event, items, donations, config, totalRaised }: Even
               />
             )}
 
+            {/* Photo slider — mobile: between items and donor wall */}
+            {photos.length > 0 && (
+              <div className="lg:hidden">
+                <SectionLabel>Galerie foto</SectionLabel>
+                <div className="mt-3">
+                  <PhotoSlider photos={photos} primary={config.palette.primary} background={config.palette.background} />
+                </div>
+              </div>
+            )}
+
             {/* Donor wall — mobile only */}
             {config.showDonorWall && hasAnyDonors && (
               <div id="donors" className="lg:hidden space-y-3">
@@ -296,7 +308,25 @@ export function EventPage({ event, items, donations, config, totalRaised }: Even
                   <DonorWall donations={donations} config={config} variant="sidebar" />
                 </div>
               </div>
+
+              {/* Photo slider — desktop: below donor wall */}
+              {photos.length > 0 && (
+                <div className="mt-6">
+                  <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#9A7B60' }}>Galerie foto</p>
+                  <PhotoSlider photos={photos} primary={config.palette.primary} background={config.palette.background} />
+                </div>
+              )}
             </aside>
+          )}
+
+          {/* Desktop: photos below content when there's no donor wall */}
+          {photos.length > 0 && (!config.showDonorWall || !hasAnyDonors) && (
+            <div className="hidden lg:block mt-2">
+              <SectionLabel>Galerie foto</SectionLabel>
+              <div className="mt-3">
+                <PhotoSlider photos={photos} primary={config.palette.primary} background={config.palette.background} />
+              </div>
+            </div>
           )}
         </div>
       </main>

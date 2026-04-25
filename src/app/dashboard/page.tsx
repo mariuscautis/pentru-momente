@@ -31,6 +31,8 @@ const EVENT_TYPE_LABELS: Record<string, { label: string; emoji: string }> = {
   nunta: { label: 'Nuntă', emoji: '💍' },
   bebe: { label: 'Nou-născut', emoji: '🍼' },
   sanatate: { label: 'Sănătate', emoji: '🌿' },
+  caritate: { label: 'Organizații caritabile', emoji: '🤝' },
+  animale: { label: 'Animale', emoji: '🐾' },
   altele: { label: 'Altele', emoji: '🌟' },
 }
 
@@ -419,6 +421,61 @@ function EventCard({
     event.expiresAt ? new Date(event.expiresAt).toISOString().split('T')[0] : ''
   )
 
+  // ── Photos state ─────────────────────────────────────────────────────────────
+  interface LocalPhoto { id: string; imageUrl: string; caption: string | null; sortOrder: number }
+  const [photos, setPhotos] = useState<LocalPhoto[]>([])
+  const [photosLoaded, setPhotosLoaded] = useState(false)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [editingCaptionId, setEditingCaptionId] = useState<string | null>(null)
+  const [captionDraft, setCaptionDraft] = useState('')
+  const photoInputRef = useRef<HTMLInputElement>(null)
+
+  async function loadPhotos() {
+    if (photosLoaded) return
+    const res = await fetch(`/api/events/${event.id}/photos`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+    if (res.ok) {
+      const data = await res.json() as { photos: LocalPhoto[] }
+      setPhotos(data.photos)
+      setPhotosLoaded(true)
+    }
+  }
+
+  async function uploadPhoto(file: File) {
+    setUploadingPhoto(true)
+    const form = new FormData()
+    form.append('file', file)
+    const res = await fetch(`/api/events/${event.id}/photos`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body: form,
+    })
+    if (res.ok) {
+      const data = await res.json() as { photo: LocalPhoto }
+      setPhotos((p) => [...p, data.photo])
+    }
+    setUploadingPhoto(false)
+  }
+
+  async function deletePhoto(photoId: string) {
+    await fetch(`/api/events/${event.id}/photos?photoId=${photoId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+    setPhotos((p) => p.filter((ph) => ph.id !== photoId))
+  }
+
+  async function saveCaption(photoId: string, caption: string) {
+    await fetch(`/api/events/${event.id}/photos`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify({ photoId, caption: caption.trim() || null }),
+    })
+    setPhotos((p) => p.map((ph) => ph.id === photoId ? { ...ph, caption: caption.trim() || null } : ph))
+    setEditingCaptionId(null)
+  }
+
   // ── Items state (loaded when edit panel opens) ──────────────────────────────
   const [items, setItems] = useState<LocalItem[]>([])
   const [itemsLoaded, setItemsLoaded] = useState(false)
@@ -446,6 +503,7 @@ function EventCard({
   function openEdit() {
     setEditing(true)
     loadItems()
+    loadPhotos()
   }
 
   function cancelEdit() {
@@ -1024,6 +1082,106 @@ function EventCard({
                 >
                   + Adaugă articol nou
                 </button>
+              )}
+            </div>
+
+            {/* ── Photos editor ── */}
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#9A7B60' }}>
+                Galerie foto
+              </p>
+
+              {/* Photo grid */}
+              {photos.length > 0 && (
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  {photos.map((photo) => (
+                    <div
+                      key={photo.id}
+                      className="rounded-xl overflow-hidden"
+                      style={{ backgroundColor: '#FFFDFB', border: '1px solid #EDE0D0' }}
+                    >
+                      {/* Thumbnail */}
+                      <div className="relative w-full" style={{ height: 90 }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={photo.imageUrl} alt={photo.caption ?? ''} className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => deletePhoto(photo.id)}
+                          className="absolute top-1.5 right-1.5 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold"
+                          style={{ backgroundColor: 'rgba(30,18,9,0.65)', color: '#fff' }}
+                          aria-label="Șterge foto"
+                        >
+                          ×
+                        </button>
+                      </div>
+
+                      {/* Caption */}
+                      <div className="px-2 py-1.5">
+                        {editingCaptionId === photo.id ? (
+                          <div className="flex gap-1">
+                            <input
+                              autoFocus
+                              type="text"
+                              value={captionDraft}
+                              onChange={(e) => setCaptionDraft(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') saveCaption(photo.id, captionDraft)
+                                if (e.key === 'Escape') setEditingCaptionId(null)
+                              }}
+                              placeholder="Adaugă legendă..."
+                              className="flex-1 rounded px-1.5 py-1 text-xs outline-none min-w-0"
+                              style={{ border: '1px solid #C4956A', color: '#2D2016', backgroundColor: '#FDFAF7' }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => saveCaption(photo.id, captionDraft)}
+                              className="shrink-0 rounded px-1.5 py-1 text-xs font-semibold text-white"
+                              style={{ backgroundColor: '#C4956A' }}
+                            >
+                              ✓
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => { setEditingCaptionId(photo.id); setCaptionDraft(photo.caption ?? '') }}
+                            className="w-full text-left text-xs truncate transition-colors"
+                            style={{ color: photo.caption ? '#5A3D25' : '#B09070', fontStyle: photo.caption ? 'italic' : 'normal' }}
+                          >
+                            {photo.caption ?? '+ Legendă'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Upload button */}
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPhoto(f); if (photoInputRef.current) photoInputRef.current.value = '' }}
+              />
+              {photos.length < 20 && (
+                <button
+                  type="button"
+                  onClick={() => photoInputRef.current?.click()}
+                  disabled={uploadingPhoto}
+                  className="w-full rounded-xl py-2.5 text-xs font-medium transition-colors flex items-center justify-center gap-2"
+                  style={{ border: '1.5px dashed #C4956A', color: '#C4956A', backgroundColor: '#FFFBF5', opacity: uploadingPhoto ? 0.6 : 1 }}
+                >
+                  {uploadingPhoto ? (
+                    <><div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" /> Se încarcă...</>
+                  ) : (
+                    <>+ Adaugă foto</>
+                  )}
+                </button>
+              )}
+              {photos.length >= 20 && (
+                <p className="text-xs text-center" style={{ color: '#B09070' }}>Limită de 20 fotografii atinsă.</p>
               )}
             </div>
           </div>
