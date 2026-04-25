@@ -16,6 +16,8 @@ import {
   Baby,
   HeartPulse,
   Sparkles,
+  HandHeart,
+  PawPrint,
   User,
   Building2,
   ShieldCheck,
@@ -74,10 +76,22 @@ const EVENT_TYPE_META: Record<string, {
     namePlaceholder: 'ex: Maria Ionescu',
     accentColor: '#B57E7E',
   },
+  caritate: {
+    Icon: HandHeart,
+    description: 'Susține o organizație caritabilă sau o cauză umanitară',
+    namePlaceholder: 'ex: Asociația Speranța',
+    accentColor: '#3B82F6',
+  },
+  animale: {
+    Icon: PawPrint,
+    description: 'Tratamente veterinare, adăposturi și îngrijire pentru animale',
+    namePlaceholder: 'ex: Rex / Pisica Mia',
+    accentColor: '#F59E0B',
+  },
   altele: {
     Icon: Sparkles,
     description: 'Orice altă cauză sau eveniment important pentru tine',
-    namePlaceholder: 'ex: Asociația Speranța',
+    namePlaceholder: 'ex: Proiectul meu',
     accentColor: '#D4882A',
   },
 }
@@ -281,6 +295,8 @@ const SLUG_LABELS: Record<string, string> = {
   nunta: 'nunta',
   bebe: 'nou-nascut',
   sanatate: 'sanatate',
+  caritate: 'caritate',
+  animale: 'animale',
   altele: 'altele',
 }
 
