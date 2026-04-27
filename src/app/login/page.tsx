@@ -8,7 +8,10 @@ function LoginPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const nextUrl = searchParams.get('next') ?? '/dashboard'
-  const [mode, setMode] = useState<'login' | 'register'>('login')
+  const modeParam = searchParams.get('mode')
+  const [mode, setMode] = useState<'login' | 'register' | 'forgot' | 'reset'>(
+    modeParam === 'reset' ? 'reset' : 'login'
+  )
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -16,6 +19,43 @@ function LoginPageInner() {
   const [oauthLoading, setOauthLoading] = useState<'google' | 'facebook' | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+
+  async function handleForgot(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+    setSuccess(null)
+    setLoading(true)
+    const supabase = getSupabase()
+    const resetUrl = new URL(`${window.location.origin}/auth/callback`)
+    resetUrl.searchParams.set('next', '/login?mode=reset')
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: resetUrl.toString(),
+    })
+    setLoading(false)
+    if (resetError) {
+      setError('Nu am putut trimite emailul. Verifică adresa și încearcă din nou.')
+    } else {
+      setSuccess('Am trimis un link de resetare pe adresa ta de email. Verifică și folderul Spam.')
+    }
+  }
+
+  async function handleReset(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+    setSuccess(null)
+    if (password !== confirmPassword) { setError('Parolele nu coincid.'); return }
+    if (password.length < 8) { setError('Parola trebuie să aibă cel puțin 8 caractere.'); return }
+    setLoading(true)
+    const supabase = getSupabase()
+    const { error: updateError } = await supabase.auth.updateUser({ password })
+    setLoading(false)
+    if (updateError) {
+      setError('Nu am putut seta parola. Încearcă din nou sau solicită un nou link.')
+    } else {
+      setSuccess('Parola a fost schimbată cu succes! Te redirecționăm...')
+      setTimeout(() => router.replace(nextUrl), 1500)
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -43,11 +83,13 @@ function LoginPageInner() {
         router.push(hasDraft ? '/create' : nextUrl)
       }
     } else {
+      const confirmUrl = new URL(`${window.location.origin}/auth/callback`)
+      if (nextUrl && nextUrl !== '/dashboard') confirmUrl.searchParams.set('next', nextUrl)
       const { error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+          emailRedirectTo: confirmUrl.toString(),
         },
       })
       if (authError) {
@@ -63,7 +105,8 @@ function LoginPageInner() {
   async function handleOAuth(provider: 'google' | 'facebook') {
     setOauthLoading(provider)
     const supabase = getSupabase()
-    const callbackUrl = new URL(`${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`)
+    // Use window.location.origin so this works on any environment (prod, preview, local)
+    const callbackUrl = new URL(`${window.location.origin}/auth/callback`)
     if (nextUrl && nextUrl !== '/dashboard') callbackUrl.searchParams.set('next', nextUrl)
     await supabase.auth.signInWithOAuth({
       provider,
@@ -148,76 +191,159 @@ function LoginPageInner() {
           >
             <div>
               <h1 className="text-xl font-extrabold tracking-tight" style={{ color: 'var(--color-ink)' }}>
-                {mode === 'login' ? 'Bine ai revenit' : 'Creează un cont'}
+                {mode === 'login' ? 'Bine ai revenit' : mode === 'register' ? 'Creează un cont' : mode === 'forgot' ? 'Resetează parola' : 'Parolă nouă'}
               </h1>
               <p className="text-sm mt-1" style={{ color: 'var(--color-ink-muted)' }}>
                 {mode === 'login'
                   ? 'Intră în contul tău pentru a gestiona paginile.'
-                  : 'Înregistrează-te pentru a crea o pagină de donații.'}
+                  : mode === 'register'
+                  ? 'Înregistrează-te pentru a crea o pagină de donații.'
+                  : mode === 'forgot'
+                  ? 'Introdu adresa de email și îți trimitem un link de resetare.'
+                  : 'Alege o parolă nouă pentru contul tău.'}
               </p>
             </div>
 
-            {/* OAuth */}
-            <div className="space-y-2">
-              <OAuthButton onClick={() => handleOAuth('google')} loading={oauthLoading === 'google'} icon={<GoogleIcon />}>
-                Continuă cu Google
-              </OAuthButton>
-              <OAuthButton onClick={() => handleOAuth('facebook')} loading={oauthLoading === 'facebook'} icon={<FacebookIcon />}>
-                Continuă cu Facebook
-              </OAuthButton>
-            </div>
+            {/* OAuth — hidden on forgot/reset */}
+            {mode !== 'forgot' && mode !== 'reset' && (
+              <>
+                <div className="space-y-2">
+                  <OAuthButton onClick={() => handleOAuth('google')} loading={oauthLoading === 'google'} icon={<GoogleIcon />}>
+                    Continuă cu Google
+                  </OAuthButton>
+                  <OAuthButton onClick={() => handleOAuth('facebook')} loading={oauthLoading === 'facebook'} icon={<FacebookIcon />}>
+                    Continuă cu Facebook
+                  </OAuthButton>
+                </div>
 
-            {/* Divider */}
-            <div className="flex items-center gap-3">
-              <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border)' }} />
-              <span className="text-xs font-medium" style={{ color: 'var(--color-ink-faint)' }}>sau cu email</span>
-              <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border)' }} />
-            </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border)' }} />
+                  <span className="text-xs font-medium" style={{ color: 'var(--color-ink-faint)' }}>sau cu email</span>
+                  <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border)' }} />
+                </div>
+              </>
+            )}
 
-            {/* Email form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <Field label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" placeholder="adresa@email.ro" />
-              <Field
-                label="Parolă" type="password" value={password} onChange={setPassword}
-                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                placeholder={mode === 'register' ? 'Minim 8 caractere' : ''}
-              />
-              {mode === 'register' && (
-                <Field label="Confirmă parola" type="password" value={confirmPassword} onChange={setConfirmPassword} autoComplete="new-password" placeholder="Repetă parola" />
-              )}
-
-              {error && (
-                <p className="text-sm rounded-xl px-4 py-3" style={{ backgroundColor: '#FEF2F2', color: '#B91C1C', border: '1px solid #FECACA' }}>
-                  {error}
+            {/* Forgot password form */}
+            {mode === 'forgot' && (
+              <form onSubmit={handleForgot} className="space-y-4">
+                <Field label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" placeholder="adresa@email.ro" />
+                {error && (
+                  <p className="text-sm rounded-xl px-4 py-3" style={{ backgroundColor: '#FEF2F2', color: '#B91C1C', border: '1px solid #FECACA' }}>
+                    {error}
+                  </p>
+                )}
+                {success && (
+                  <p className="text-sm rounded-xl px-4 py-3 leading-relaxed" style={{ backgroundColor: '#F0FFF4', color: '#166534', border: '1px solid #BBF7D0' }}>
+                    {success}
+                  </p>
+                )}
+                {!success && (
+                  <button
+                    type="submit" disabled={loading}
+                    className="btn-press btn-fill w-full rounded-xl py-3.5 text-sm font-bold text-white"
+                    style={{ backgroundColor: 'var(--color-amber)', boxShadow: 'var(--shadow-warm)', opacity: loading ? 0.7 : 1 }}
+                  >
+                    {loading ? 'Se trimite...' : 'Trimite link de resetare'}
+                  </button>
+                )}
+                <p className="text-center text-sm" style={{ color: 'var(--color-ink-muted)' }}>
+                  <button onClick={() => { setMode('login'); setError(null); setSuccess(null) }} className="font-bold" style={{ color: 'var(--color-amber)' }}>
+                    ← Înapoi la autentificare
+                  </button>
                 </p>
-              )}
-              {success && (
-                <p className="text-sm rounded-xl px-4 py-3 leading-relaxed" style={{ backgroundColor: '#F0FFF4', color: '#166534', border: '1px solid #BBF7D0' }}>
-                  {success}
-                </p>
-              )}
+              </form>
+            )}
 
-              {!success && (
+            {/* Reset password form */}
+            {mode === 'reset' && (
+              <form onSubmit={handleReset} className="space-y-4">
+                <Field label="Parolă nouă" type="password" value={password} onChange={setPassword} autoComplete="new-password" placeholder="Minim 8 caractere" />
+                <Field label="Confirmă parola nouă" type="password" value={confirmPassword} onChange={setConfirmPassword} autoComplete="new-password" placeholder="Repetă parola" />
+                {error && (
+                  <p className="text-sm rounded-xl px-4 py-3" style={{ backgroundColor: '#FEF2F2', color: '#B91C1C', border: '1px solid #FECACA' }}>
+                    {error}
+                  </p>
+                )}
+                {success && (
+                  <p className="text-sm rounded-xl px-4 py-3 leading-relaxed" style={{ backgroundColor: '#F0FFF4', color: '#166534', border: '1px solid #BBF7D0' }}>
+                    {success}
+                  </p>
+                )}
+                {!success && (
+                  <button
+                    type="submit" disabled={loading}
+                    className="btn-press btn-fill w-full rounded-xl py-3.5 text-sm font-bold text-white"
+                    style={{ backgroundColor: 'var(--color-amber)', boxShadow: 'var(--shadow-warm)', opacity: loading ? 0.7 : 1 }}
+                  >
+                    {loading ? 'Se salvează...' : 'Setează parola nouă'}
+                  </button>
+                )}
+              </form>
+            )}
+
+            {/* Email login / register form */}
+            {mode !== 'forgot' && mode !== 'reset' && (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <Field label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" placeholder="adresa@email.ro" />
+                <div>
+                  <Field
+                    label="Parolă" type="password" value={password} onChange={setPassword}
+                    autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                    placeholder={mode === 'register' ? 'Minim 8 caractere' : ''}
+                  />
+                  {mode === 'login' && (
+                    <div className="text-right mt-1.5">
+                      <button
+                        type="button"
+                        onClick={() => { setMode('forgot'); setError(null); setSuccess(null) }}
+                        className="text-xs"
+                        style={{ color: 'var(--color-ink-faint)' }}
+                      >
+                        Ai uitat parola?
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {mode === 'register' && (
+                  <Field label="Confirmă parola" type="password" value={confirmPassword} onChange={setConfirmPassword} autoComplete="new-password" placeholder="Repetă parola" />
+                )}
+
+                {error && (
+                  <p className="text-sm rounded-xl px-4 py-3" style={{ backgroundColor: '#FEF2F2', color: '#B91C1C', border: '1px solid #FECACA' }}>
+                    {error}
+                  </p>
+                )}
+                {success && (
+                  <p className="text-sm rounded-xl px-4 py-3 leading-relaxed" style={{ backgroundColor: '#F0FFF4', color: '#166534', border: '1px solid #BBF7D0' }}>
+                    {success}
+                  </p>
+                )}
+
+                {!success && (
+                  <button
+                    type="submit" disabled={loading}
+                    className="btn-press btn-fill w-full rounded-xl py-3.5 text-sm font-bold text-white"
+                    style={{ backgroundColor: 'var(--color-amber)', boxShadow: 'var(--shadow-warm)', opacity: loading ? 0.7 : 1 }}
+                  >
+                    {loading ? 'Se procesează...' : mode === 'login' ? 'Intră în cont' : 'Creează cont'}
+                  </button>
+                )}
+              </form>
+            )}
+
+            {mode !== 'forgot' && mode !== 'reset' && (
+              <p className="text-center text-sm" style={{ color: 'var(--color-ink-muted)' }}>
+                {mode === 'login' ? 'Nu ai cont?' : 'Ai deja cont?'}{' '}
                 <button
-                  type="submit" disabled={loading}
-                  className="btn-press btn-fill w-full rounded-xl py-3.5 text-sm font-bold text-white"
-                  style={{ backgroundColor: 'var(--color-amber)', boxShadow: 'var(--shadow-warm)', opacity: loading ? 0.7 : 1 }}
+                  onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(null); setSuccess(null); setConfirmPassword('') }}
+                  className="font-bold"
+                  style={{ color: 'var(--color-amber)' }}
                 >
-                  {loading ? 'Se procesează...' : mode === 'login' ? 'Intră în cont' : 'Creează cont'}
+                  {mode === 'login' ? 'Înregistrează-te' : 'Intră'}
                 </button>
-              )}
-            </form>
-
-            <p className="text-center text-sm" style={{ color: 'var(--color-ink-muted)' }}>
-              {mode === 'login' ? 'Nu ai cont?' : 'Ai deja cont?'}{' '}
-              <button
-                onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(null); setSuccess(null); setConfirmPassword('') }}
-                className="font-bold"
-                style={{ color: 'var(--color-amber)' }}
-              >
-                {mode === 'login' ? 'Înregistrează-te' : 'Intră'}
-              </button>
-            </p>
+              </p>
+            )}
           </div>
         </div>
       </div>

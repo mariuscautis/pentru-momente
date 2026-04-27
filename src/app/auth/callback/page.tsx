@@ -16,9 +16,14 @@ function AuthCallbackInner() {
     async function handleCallback() {
       if (code) {
         // PKCE flow — exchange the code for a session and persist it
-        const { error } = await supabase.auth.exchangeCodeForSession(code)
+        const { data: exchangeData, error } = await supabase.auth.exchangeCodeForSession(code)
         if (error) {
           router.replace('/login?error=auth')
+          return
+        }
+        // Password recovery flow — send user to set new password
+        if (exchangeData.session?.user?.aud === 'authenticated' && searchParams.get('next') === '/login?mode=reset') {
+          router.replace('/login?mode=reset')
           return
         }
       }
