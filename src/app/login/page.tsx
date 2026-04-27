@@ -35,7 +35,7 @@ function LoginPageInner() {
     if (resetError) {
       setError('Nu am putut trimite emailul. Verifică adresa și încearcă din nou.')
     } else {
-      setSuccess('Am trimis un link de resetare pe adresa ta de email. Verifică și folderul Spam.')
+      setSuccess('Am trimis un link de resetare. Verifică emailul și folderul Spam / Junk. Dacă nu primești nimic în câteva minute, încearcă din nou.')
     }
   }
 
@@ -95,7 +95,7 @@ function LoginPageInner() {
       if (authError) {
         setError(authError.message)
       } else {
-        setSuccess('Contul a fost creat! Verifică emailul și apasă pe linkul de confirmare pentru a te autentifica.')
+        setSuccess('Contul a fost creat! Verifică emailul și apasă pe linkul de confirmare. Dacă nu îl găsești, verifică și folderul Spam / Junk.')
       }
     }
 
