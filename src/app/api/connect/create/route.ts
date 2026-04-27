@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createConnectAccount } from '@/lib/connect/createAccount'
-import { createOnboardingLink } from '@/lib/connect/createOnboardingLink'
 import { supabase, supabaseAdmin } from '@/lib/db/supabase'
 import { ApiError } from '@/types'
 
@@ -56,8 +55,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         .eq('id', body.eventId)
     }
 
-    const onboardingUrl = await createOnboardingLink(accountId, body.eventSlug)
-    return NextResponse.json({ onboardingUrl })
+    return NextResponse.json({ accountId, eventId: body.eventId })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to create Connect account'
     return NextResponse.json<ApiError>({ error: message }, { status: 500 })

@@ -25,18 +25,24 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json<ApiError>({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  let body: { eventSlug: string }
+  let body: { eventId?: string; eventSlug?: string }
   try {
-    body = (await req.json()) as { eventSlug: string }
+    body = (await req.json()) as { eventId?: string; eventSlug?: string }
   } catch {
     return NextResponse.json<ApiError>({ error: 'Invalid request body' }, { status: 400 })
   }
 
-  const { data: eventRow } = await supabase
+  if (!body.eventId && !body.eventSlug) {
+    return NextResponse.json<ApiError>({ error: 'eventId or eventSlug required' }, { status: 400 })
+  }
+
+  const query = supabase
     .from('events')
     .select('id, slug, event_type, name, organiser_id, stripe_connect_account_id, connect_onboarding_complete')
-    .eq('slug', body.eventSlug)
-    .single()
+
+  const { data: eventRow } = await (
+    body.eventId ? query.eq('id', body.eventId).single() : query.eq('slug', body.eventSlug!).single()
+  )
 
   if (!eventRow || (eventRow.organiser_id as string) !== user.id) {
     return NextResponse.json<ApiError>({ error: 'Forbidden' }, { status: 403 })

@@ -735,14 +735,16 @@ export default function CreateEventPage() {
       }),
     })
 
-    const connectData = (await connectRes.json()) as { onboardingUrl?: string; error?: string }
-    if (!connectRes.ok || !connectData.onboardingUrl) {
+    const connectData = (await connectRes.json()) as { accountId?: string; eventId?: string; error?: string }
+    if (!connectRes.ok || !connectData.eventId) {
       setError(connectData.error ?? 'Eroare la configurarea plăților.')
       setLoading(false)
       return
     }
 
-    window.location.href = connectData.onboardingUrl
+    const isDual = selectedConfig?.copy.pageTitle.includes('{name1}') ?? false
+    const finalName = isDual && name2.trim() ? `${name} & ${name2}` : name
+    router.push(`/dashboard/onboarding?eventId=${connectData.eventId}&name=${encodeURIComponent(finalName)}`)
   }
 
   const isDualName = selectedConfig

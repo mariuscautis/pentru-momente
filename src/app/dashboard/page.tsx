@@ -1236,7 +1236,7 @@ function EventCard({
               <p className="text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: '#FFFBEB', color: '#92400E' }}>
                 Configurarea plăților nu este finalizată. Pagina nu este încă activă pentru donații.
               </p>
-              <OnboardingResumeButton eventSlug={event.slug} />
+              <OnboardingResumeButton eventId={event.id} eventName={event.name} />
             </div>
           ) : (
             <p className="text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: '#F0FFF4', color: '#166534' }}>
@@ -1279,25 +1279,13 @@ function EventCard({
 
 // ─── Onboarding resume button ──────────────────────────────────────────────────
 
-function OnboardingResumeButton({ eventSlug }: { eventSlug: string }) {
+function OnboardingResumeButton({ eventId, eventName }: { eventId: string; eventName: string }) {
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [err, setErr] = useState('')
 
-  async function resume() {
+  function resume() {
     setLoading(true)
-    setErr('')
-    const res = await fetch('/api/connect/refresh', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ eventSlug }),
-    })
-    const data = (await res.json()) as { onboardingUrl?: string; error?: string }
-    if (!res.ok || !data.onboardingUrl) {
-      setErr(data.error ?? 'Eroare la generarea linkului.')
-      setLoading(false)
-      return
-    }
-    window.location.href = data.onboardingUrl
+    router.push(`/dashboard/onboarding?eventId=${eventId}&name=${encodeURIComponent(eventName)}`)
   }
 
   return (
@@ -1310,7 +1298,6 @@ function OnboardingResumeButton({ eventSlug }: { eventSlug: string }) {
       >
         {loading ? 'Se încarcă...' : 'Finalizează configurarea Stripe →'}
       </button>
-      {err && <p className="mt-1 text-xs" style={{ color: '#B91C1C' }}>{err}</p>}
     </div>
   )
 }
