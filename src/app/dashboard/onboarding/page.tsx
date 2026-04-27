@@ -2,10 +2,9 @@
 
 import { useEffect, useState, useCallback, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { loadConnectAndInitialize } from '@stripe/connect-js'
+import { loadConnectAndInitialize } from '@stripe/connect-js/pure'
 import { ConnectAccountOnboarding, ConnectComponentsProvider } from '@stripe/react-connect-js'
 import { getSupabase } from '@/lib/db/supabase'
-import Script from 'next/script'
 import Link from 'next/link'
 
 function OnboardingContent() {
@@ -238,8 +237,6 @@ function OnboardingContent() {
 export default function OnboardingPage() {
   return (
     <>
-      {/* Preload Stripe Connect JS so it's ready before loadConnectAndInitialize runs */}
-      <Script src="https://connect-js.stripe.com/v1.0/connect.js" strategy="beforeInteractive" />
       <Suspense fallback={
         <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-bg)' }}>
           <div className="h-7 w-7 animate-spin rounded-full border-2"
