@@ -18,7 +18,6 @@ function OnboardingContent() {
   const [done, setDone] = useState(false)
   const [accessToken, setAccessToken] = useState<string | null>(null)
 
-  // Fetch session token on mount
   useEffect(() => {
     if (!eventId) { router.push('/dashboard'); return }
 
@@ -52,12 +51,17 @@ function OnboardingContent() {
           overlays: 'dialog',
           variables: {
             colorPrimary: '#C4956A',
-            colorBackground: '#FFFDFB',
+            colorBackground: '#FFFFFF',
             colorText: '#2D2016',
+            colorSecondaryText: '#9A7B60',
             colorDanger: '#DC2626',
-            borderRadius: '12px',
-            fontFamily: 'inherit',
-            spacingUnit: '4px',
+            colorBorder: '#E8D9C8',
+            borderRadius: '10px',
+            buttonBorderRadius: '10px',
+            badgeBorderRadius: '6px',
+            formHighlightColorBorder: '#C4956A',
+            formAccentColor: '#C4956A',
+            offsetBackgroundColor: '#FDFAF7',
           },
         },
       })
@@ -71,12 +75,10 @@ function OnboardingContent() {
   const handleExit = useCallback(async () => {
     if (!eventId || !accessToken) { router.push('/dashboard'); return }
 
-    // Poll activate endpoint to check if onboarding completed
     const supabase = getSupabase()
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) { router.push('/dashboard'); return }
 
-    // Try to activate a few times — Stripe may not have processed yet
     for (let i = 0; i < 5; i++) {
       try {
         const res = await fetch('/api/connect/activate', {
@@ -97,93 +99,112 @@ function OnboardingContent() {
 
   if (error) {
     return (
-      <div className="max-w-md w-full rounded-3xl p-10 text-center space-y-4"
-        style={{ backgroundColor: '#FFFDFB', border: '1px solid #EDE0D0' }}>
-        <div className="text-4xl">⚠️</div>
-        <p className="text-sm font-medium" style={{ color: '#991B1B' }}>{error}</p>
-        <Link href="/dashboard" className="inline-block rounded-xl px-6 py-3 text-sm font-semibold text-white"
-          style={{ backgroundColor: '#C4956A' }}>
-          Înapoi la dashboard
-        </Link>
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: 'var(--color-bg)' }}>
+        <div className="max-w-md w-full rounded-3xl p-10 text-center space-y-5"
+          style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-md)' }}>
+          <div className="text-4xl">⚠️</div>
+          <p className="text-sm font-medium" style={{ color: '#991B1B' }}>{error}</p>
+          <Link href="/dashboard"
+            className="inline-block rounded-xl px-6 py-3 text-sm font-semibold text-white"
+            style={{ backgroundColor: 'var(--color-amber)' }}>
+            Înapoi la dashboard
+          </Link>
+        </div>
       </div>
     )
   }
 
   if (done) {
     return (
-      <div className="max-w-md w-full rounded-3xl p-10 text-center space-y-6"
-        style={{ backgroundColor: '#FFFDFB', border: '1px solid #EDE0D0' }}>
-        <div className="text-5xl">🎉</div>
-        <h1 className="text-xl font-bold" style={{ color: '#2D2016' }}>Configurare finalizată!</h1>
-        <p className="text-sm leading-relaxed" style={{ color: '#9A7B60' }}>
-          Stripe a primit datele tale. Pagina va deveni activă în câteva minute după confirmare.
-        </p>
-        <Link href="/dashboard" className="inline-block rounded-xl px-6 py-3 text-sm font-semibold text-white"
-          style={{ backgroundColor: '#C4956A' }}>
-          Mergi la dashboard →
-        </Link>
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: 'var(--color-bg)' }}>
+        <div className="max-w-md w-full rounded-3xl p-10 text-center space-y-6"
+          style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-md)' }}>
+          <div className="text-5xl">🎉</div>
+          <h1 className="text-xl font-bold" style={{ color: 'var(--color-ink)' }}>Configurare finalizată!</h1>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--color-ink-muted)' }}>
+            Stripe a primit datele tale. Pagina va deveni activă în câteva minute după confirmare.
+          </p>
+          <Link href="/dashboard"
+            className="inline-block rounded-xl px-6 py-3 text-sm font-semibold text-white"
+            style={{ backgroundColor: 'var(--color-amber)' }}>
+            Mergi la dashboard →
+          </Link>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="w-full max-w-2xl">
-      {/* Header */}
-      <div className="mb-8 text-center">
-        <a href="/" className="inline-flex items-center gap-1 font-extrabold tracking-tight text-lg mb-6"
-          style={{ color: '#2D2016' }}>
-          pentru<span style={{ color: '#C4956A' }}>momente</span>
-        </a>
-        <h1 className="text-2xl font-bold mt-4" style={{ color: '#2D2016' }}>
-          Configurare plăți
-        </h1>
-        {eventName && (
-          <p className="text-sm mt-2" style={{ color: '#9A7B60' }}>
-            pentru <span className="font-semibold" style={{ color: '#6B4E37' }}>{eventName}</span>
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg)' }}>
+
+      {/* Header — matches create page */}
+      <header className="sticky top-0 z-40 px-6 py-4"
+        style={{ borderBottom: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
+        <div className="mx-auto max-w-2xl flex items-center justify-between">
+          <a href="/" className="text-sm font-extrabold tracking-tight" style={{ color: 'var(--color-ink)' }}>
+            pentru<span style={{ color: 'var(--color-amber)' }}>momente</span>
+          </a>
+          {eventName && (
+            <span className="text-xs font-medium truncate max-w-[200px]" style={{ color: 'var(--color-ink-muted)' }}>
+              {eventName}
+            </span>
+          )}
+        </div>
+      </header>
+
+      {/* Body */}
+      <div className="mx-auto max-w-2xl px-4 py-10 sm:py-14">
+
+        {/* Section header */}
+        <div className="mb-8">
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] mb-2" style={{ color: 'var(--color-amber)' }}>
+            Ultimul pas
           </p>
+          <h1 className="text-2xl font-extrabold tracking-tight" style={{ color: 'var(--color-ink)' }}>
+            Configurare plăți
+          </h1>
+          <p className="text-sm mt-2 leading-relaxed" style={{ color: 'var(--color-ink-muted)' }}>
+            Completează datele de mai jos pentru a activa donațiile. Stripe gestionează verificarea identității și plățile în siguranță.
+          </p>
+        </div>
+
+        {/* Stripe embedded component */}
+        {stripeConnectInstance ? (
+          <div className="rounded-2xl overflow-hidden"
+            style={{ border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-md)' }}>
+            <ConnectComponentsProvider connectInstance={stripeConnectInstance}>
+              <ConnectAccountOnboarding onExit={handleExit} />
+            </ConnectComponentsProvider>
+          </div>
+        ) : (
+          <div className="rounded-2xl flex items-center justify-center py-24"
+            style={{ border: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
+            <div className="flex flex-col items-center gap-3">
+              <div className="h-7 w-7 animate-spin rounded-full border-2"
+                style={{ borderColor: 'var(--color-border)', borderTopColor: 'var(--color-amber)' }} />
+              <p className="text-xs" style={{ color: 'var(--color-ink-faint)' }}>Se încarcă formularul Stripe...</p>
+            </div>
+          </div>
         )}
-        <p className="text-sm mt-3 max-w-sm mx-auto leading-relaxed" style={{ color: '#9A7B60' }}>
-          Completează datele de mai jos pentru a activa donațiile. Stripe va gestiona verificarea identității și plățile în siguranță.
+
+        {/* Trust footer */}
+        <p className="text-center text-xs mt-6" style={{ color: 'var(--color-ink-faint)' }}>
+          🔒 Datele tale sunt procesate securizat prin Stripe. pentrumomente.ro nu stochează informații bancare.
         </p>
       </div>
-
-      {/* Embedded Stripe component */}
-      {stripeConnectInstance ? (
-        <div
-          className="rounded-3xl overflow-hidden"
-          style={{ border: '1px solid #EDE0D0', boxShadow: '0 4px 32px rgba(45,32,22,0.07)' }}
-        >
-          <ConnectComponentsProvider connectInstance={stripeConnectInstance}>
-            <ConnectAccountOnboarding
-              onExit={handleExit}
-            />
-          </ConnectComponentsProvider>
-        </div>
-      ) : (
-        <div className="flex justify-center py-16">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-t-transparent"
-            style={{ borderColor: '#EDE0D0', borderTopColor: '#C4956A' }} />
-        </div>
-      )}
-
-      {/* Trust footer */}
-      <p className="text-center text-xs mt-6" style={{ color: '#B09070' }}>
-        🔒 Datele tale sunt procesate securizat prin Stripe. pentrumomente.ro nu stochează informații bancare.
-      </p>
     </div>
   )
 }
 
 export default function OnboardingPage() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12"
-      style={{ backgroundColor: '#FDFAF7' }}>
-      <Suspense fallback={
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-t-transparent"
-          style={{ borderColor: '#EDE0D0', borderTopColor: '#C4956A' }} />
-      }>
-        <OnboardingContent />
-      </Suspense>
-    </div>
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-bg)' }}>
+        <div className="h-7 w-7 animate-spin rounded-full border-2"
+          style={{ borderColor: 'var(--color-border)', borderTopColor: 'var(--color-amber)' }} />
+      </div>
+    }>
+      <OnboardingContent />
+    </Suspense>
   )
 }
