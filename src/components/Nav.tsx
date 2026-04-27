@@ -36,8 +36,15 @@ export function Nav() {
     supabase.auth.getSession().then(({ data }) => {
       setUser(data.session?.user ?? null)
     })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null)
+      // When a user signs in from any page, resume create draft if one exists
+      if (event === 'SIGNED_IN' && session) {
+        const draft = localStorage.getItem('create_draft')
+        if (draft) {
+          window.location.href = '/create'
+        }
+      }
     })
     return () => subscription.unsubscribe()
   }, [])
