@@ -574,9 +574,9 @@ export default function CreateEventPage() {
   const coverInputRef = useRef<HTMLInputElement>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
 
-  // Restore draft from sessionStorage on mount (after login redirect)
+  // Restore draft from localStorage on mount (survives email confirmation tabs and OAuth redirects)
   useEffect(() => {
-    const saved = sessionStorage.getItem('create_draft')
+    const saved = localStorage.getItem('create_draft')
     if (!saved) return
     try {
       const draft = JSON.parse(saved) as {
@@ -611,12 +611,12 @@ export default function CreateEventPage() {
     } catch {
       // ignore malformed draft
     }
-    sessionStorage.removeItem('create_draft')
+    localStorage.removeItem('create_draft')
   }, [])
 
   function saveDraftAndRedirect(path: string) {
     if (selectedConfig) {
-      sessionStorage.setItem('create_draft', JSON.stringify({
+      localStorage.setItem('create_draft', JSON.stringify({
         step,
         selectedConfigSlug: selectedConfig.slug,
         name,

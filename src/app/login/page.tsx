@@ -62,10 +62,12 @@ function LoginPageInner() {
   async function handleOAuth(provider: 'google' | 'facebook') {
     setOauthLoading(provider)
     const supabase = getSupabase()
+    const callbackUrl = new URL(`${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`)
+    if (nextUrl && nextUrl !== '/dashboard') callbackUrl.searchParams.set('next', nextUrl)
     await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+        redirectTo: callbackUrl.toString(),
       },
     })
     setOauthLoading(null)
