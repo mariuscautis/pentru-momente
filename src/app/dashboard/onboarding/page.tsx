@@ -54,23 +54,23 @@ function OnboardingContent() {
             fontFamily: '"Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif',
             fontSizeBase: '15px',
 
-            // Colours
+            // Colours — white card on cream page
             colorPrimary: '#C4956A',
-            colorBackground: '#FDFAF7',
+            colorBackground: '#FFFFFF',       // card/section background: white
             colorText: '#2D2016',
             colorSecondaryText: '#7A6652',
             colorDanger: '#DC2626',
-            colorBorder: '#DDD0BF',
+            colorBorder: '#E8D9C8',
 
-            // Offset sections (alternating bg inside the form)
-            offsetBackgroundColor: '#F5EDE2',
+            // Offset sections inside the component (header strip, alternating rows)
+            offsetBackgroundColor: '#FDF8F3',
 
             // Form inputs
             formBackgroundColor: '#FFFFFF',
             formBorderRadius: '10px',
             formHighlightColorBorder: '#C4956A',
             formAccentColor: '#C4956A',
-            formPlaceholderTextColor: '#B8A090',
+            formPlaceholderTextColor: '#C0A890',
             inputFieldPaddingX: '14px',
             inputFieldPaddingY: '10px',
 
@@ -78,10 +78,10 @@ function OnboardingContent() {
             borderRadius: '10px',
             buttonBorderRadius: '10px',
             buttonPrimaryColorBackground: '#C4956A',
-            buttonPrimaryColorBorder: '#C4956A',
+            buttonPrimaryColorBorder: '#B8845A',
             buttonPrimaryColorText: '#FFFFFF',
-            buttonSecondaryColorBackground: '#F5EDE2',
-            buttonSecondaryColorBorder: '#DDD0BF',
+            buttonSecondaryColorBackground: '#FDF8F3',
+            buttonSecondaryColorBorder: '#E8D9C8',
             buttonSecondaryColorText: '#2D2016',
             buttonPaddingX: '20px',
             buttonPaddingY: '10px',
@@ -200,7 +200,8 @@ function OnboardingContent() {
 
         {/* Stripe embedded component */}
         {stripeConnectInstance ? (
-          <div>
+          <div className="rounded-2xl overflow-hidden"
+            style={{ border: '1px solid #E8D9C8', backgroundColor: '#FFFFFF', boxShadow: '0 2px 16px rgba(45,32,22,0.06)' }}>
             <ConnectComponentsProvider connectInstance={stripeConnectInstance}>
               <ConnectAccountOnboarding onExit={handleExit} />
             </ConnectComponentsProvider>
