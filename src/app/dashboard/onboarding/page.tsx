@@ -50,18 +50,48 @@ function OnboardingContent() {
         appearance: {
           overlays: 'dialog',
           variables: {
+            // Typography
+            fontFamily: '"Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif',
+            fontSizeBase: '15px',
+
+            // Colours
             colorPrimary: '#C4956A',
-            colorBackground: '#FFFFFF',
+            colorBackground: '#FDFAF7',
             colorText: '#2D2016',
-            colorSecondaryText: '#9A7B60',
+            colorSecondaryText: '#7A6652',
             colorDanger: '#DC2626',
-            colorBorder: '#E8D9C8',
-            borderRadius: '10px',
-            buttonBorderRadius: '10px',
-            badgeBorderRadius: '6px',
+            colorBorder: '#DDD0BF',
+
+            // Offset sections (alternating bg inside the form)
+            offsetBackgroundColor: '#F5EDE2',
+
+            // Form inputs
+            formBackgroundColor: '#FFFFFF',
+            formBorderRadius: '10px',
             formHighlightColorBorder: '#C4956A',
             formAccentColor: '#C4956A',
-            offsetBackgroundColor: '#FDFAF7',
+            formPlaceholderTextColor: '#B8A090',
+            inputFieldPaddingX: '14px',
+            inputFieldPaddingY: '10px',
+
+            // Buttons
+            borderRadius: '10px',
+            buttonBorderRadius: '10px',
+            buttonPrimaryColorBackground: '#C4956A',
+            buttonPrimaryColorBorder: '#C4956A',
+            buttonPrimaryColorText: '#FFFFFF',
+            buttonSecondaryColorBackground: '#F5EDE2',
+            buttonSecondaryColorBorder: '#DDD0BF',
+            buttonSecondaryColorText: '#2D2016',
+            buttonPaddingX: '20px',
+            buttonPaddingY: '10px',
+            buttonLabelFontWeight: '600',
+
+            // Links
+            actionPrimaryColorText: '#C4956A',
+
+            // Badges
+            badgeBorderRadius: '6px',
           },
         },
       })
@@ -170,8 +200,7 @@ function OnboardingContent() {
 
         {/* Stripe embedded component */}
         {stripeConnectInstance ? (
-          <div className="rounded-2xl overflow-hidden"
-            style={{ border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-md)' }}>
+          <div>
             <ConnectComponentsProvider connectInstance={stripeConnectInstance}>
               <ConnectAccountOnboarding onExit={handleExit} />
             </ConnectComponentsProvider>
