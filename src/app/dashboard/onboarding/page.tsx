@@ -31,6 +31,9 @@ function OnboardingContent() {
       const instance = loadConnectAndInitialize({
         publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
         locale: 'ro-RO',
+        fonts: [
+          { cssSrc: 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap' },
+        ],
         fetchClientSecret: async () => {
           const res = await fetch('/api/connect/session', {
             method: 'POST',
@@ -50,22 +53,19 @@ function OnboardingContent() {
         appearance: {
           overlays: 'dialog',
           variables: {
-            // Typography
-            fontFamily: '"Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif',
+            fontFamily: '"Plus Jakarta Sans", sans-serif',
             fontSizeBase: '15px',
+            spacingUnit: '10px',
+            borderRadius: '10px',
 
-            // Colours — white card on cream page
             colorPrimary: '#C4956A',
-            colorBackground: '#FFFFFF',       // card/section background: white
+            colorBackground: '#FFFFFF',
             colorText: '#2D2016',
             colorSecondaryText: '#7A6652',
             colorDanger: '#DC2626',
             colorBorder: '#E8D9C8',
-
-            // Offset sections inside the component (header strip, alternating rows)
             offsetBackgroundColor: '#FDF8F3',
 
-            // Form inputs
             formBackgroundColor: '#FFFFFF',
             formBorderRadius: '10px',
             formHighlightColorBorder: '#C4956A',
@@ -74,8 +74,6 @@ function OnboardingContent() {
             inputFieldPaddingX: '14px',
             inputFieldPaddingY: '10px',
 
-            // Buttons
-            borderRadius: '10px',
             buttonBorderRadius: '10px',
             buttonPrimaryColorBackground: '#C4956A',
             buttonPrimaryColorBorder: '#B8845A',
@@ -87,10 +85,7 @@ function OnboardingContent() {
             buttonPaddingY: '10px',
             buttonLabelFontWeight: '600',
 
-            // Links
             actionPrimaryColorText: '#C4956A',
-
-            // Badges
             badgeBorderRadius: '6px',
           },
         },
