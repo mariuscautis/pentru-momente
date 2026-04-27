@@ -170,7 +170,7 @@ function OnboardingContent() {
         {/* Stripe embedded component */}
         {stripeConnectInstance ? (
           <div className="rounded-2xl overflow-hidden"
-            style={{ border: '1px solid #E8D9C8', backgroundColor: '#FFFFFF', boxShadow: '0 2px 16px rgba(45,32,22,0.06)' }}>
+            style={{ border: '1px solid #E8D9C8', backgroundColor: '#FFFFFF', boxShadow: '0 2px 16px rgba(45,32,22,0.06)', padding: '20px' }}>
             <ConnectComponentsProvider connectInstance={stripeConnectInstance}>
               <ConnectAccountOnboarding onExit={handleExit} />
             </ConnectComponentsProvider>
