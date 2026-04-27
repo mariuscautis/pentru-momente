@@ -66,45 +66,6 @@ function OnboardingContent() {
       })
 
       setStripeConnectInstance(instance)
-
-      // Re-apply appearance after a tick — ensures it's set after the
-      // dynamically loaded Stripe Connect script finishes initialising
-      setTimeout(() => {
-        instance.update({
-          appearance: {
-            overlays: 'dialog',
-            variables: {
-              colorPrimary: '#C4956A',
-              colorBackground: '#FFFFFF',
-              colorText: '#2D2016',
-              colorDanger: '#DC2626',
-              borderRadius: '10px',
-              spacingUnit: '10px',
-              fontSizeBase: '15px',
-              fontFamily: '"Plus Jakarta Sans", sans-serif',
-              colorSecondaryText: '#7A6652',
-              colorBorder: '#E8D9C8',
-              offsetBackgroundColor: '#FDF8F3',
-              formBackgroundColor: '#FFFFFF',
-              formBorderRadius: '10px',
-              formHighlightColorBorder: '#C4956A',
-              formAccentColor: '#C4956A',
-              formPlaceholderTextColor: '#C0A890',
-              inputFieldPaddingX: '14px',
-              inputFieldPaddingY: '10px',
-              buttonBorderRadius: '10px',
-              buttonPrimaryColorBackground: '#C4956A',
-              buttonPrimaryColorBorder: '#B8845A',
-              buttonPrimaryColorText: '#FFFFFF',
-              buttonPaddingX: '20px',
-              buttonPaddingY: '10px',
-              buttonLabelFontWeight: '600',
-              actionPrimaryColorText: '#C4956A',
-              badgeBorderRadius: '6px',
-            },
-          },
-        })
-      }, 500)
     }
 
     init().catch((err) => setError(err instanceof Error ? err.message : 'Eroare neașteptată'))
