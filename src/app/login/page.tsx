@@ -43,13 +43,11 @@ function LoginPageInner() {
         router.push(hasDraft ? '/create' : nextUrl)
       }
     } else {
-      const confirmUrl = new URL(`${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`)
-      if (nextUrl && nextUrl !== '/dashboard') confirmUrl.searchParams.set('next', nextUrl)
       const { error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: confirmUrl.toString(),
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
         },
       })
       if (authError) {

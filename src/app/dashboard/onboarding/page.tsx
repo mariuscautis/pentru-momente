@@ -31,6 +31,7 @@ function OnboardingContent() {
 
       const instance = loadConnectAndInitialize({
         publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
+        locale: 'ro-RO',
         fetchClientSecret: async () => {
           const res = await fetch('/api/connect/session', {
             method: 'POST',

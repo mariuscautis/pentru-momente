@@ -119,7 +119,11 @@ export default function DashboardPage() {
     setLoading(false)
   }
 
-  useEffect(() => { load() }, [router]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    // If there's a saved create draft, resume it instead of showing the dashboard
+    if (localStorage.getItem('create_draft')) { router.replace('/create'); return }
+    load()
+  }, [router]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function uploadCover(eventId: string, file: File) {
     setUploadingFor(eventId)
